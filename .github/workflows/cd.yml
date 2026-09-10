@@ -1,0 +1,60 @@
+# ===========================================
+# CD Pipeline - Deploy to Railway
+# ===========================================
+
+name: CD - Deploy to Railway
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Test"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+jobs:
+  # ===========================================
+  # Deploy to Railway
+  # ===========================================
+  deploy-to-railway:
+    name: Deploy to Railway
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Install Railway CLI
+        run: npm i -g @railway/cli
+
+      - name: Deploy to Railway
+        run: 
+          railway up --detach
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_ENVIRONMENT_ID: ${{ secrets.RAILWAY_ENVIRONMENT_ID }}
+
+      - name: Get Railway service URL
+        id: railway-url
+        run: |
+          SERVICE_URL=$(railway open --url)
+          echo "service_url=$SERVICE_URL" >> $GITHUB_OUTPUT
+          echo "✅ Service deployed at: $SERVICE_URL"
+
+      - name: Deployment summary
+        run: |
+          echo "✅ Deployment to Railway completed!"
+          echo "Service URL: ${{ steps.railway-url.outputs.service_url }}"
+          echo "Commit: ${{ github.event.workflow_run.head_sha }}"
+          echo "CI Run: ${{ github.event.workflow_run.html_url }}"
+          echo ""
+          echo "📝 Next steps:"
+          echo "1. Update Postman environment with new baseUrl"
+          echo "2. Run integration tests with Newman"
