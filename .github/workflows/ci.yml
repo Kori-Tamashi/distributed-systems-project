@@ -143,6 +143,7 @@ jobs:
 
       - name: Run unit tests
         run: |
+          mkdir -p ./TestResults
           dotnet test src/tests/tests.csproj \
             --configuration Release \
             --filter "FullyQualifiedName~unit" \
@@ -157,7 +158,9 @@ jobs:
         if: always()
         with:
           name: unit-test-results-${{ runner.os }}
-          path: TestResults/*.trx
+          path: |
+            ./TestResults/*.trx
+            ./TestResults/**/coverage.cobertura.xml
           retention-days: 7
           if-no-files-found: warn
 
@@ -181,7 +184,7 @@ jobs:
         if: success() || failure()
         with:
           name: Unit Test Results
-          path: TestResults/*.trx
+          path: ./TestResults/*.trx
           reporter: dotnet-trx
 
   # ===========================================
@@ -239,6 +242,7 @@ jobs:
 
       - name: Run integration tests
         run: |
+          mkdir -p ./TestResults
           dotnet test src/tests/tests.csproj \
             --configuration Release \
             --filter "FullyQualifiedName~integration" \
@@ -260,8 +264,8 @@ jobs:
         with:
           name: integration-test-results-${{ runner.os }}
           path: |
-            TestResults/*.trx
-            TestResults/**/coverage.cobertura.xml
+            ./TestResults/*.trx
+            ./TestResults/**/coverage.cobertura.xml
           retention-days: 7
           if-no-files-found: warn
 
@@ -285,7 +289,7 @@ jobs:
         if: success() || failure()
         with:
           name: Integration Test Results
-          path: TestResults/*.trx
+          path: ./TestResults/*.trx
           reporter: dotnet-trx
 
   # ===========================================
