@@ -148,10 +148,8 @@ jobs:
             --filter "FullyQualifiedName~unit" \
             --verbosity normal \
             --logger "trx;LogFileName=unit-tests.trx" \
-            --logger "console;verbosity=detailed" \
             --results-directory ./TestResults \
-            --collect:"XPlat Code Coverage" \
-            --data-collection-run-settings '{"codeCoverage": {"enabled": true}}'
+            --collect:"XPlat Code Coverage"
         continue-on-error: false
 
       - name: Upload unit test results
@@ -246,7 +244,6 @@ jobs:
             --filter "FullyQualifiedName~integration" \
             --verbosity normal \
             --logger "trx;LogFileName=integration-tests.trx" \
-            --logger "console;verbosity=detailed" \
             --results-directory ./TestResults \
             --collect:"XPlat Code Coverage"
         env:
