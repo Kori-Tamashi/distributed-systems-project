@@ -1,0 +1,65 @@
+services:
+  # ===========================================
+  # Production PostgreSQL Database
+  # ===========================================
+  postgres-prod:
+    image: postgres:13-alpine
+    container_name: dsp-postgres-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_PROD_DATABASE}
+      POSTGRES_USER: ${POSTGRES_PROD_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PROD_PASSWORD}
+    ports:
+      - "${POSTGRES_PROD_PORT}:5432"
+    volumes:
+      - ${POSTGRES_PROD_DATA_PATH}:/var/lib/postgresql/data
+    networks:
+      - dsp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_PROD_USER} -d ${POSTGRES_PROD_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  # ===========================================
+  # Test PostgreSQL Database
+  # ===========================================
+  postgres-test:
+    image: postgres:13-alpine
+    container_name: dsp-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_TEST_DATABASE}
+      POSTGRES_USER: ${POSTGRES_TEST_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD}
+    ports:
+      - "${POSTGRES_TEST_PORT}:5432"
+    networks:
+      - dsp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER} -d ${POSTGRES_TEST_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+# ===========================================
+# Networks
+# ===========================================
+networks:
+  dsp-network:
+    driver: bridge
+    name: dsp-network
+

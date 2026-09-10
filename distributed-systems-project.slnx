@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/businesslogic/businesslogic.csproj" />
+    <Project Path="src/core/core.csproj" />
+    <Project Path="src/dataaccess/dataaccess.csproj" />
+    <Project Path="src/presentation/presentation.csproj" />
+    <Project Path="src/tests/tests.csproj" />
+  </Folder>
+</Solution>
