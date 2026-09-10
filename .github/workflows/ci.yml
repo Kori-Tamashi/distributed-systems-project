@@ -367,18 +367,15 @@ jobs:
           
           echo "✅ Running Docker verification tests..."
           
-          # Run basic verification tests
-          CONTAINER_ID=$(docker ps -q -f name=person-service-test)
-          docker exec $CONTAINER_ID dotnet --version
-          docker exec $CONTAINER_ID dotnet --list-sdks
-          
           # Check health endpoint
           echo "🏥 Checking health endpoint..."
-          curl -f http://localhost:8080/health || echo "Health endpoint check completed"
+          HEALTH_RESPONSE=$(curl -sf http://localhost:8080/health)
+          echo "Health response: $HEALTH_RESPONSE"
           
           # Test API endpoint
           echo "🔌 Testing API endpoint..."
-          curl -sf http://localhost:8080/api/persons || echo "API endpoint check completed"
+          PERSONS_RESPONSE=$(curl -sf http://localhost:8080/api/persons)
+          echo "API response: $PERSONS_RESPONSE"
           
           echo "🧹 Cleaning up..."
           # Cleanup
