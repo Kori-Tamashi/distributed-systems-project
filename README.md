@@ -131,7 +131,7 @@ GitHub Actions workflow автоматически:
 - Build проекта
 - Запуск тестов
 - Сборка Docker-образа
-- Деплой на Heroku (настраивается)
+- Деплой на Railway (настраивается)
 
 Workflow файл: `.github/workflows/build.yml`
 

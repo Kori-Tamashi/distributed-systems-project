@@ -48,7 +48,7 @@
   - [ ] Build step
   - [ ] Test execution
   - [ ] Docker image build
-  - [ ] Heroku deployment
+  - [ ] Railway deployment
 
 ### Docker Configuration
 - [x] Multi-stage Dockerfile for production
@@ -57,9 +57,9 @@
 - [x] Non-root user for security
 - [x] Health checks in Dockerfile
 
-### Heroku Deployment
-- [ ] Heroku configuration files
-- [ ] Procfile
+### Railway Deployment
+- [ ] Railway configuration files
+- [ ] railway.toml
 - [ ] Deployment pipeline testing
 
 ## 📋 Next Steps
@@ -69,17 +69,17 @@
    - Build .NET project
    - Run all tests
    - Build Docker image
-   - Deploy to Heroku on merge to main
+   - Deploy to Railway on merge to main
 
-2. Configure Heroku
-   - Create Heroku app
+2. Configure Railway
+   - Create Railway project
    - Set environment variables
    - Configure Docker deployment
 
 3. Add GitHub secrets
-   - HEROKU_API_KEY
-   - HEROKU_EMAIL
-   - HEROKU_APP_NAME
+   - RAILWAY_TOKEN
+   - RAILWAY_PROJECT_ID
+   - RAILWAY_SERVICE_ID
 
 ### Priority 2: Production Ready
 1. Optimize Dockerfile
@@ -121,7 +121,7 @@
 - [x] All 154 tests pass
 - [x] Multi-database switching works
 - [ ] CI/CD pipeline runs successfully
-- [ ] Application deploys to Heroku
+- [ ] Application deploys to Railway
 
 ### Non-Functional
 - [x] Clean Architecture implemented
@@ -137,7 +137,7 @@
 | Core Implementation | Domain, Services, Controllers, Repositories | ✅ Done |
 | Testing | Unit + Integration tests | ✅ Done |
 | Infrastructure | Docker, Environment config, Makefile | ✅ Done |
-| CI/CD | GitHub Actions, Heroku | 🔄 In Progress |
+| CI/CD | GitHub Actions, Railway | 🔄 In Progress |
 | Production | Optimization, Monitoring | 📋 Planned |
 | Security | Auth, Validation | 📋 Planned |
 

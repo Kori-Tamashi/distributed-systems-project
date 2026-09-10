@@ -21,7 +21,7 @@
   - [x] Добавить health check endpoint (`/health`)
   - [x] Закоммитить и запушить изменения
   - [ ] Настроить GitHub Actions (`.github/workflows/build.yml`)
-  - [ ] Настроить деплой на Heroku через GitHub Actions
+  - [ ] Настроить деплой на Railway через GitHub Actions
 
 ## 📚 Текущая тема изучения
 - **Лекция 13:** Инфраструктура — мониторинг, логирование, трейсинг, CI/CD
@@ -42,7 +42,7 @@
 - ✅ Добавить health check endpoint (`/health`)
 - ✅ Закоммитить и запушить изменения на GitHub
 - [ ] Создать GitHub Actions workflow для CI/CD
-- [ ] Настроить деплой на Heroku
+- [ ] Настроить деплой на Railway
 
 ## 📝 Заметки и проблемы
 - **Стек:** C# / ASP.NET Core / PostgreSQL 14 / EF Core
@@ -81,4 +81,4 @@
    - Сборка проекта
    - Запуск unit-тестов
    - Сборка Docker-образа
-   - Деплой на Heroku
+   - Деплой на Railway
