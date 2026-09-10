@@ -240,6 +240,19 @@ jobs:
           done
           echo "✅ PostgreSQL is ready"
 
+      - name: Create database schema
+        run: |
+          PGPASSWORD=test psql -h localhost -p 5432 -U program -d test_persons -c "
+            CREATE TABLE IF NOT EXISTS persons (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              age INTEGER,
+              address VARCHAR(500),
+              work VARCHAR(255)
+            );
+          "
+          echo "✅ Database schema created"
+
       - name: Run integration tests
         run: |
           mkdir -p ./TestResults
