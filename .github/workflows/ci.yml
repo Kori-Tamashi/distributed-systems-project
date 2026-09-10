@@ -120,10 +120,8 @@ jobs:
         with:
           name: build-artifacts-${{ runner.os }}
           path: |
-            src/presentation/bin/Release/
-            src/presentation/obj/
-            src/tests/bin/Release/
-            src/tests/obj/
+            src/**/bin/Release/
+            src/**/obj/
           retention-days: 1
           if-no-files-found: warn
 
@@ -133,8 +131,8 @@ jobs:
         with:
           name: build-debug-${{ runner.os }}-${{ steps.commit.outputs.sha_short }}
           path: |
-            src/presentation/bin/
-            src/presentation/obj/
+            src/**/bin/
+            src/**/obj/
           retention-days: 7
 
   # ===========================================
