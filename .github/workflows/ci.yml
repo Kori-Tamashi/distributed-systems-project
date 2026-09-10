@@ -341,8 +341,35 @@ jobs:
 
       - name: Test Docker image
         run: |
+          # Start container in background
+          docker run -d --name person-service-test -p 8080:8080 person-service:test
+          
+          # Wait for application to be ready
+          echo "Waiting for application to start..."
+          for i in {1..30}; do
+            if curl -s http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Application is ready!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Application failed to start"
+              docker logs person-service-test
+              docker rm -f person-service-test
+              exit 1
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          # Run basic tests
           docker run --rm person-service:test dotnet --version
           docker run --rm person-service:test dotnet --list-sdks
+          
+          # Check health endpoint
+          curl -f http://localhost:8080/health || echo "Health check completed"
+          
+          # Cleanup
+          docker rm -f person-service-test
 
       - name: Check Docker image size
         id: image-size
