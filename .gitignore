@@ -119,3 +119,9 @@ coverage/
 
 # PostgreSQL data directory
 data/postgres_data/
+
+# Documentation and templates
+TASK.md
+NOTES.md
+PLAN.md
+template/

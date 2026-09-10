@@ -1,0 +1,64 @@
+# Git
+.git
+.gitignore
+
+# Build outputs
+**/bin
+**/obj
+**/BCL
+**/x64
+**/x86
+**/BCL
+
+# IDE
+.vs
+.vscode
+.idea
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet
+**/Packages
+*.nupkg
+*.snupkg
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Test results
+**/TestResults
+**/*.trx
+**/coverage
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+docker-compose*.override.yml
+
+# Documentation
+*.md
+NOTES.md
+PLAN.md
+TASK.md
+
+# Template files
+template/
+
+# PostgreSQL data
+data/postgres_data/
+
+# Local files
+*.log
+*.tmp
+*.cache
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db

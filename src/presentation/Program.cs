@@ -38,6 +38,7 @@ builder.Services.AddSingleton(appSettings);
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddHealthChecks();
 
 // Configure Kestrel to use port from .env
 var appUrl = $"http://{appSettings.Application.Host}:{appSettings.Application.Port}";
@@ -51,6 +52,9 @@ var app = builder.Build();
 // Configure HTTP request pipeline
 app.UseSwagger();
 app.UseSwaggerUI();
+
+// Health check endpoint
+app.MapHealthChecks("/health");
 
 app.UseAuthorization();
 app.MapControllers();
