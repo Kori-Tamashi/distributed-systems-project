@@ -98,12 +98,13 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore distributed-systems-project.sln
+          dotnet restore src/presentation/presentation.csproj
+          dotnet restore src/tests/tests.csproj
           echo "✅ Dependencies restored"
 
       - name: Build application
         run: |
-          dotnet build distributed-systems-project.sln --no-restore --configuration Release --verbosity normal
+          dotnet build src/presentation/presentation.csproj --no-restore --configuration Release --verbosity normal
           echo "✅ Build completed"
 
       - name: Analyze dependencies
@@ -137,11 +138,12 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore distributed-systems-project.sln
+          dotnet restore src/presentation/presentation.csproj
+          dotnet restore src/tests/tests.csproj
 
       - name: Run unit tests
         run: |
-          dotnet test distributed-systems-project.sln \
+          dotnet test src/tests/tests.csproj \
             --configuration Release \
             --filter "FullyQualifiedName~unit" \
             --verbosity normal \
@@ -223,7 +225,8 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore distributed-systems-project.sln
+          dotnet restore src/presentation/presentation.csproj
+          dotnet restore src/tests/tests.csproj
 
       - name: Install PostgreSQL client
         run: sudo apt-get update && sudo apt-get install -y postgresql-client
@@ -238,7 +241,7 @@ jobs:
 
       - name: Run integration tests
         run: |
-          dotnet test distributed-systems-project.sln \
+          dotnet test src/tests/tests.csproj \
             --configuration Release \
             --filter "FullyQualifiedName~integration" \
             --verbosity normal \
@@ -309,7 +312,7 @@ jobs:
 
       - name: Restore dependencies
         run: |
-          dotnet restore distributed-systems-project.sln
+          dotnet restore src/presentation/presentation.csproj
 
       - name: Build Docker image (test)
         id: docker-build
