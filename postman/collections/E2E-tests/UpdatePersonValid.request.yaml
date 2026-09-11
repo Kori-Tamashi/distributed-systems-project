@@ -9,6 +9,7 @@ body:
   type: json
   content: |-
     {
+      "id": {{createdPersonId}},
       "name": "Jane Doe",
       "age": 31,
       "address": "999 Updated St",
