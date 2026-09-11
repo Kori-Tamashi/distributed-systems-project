@@ -14,7 +14,7 @@ on:
 
 env:
   DOTNET_VERSION: '10.0.x'
-  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/person-api
+  DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/dsp-project
 
 jobs:
   # ===========================================
@@ -74,4 +74,4 @@ jobs:
           echo "CI Run: ${{ github.event.workflow_run.html_url }}"
           echo ""
           echo "📦 Image available at:"
-          echo "https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/person-api"
+          echo "https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/dsp-project"
