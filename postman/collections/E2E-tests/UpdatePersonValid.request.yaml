@@ -1,7 +1,7 @@
 $kind: http-request
 order: 10000
 method: PATCH
-url: '{{baseUrl}}/api/persons/{{createdPersonId}}'
+url: '{{baseUrl}}/api/v1/persons/{{createdPersonId}}'
 headers:
   - key: Content-Type
     value: application/json

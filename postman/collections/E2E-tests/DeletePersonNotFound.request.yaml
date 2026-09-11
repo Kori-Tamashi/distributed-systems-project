@@ -1,7 +1,7 @@
 $kind: http-request
 order: 16000
 method: DELETE
-url: '{{baseUrl}}/api/persons/99999'
+url: '{{baseUrl}}/api/v1/persons/99999'
 scripts:
   - type: afterResponse
     language: text/javascript

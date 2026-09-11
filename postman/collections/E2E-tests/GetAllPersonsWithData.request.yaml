@@ -1,7 +1,7 @@
 $kind: http-request
 order: 12000
 method: GET
-url: '{{baseUrl}}/api/persons'
+url: '{{baseUrl}}/api/v1/persons'
 scripts:
   - type: afterResponse
     language: text/javascript

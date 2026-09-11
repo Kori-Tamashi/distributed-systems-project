@@ -1,7 +1,7 @@
 $kind: http-request
 order: 4000
 method: POST
-url: '{{baseUrl}}/api/persons'
+url: '{{baseUrl}}/api/v1/persons'
 headers:
   - key: Content-Type
     value: application/json
