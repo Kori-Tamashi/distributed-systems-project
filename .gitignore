@@ -128,3 +128,5 @@ template/
 MEMORY.md
 PLAN.md
 postman/environments/railway.environment.yaml
+postman/run-tests.sh
+postman/test-results/

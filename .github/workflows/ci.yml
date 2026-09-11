@@ -396,3 +396,145 @@ jobs:
           format: 'table'
           exit-code: '0'  # Don't fail PR on vulnerabilities
           severity: 'CRITICAL,HIGH'
+
+  # ===========================================
+  # API E2E Tests Job
+  # ===========================================
+  api-e2e-tests:
+    name: API E2E Tests (Postman)
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    permissions:
+      contents: read
+      checks: write
+    
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_DB: test_persons
+          POSTGRES_USER: program
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Restore dependencies
+        run: |
+          dotnet restore src/presentation/presentation.csproj
+
+      - name: Build application
+        run: |
+          dotnet build src/presentation/presentation.csproj --no-restore --configuration Release
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image for testing
+        run: |
+          docker build \
+            --tag person-service:e2e-test \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VERSION=${{ github.sha }} \
+            .
+          echo "✅ Docker image built: person-service:e2e-test"
+
+      - name: Build Postman Newman image
+        run: |
+          docker build \
+            --tag postman-newman:e2e \
+            -f postman/Dockerfile \
+            postman/
+          echo "✅ Postman Newman image built: postman-newman:e2e"
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U program; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL is ready"
+
+      - name: Create database schema
+        run: |
+          PGPASSWORD=test psql -h localhost -p 5432 -U program -d test_persons -c "
+            CREATE TABLE IF NOT EXISTS persons (
+              id SERIAL PRIMARY KEY,
+              name VARCHAR(255) NOT NULL,
+              age INTEGER,
+              address VARCHAR(500),
+              work VARCHAR(255)
+            );
+          "
+          echo "✅ Database schema created"
+
+      - name: Start application container
+        run: |
+          docker run -d \
+            --name person-service-e2e \
+            --network host \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e DATABASE_PROVIDER=POSTGRESQL \
+            -e POSTGRESQL_HOST=localhost \
+            -e POSTGRESQL_PORT=5432 \
+            -e POSTGRESQL_DATABASE=test_persons \
+            -e POSTGRESQL_USER=program \
+            -e POSTGRESQL_PASSWORD=test \
+            person-service:e2e-test
+          echo "⏳ Waiting for application to start..."
+          sleep 10
+
+      - name: Wait for application to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Application is ready!"
+              exit 0
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "❌ Application failed to start"
+          docker logs person-service-e2e
+          exit 1
+
+      - name: Run Postman E2E tests
+        run: |
+          mkdir -p ./postman/test-results
+          docker run --rm \
+            --network host \
+            -v $(pwd)/postman/test-results:/app/test-results \
+            postman-newman:e2e
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-e2e-test-results
+          path: |
+            ./postman/test-results/*.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Publish E2E test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: API E2E Test Results (Postman)
+          path: ./postman/test-results/*.xml
+          reporter: jest
