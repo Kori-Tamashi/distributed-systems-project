@@ -10,8 +10,9 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('Response is an empty array', function () {
+      pm.test('Response contains items array', function () {
           var jsonData = pm.response.json();
-          pm.expect(jsonData).to.be.an('array');
-          pm.expect(jsonData.length).to.equal(0);
+          pm.expect(jsonData).to.have.property('items');
+          pm.expect(jsonData.items).to.be.an('array');
+          pm.expect(jsonData.items.length).to.equal(0);
       });

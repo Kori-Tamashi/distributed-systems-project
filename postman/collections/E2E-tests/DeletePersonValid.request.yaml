@@ -10,8 +10,8 @@ scripts:
           pm.response.to.have.status(200);
       });
 
-      pm.test('Delete returns person data', function () {
+      pm.test('Delete returns success message', function () {
           var jsonData = pm.response.json();
-          pm.expect(jsonData).to.have.property('id');
-          pm.expect(jsonData.name).to.equal('Jane Doe');
+          pm.expect(jsonData).to.have.property('message');
+          pm.expect(jsonData.message).to.include('deleted successfully');
       });
