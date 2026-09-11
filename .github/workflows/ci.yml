@@ -398,10 +398,10 @@ jobs:
           severity: 'CRITICAL,HIGH'
 
   # ===========================================
-  # API E2E Tests Job
+  # API Tests Job
   # ===========================================
   api-tests:
-    name: API E2E Tests (Postman)
+    name: API Tests
     runs-on: ubuntu-latest
     needs: integration-tests
     timeout-minutes: 15
@@ -529,7 +529,7 @@ jobs:
           docker logs person-service-e2e
           exit 1
 
-      - name: Run Postman E2E tests
+      - name: Run Postman API tests
         run: |
           mkdir -p ./postman/test-results
           docker run --rm \
@@ -538,30 +538,30 @@ jobs:
             postman-newman:e2e
         id: e2e-tests
 
-      - name: Upload E2E test results (JUnit)
+      - name: Upload API test results (JUnit)
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: api-e2e-junit-results
+          name: api-tests-junit-results
           path: |
             ./postman/test-results/results.xml
           retention-days: 7
           if-no-files-found: warn
 
-      - name: Upload E2E test results (HTML)
+      - name: Upload API test results (HTML)
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: api-e2e-html-report
+          name: api-tests-html-report
           path: |
             ./postman/test-results/report.html
           retention-days: 7
           if-no-files-found: warn
 
-      - name: Publish E2E test results to GitHub
+      - name: Publish API test results to GitHub
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: API E2E Test Results (Postman)
+          name: API Test Results (Postman)
           path: ./postman/test-results/*.xml
           reporter: jest
