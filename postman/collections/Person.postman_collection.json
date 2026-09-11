@@ -1,0 +1,173 @@
+{
+	"info": {
+		"_postman_id": "person-api-e2e-tests",
+		"name": "Person API - E2E Tests",
+		"description": "End-to-End тесты для Person API (Lab 01 - CI/CD)",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/health",
+					"host": ["{{baseUrl}}"],
+					"path": ["health"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "02 Create Person Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set('createdPersonId', jsonData.id);",
+							"console.log('Created person ID: ' + jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"John Doe\",\n  \"age\": 30,\n  \"address\": \"123 Main St\",\n  \"work\": \"Software Engineer\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			}
+		},
+		{
+			"name": "03 Get Person By ID Valid",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/{{createdPersonId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "{{createdPersonId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "04 Update Person Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": {{createdPersonId}},\n  \"name\": \"Jane Doe\",\n  \"age\": 31,\n  \"address\": \"999 Updated St\",\n  \"work\": \"Senior Developer\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/{{createdPersonId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "{{createdPersonId}}"]
+				}
+			}
+		},
+		{
+			"name": "05 Delete Person Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/{{createdPersonId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "{{createdPersonId}}"]
+				}
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "createdPersonId",
+			"value": ""
+		}
+	]
+}

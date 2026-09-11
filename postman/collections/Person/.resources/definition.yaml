@@ -1,5 +1,4 @@
 $kind: collection
-name: Person
 description: |
   ## Person API - End-to-End Tests
 

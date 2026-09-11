@@ -3,38 +3,23 @@
 # ===========================================
 # This image is used to run Postman E2E tests in CI/CD pipeline
 
-FROM node:20-alpine
-
-# Install dependencies
-RUN apk add --no-cache \
-    curl \
-    jq
-
-# Install Newman and reporters
-RUN npm install -g \
-    newman \
-    newman-reporter-html \
-    newman-reporter-junit \
-    newman-reporter-htmlextra
+FROM postman/newman:alpine
 
 # Set working directory
-WORKDIR /app
+WORKDIR /etc/newman
 
-# Copy only package files first for better caching
-COPY collections/Person/ /app/collections/Person/
-COPY environments/ci.environment.yaml /app/environments/
+# Copy collection and environment (JSON format for Newman)
+COPY collections/Person.postman_collection.json /etc/newman/collection.json
+COPY environments/ci.postman_environment.json /etc/newman/environment.json
 
 # Create output directory
-RUN mkdir -p /app/test-results
+RUN mkdir -p /etc/newman/results
 
-# Default command - run tests with proper configuration
-# Timeout: 600s total, 60s per test
-ENV BASE_URL=http://person-service-e2e:8080
-CMD ["newman", "run", "/app/collections/Person/.resources/definition.yaml", \
-    "--environment", "/app/environments/ci.environment.yaml", \
-    "--reporters", "cli,junit,html", \
-    "--reporter-junit-export", "/app/test-results/results.xml", \
-    "--reporter-html-export", "/app/test-results/report.html", \
-    "--delay-request", "500", \
-    "--timeout", "600000", \
-    "--bail"]
+# Default command - run tests
+# Timeout: 600s total
+ENTRYPOINT ["sh", "-c", "newman run /etc/newman/collection.json \
+  -e /etc/newman/environment.json \
+  --env-var \"baseUrl=${BASE_URL:-http://person-service-e2e:8080}\" \
+  --reporters cli,junit \
+  --reporter-junit-export /etc/newman/results/results.xml \
+  --bail"]

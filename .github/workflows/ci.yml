@@ -546,9 +546,9 @@ jobs:
           mkdir -p ./postman/test-results
           docker run --rm \
             --network api-test-network \
-            -v $(pwd)/postman/test-results:/app/test-results \
+            -e BASE_URL=http://person-service-e2e:8080 \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman:e2e
-        id: api-tests
 
       - name: Upload API test results (JUnit)
         uses: actions/upload-artifact@v4
@@ -558,24 +558,14 @@ jobs:
           path: |
             ./postman/test-results/results.xml
           retention-days: 7
-          if-no-files-found: warn
-
-      - name: Upload API test results (HTML)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: api-tests-html-report
-          path: |
-            ./postman/test-results/report.html
-          retention-days: 7
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Publish API test results to GitHub
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
           name: API Test Results (Postman)
-          path: ./postman/test-results/*.xml
+          path: ./postman/test-results/results.xml
           reporter: java-junit
 
       - name: Cleanup Docker containers
