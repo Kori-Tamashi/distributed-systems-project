@@ -1,0 +1,575 @@
+$kind: postman-collection
+info:
+  name: Person API - E2E Tests
+  description: |
+    End-to-End тесты для Person API
+    
+    Тестирует все CRUD операции:
+    - Health Check
+    - GET /api/persons (получить всех)
+    - GET /api/persons/{id} (получить по ID)
+    - POST /api/persons (создать)
+    - PATCH /api/persons/{id} (обновить)
+    - DELETE /api/persons/{id} (удалить)
+    
+    Автор: Lab 01 - CI/CD Pipeline
+    Дата: 2026-09-10
+  schema: https://schema.getpostman.com/json/collection/v2.1.0/collection.json
+item:
+  # ==========================================
+  # Health Check
+  # ==========================================
+  - name: "01 - Health Check"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/health"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - health
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "pm.test('Response time is acceptable', function () {"
+            - "    pm.expect(pm.response.responseTime).to.be.below(1000);"
+            - "});"
+
+  # ==========================================
+  # Get All Persons - Empty Database
+  # ==========================================
+  - name: "02 - GetAllPersons - Empty Database"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "pm.test('Response is empty array', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.be.an('array');"
+            - "    pm.expect(jsonData.length).to.equal(0);"
+            - "});"
+
+  # ==========================================
+  # Create Person - Valid
+  # ==========================================
+  - name: "03 - CreatePerson - Valid"
+    request:
+      method: POST
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "John Doe",
+            "age": 30,
+            "address": "123 Main St",
+            "work": "Software Engineer"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 201', function () {"
+            - "    pm.response.to.have.status(201);"
+            - "});"
+            - ""
+            - "pm.test('Response has correct structure', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.have.property('id');"
+            - "    pm.expect(jsonData).to.have.property('name');"
+            - "    pm.expect(jsonData).to.have.property('age');"
+            - "    pm.expect(jsonData).to.have.property('address');"
+            - "    pm.expect(jsonData).to.have.property('work');"
+            - "});"
+            - ""
+            - "pm.test('Data matches request', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData.name).to.equal('John Doe');"
+            - "    pm.expect(jsonData.age).to.equal(30);"
+            - "    pm.expect(jsonData.address).to.equal('123 Main St');"
+            - "    pm.expect(jsonData.work).to.equal('Software Engineer');"
+            - "});"
+            - ""
+            - "// Save ID for subsequent tests"
+            - "var jsonData = pm.response.json();"
+            - "pm.collectionVariables.set('createdPersonId', jsonData.id);"
+            - "console.log('Created person ID: ' + jsonData.id);"
+
+  # ==========================================
+  # Create Person - Empty Name (Validation)
+  # ==========================================
+  - name: "04 - CreatePerson - Empty Name (Validation)"
+    request:
+      method: POST
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "",
+            "age": 25,
+            "address": "456 Test St",
+            "work": "Tester"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 400 (Bad Request)', function () {"
+            - "    pm.response.to.have.status(400);"
+            - "});"
+            - ""
+            - "pm.test('Response contains error message', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.have.property('message');"
+            - "});"
+
+  # ==========================================
+  # Create Person - Excessive Age (Validation)
+  # ==========================================
+  - name: "05 - CreatePerson - Excessive Age (Validation)"
+    request:
+      method: POST
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "Old Person",
+            "age": 200,
+            "address": "789 Age St",
+            "work": "Retired"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 400 (Bad Request)', function () {"
+            - "    pm.response.to.have.status(400);"
+            - "});"
+            - ""
+            - "pm.test('Response contains validation error', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.have.property('message');"
+            - "});"
+
+  # ==========================================
+  # Create Person - Negative Age (Validation)
+  # ==========================================
+  - name: "06 - CreatePerson - Negative Age (Validation)"
+    request:
+      method: POST
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "Time Traveler",
+            "age": -5,
+            "address": "100 Time St",
+            "work": "Unknown"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 400 (Bad Request)', function () {"
+            - "    pm.response.to.have.status(400);"
+            - "});"
+            - ""
+            - "pm.test('Response contains validation error', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.have.property('message');"
+            - "});"
+
+  # ==========================================
+  # Get Person By ID
+  # ==========================================
+  - name: "07 - GetPersonById - Valid"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/{{createdPersonId}}"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "{{createdPersonId}}"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "pm.test('Person data matches created data', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData.id).to.equal(parseInt(pm.collectionVariables.get('createdPersonId')));"
+            - "    pm.expect(jsonData.name).to.equal('John Doe');"
+            - "    pm.expect(jsonData.age).to.equal(30);"
+            - "});"
+
+  # ==========================================
+  # Get Person By ID - Invalid
+  # ==========================================
+  - name: "08 - GetPersonById - Invalid ID"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/-1"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "-1"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 400 (Bad Request)', function () {"
+            - "    pm.response.to.have.status(400);"
+            - "});"
+
+  # ==========================================
+  # Get Person By ID - Not Found
+  # ==========================================
+  - name: "09 - GetPersonById - Not Found"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/99999"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "99999"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 404 (Not Found)', function () {"
+            - "    pm.response.to.have.status(404);"
+            - "});"
+
+  # ==========================================
+  # Update Person - Valid
+  # ==========================================
+  - name: "10 - UpdatePerson - Valid"
+    request:
+      method: PATCH
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons/{{createdPersonId}}"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "{{createdPersonId}}"
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "Jane Doe",
+            "age": 31,
+            "address": "999 Updated St",
+            "work": "Senior Developer"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "pm.test('Person data updated correctly', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData.name).to.equal('Jane Doe');"
+            - "    pm.expect(jsonData.age).to.equal(31);"
+            - "    pm.expect(jsonData.address).to.equal('999 Updated St');"
+            - "    pm.expect(jsonData.work).to.equal('Senior Developer');"
+            - "});"
+
+  # ==========================================
+  # Update Person - Not Found
+  # ==========================================
+  - name: "11 - UpdatePerson - Not Found"
+    request:
+      method: PATCH
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons/99999"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "99999"
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "Not Found",
+            "age": 25,
+            "address": "Test",
+            "work": "Test"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 404 (Not Found)', function () {"
+            - "    pm.response.to.have.status(404);"
+            - "});"
+
+  # ==========================================
+  # Get All Persons - With Data
+  # ==========================================
+  - name: "12 - GetAllPersons - With Data"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "pm.test('Response is array with at least one person', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.be.an('array');"
+            - "    pm.expect(jsonData.length).to.be.greaterThan(0);"
+            - "});"
+
+  # ==========================================
+  # Delete Person - Valid
+  # ==========================================
+  - name: "13 - DeletePerson - Valid"
+    request:
+      method: DELETE
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/{{createdPersonId}}"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "{{createdPersonId}}"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "pm.test('Delete returns person data', function () {"
+            - "    var jsonData = pm.response.json();"
+            - "    pm.expect(jsonData).to.have.property('id');"
+            - "    pm.expect(jsonData.name).to.equal('Jane Doe');"
+            - "});"
+
+  # ==========================================
+  # Get Person After Delete - Not Found
+  # ==========================================
+  - name: "14 - GetPersonAfterDelete - Not Found"
+    request:
+      method: GET
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/{{createdPersonId}}"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "{{createdPersonId}}"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 404 (Not Found)', function () {"
+            - "    pm.response.to.have.status(404);"
+            - "});"
+
+  # ==========================================
+  # Delete Person - Invalid ID
+  # ==========================================
+  - name: "15 - DeletePerson - Invalid ID"
+    request:
+      method: DELETE
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/-1"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "-1"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 400 (Bad Request)', function () {"
+            - "    pm.response.to.have.status(400);"
+            - "});"
+
+  # ==========================================
+  # Delete Person - Not Found
+  # ==========================================
+  - name: "16 - DeletePerson - Not Found"
+    request:
+      method: DELETE
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/99999"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "99999"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 404 (Not Found)', function () {"
+            - "    pm.response.to.have.status(404);"
+            - "});"
+
+  # ==========================================
+  # Cleanup - Create and Delete for Clean State
+  # ==========================================
+  - name: "17 - Cleanup - Create Test Person"
+    request:
+      method: POST
+      header:
+        - key: Content-Type
+          value: application/json
+      url:
+        raw: "{{baseUrl}}/api/persons"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+      body:
+        mode: raw
+        raw: |
+          {
+            "name": "Cleanup Test",
+            "age": 25,
+            "address": "Cleanup St",
+            "work": "Test"
+          }
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 201', function () {"
+            - "    pm.response.to.have.status(201);"
+            - "});"
+            - ""
+            - "var jsonData = pm.response.json();"
+            - "pm.collectionVariables.set('cleanupPersonId', jsonData.id);"
+
+  - name: "18 - Cleanup - Delete Test Person"
+    request:
+      method: DELETE
+      header: []
+      url:
+        raw: "{{baseUrl}}/api/persons/{{cleanupPersonId}}"
+        host:
+          - "{{baseUrl}}"
+        path:
+          - api
+          - persons
+          - "{{cleanupPersonId}}"
+    event:
+      - listen: test
+        script:
+          exec:
+            - "pm.test('Status is 200', function () {"
+            - "    pm.response.to.have.status(200);"
+            - "});"
+            - ""
+            - "console.log('Cleanup completed successfully');"
