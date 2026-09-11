@@ -1,0 +1,40 @@
+$kind: http-request
+order: 13000
+method: DELETE
+url: '{{baseUrl}}/api/v1/persons/{{createdPersonId}}'
+description: |
+  ## Delete Person (Valid)
+  
+  **Метод:** DELETE  
+  **Endpoint:** `/api/v1/persons/{id}`  
+  **Ожидаемый статус:** 200 OK  
+  
+  ### Описание
+  Удаляет созданного ранее Person.  
+  Использует `createdPersonId` из теста CreatePersonValid.
+  
+  ### Path Parameters
+  - `id` - ID человека для удаления
+  
+  ### Ожидаемый результат
+  - Статус: 200 OK
+  - Ответ содержит сообщение об успешном удалении
+  
+  ### Предусловия
+  - Тест CreatePersonValid должен быть выполнен успешно
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 200 OK', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Delete returns success message', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('message');
+          pm.expect(jsonData.message).to.include('deleted successfully');
+      });

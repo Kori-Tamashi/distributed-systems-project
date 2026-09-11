@@ -1,0 +1,56 @@
+$kind: http-request
+order: 17000
+method: POST
+url: '{{baseUrl}}/api/v1/persons'
+headers:
+  - key: Content-Type
+    value: application/json
+description: |
+  ## Cleanup - Create Test Person
+  
+  **Метод:** POST  
+  **Endpoint:** `/api/v1/persons`  
+  **Ожидаемый статус:** 201 Created  
+  
+  ### Описание
+  Создаёт тестового Person для последующего удаления в тесте CleanupDelete.  
+  Этот тест является частью процедуры очистки после основных тестов.
+  
+  ### Request Body
+  ```json
+  {
+    "name": "Cleanup Test",
+    "age": 25,
+    "address": "Cleanup St",
+    "work": "Test"
+  }
+  ```
+  
+  ### Side Effects
+  - Сохраняет `cleanupPersonId` в переменную коллекции
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+body:
+  type: json
+  content: |-
+    {
+      "name": "Cleanup Test",
+      "age": 25,
+      "address": "Cleanup St",
+      "work": "Test"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 201 Created', function () {
+          pm.response.to.have.status(201);
+      });
+
+      // Save cleanup person ID for deletion
+      var jsonData = pm.response.json();
+      if (jsonData && jsonData.id) {
+          pm.collectionVariables.set('cleanupPersonId', jsonData.id);
+          console.log('Cleanup person ID: ' + jsonData.id);
+      }

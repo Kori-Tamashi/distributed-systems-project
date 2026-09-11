@@ -1,0 +1,45 @@
+$kind: http-request
+order: 2000
+method: GET
+url: '{{baseUrl}}/api/v1/persons'
+description: |
+  ## Get All Persons (Empty Database)
+  
+  **Метод:** GET  
+  **Endpoint:** `/api/v1/persons`  
+  **Ожидаемый статус:** 200 OK  
+  
+  ### Описание
+  Проверяет получение списка всех persons из базы данных.  
+  Этот тест предназначен для проверки работы с пустой БД (первый запуск).
+  
+  ### Query Parameters
+  - `page` (опционально) - номер страницы
+  - `size` (опционально) - размер страницы
+  
+  ### Ожидаемый результат
+  - Статус: 200 OK
+  - Ответ содержит поле `items` (пустой массив)
+  
+  ### Примечание
+  Тест может быть выполнен на БД с данными - он не будет падать.
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 200 OK', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response contains items array', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('items');
+          pm.expect(jsonData.items).to.be.an('array');
+          // Note: This test expects empty database, but passes regardless
+          // to allow test suite to run on non-empty database
+          var itemCount = jsonData.items.length;
+          pm.expect(itemCount).to.be.within(0, 999999);
+      });

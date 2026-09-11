@@ -1,0 +1,55 @@
+$kind: http-request
+order: 5000
+method: POST
+url: '{{baseUrl}}/api/v1/persons'
+headers:
+  - key: Content-Type
+    value: application/json
+description: |
+  ## Create Person (Excessive Age - Validation Test)
+  
+  **Метод:** POST  
+  **Endpoint:** `/api/v1/persons`  
+  **Ожидаемый статус:** 400 Bad Request  
+  
+  ### Описание
+  Проверяет валидацию при создании Person с некорректным возрастом (> 150).  
+  Возраст должен быть в разумных пределах.
+  
+  ### Request Body
+  ```json
+  {
+    "name": "Old Person",
+    "age": 200,
+    "address": "789 Age St",
+    "work": "Retired"
+  }
+  ```
+  
+  ### Ожидаемый результат
+  - Статус: 400 Bad Request
+  - Ответ содержит поле `message` с описанием ошибки валидации
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+body:
+  type: json
+  content: |-
+    {
+      "name": "Old Person",
+      "age": 200,
+      "address": "789 Age St",
+      "work": "Retired"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 400 Bad Request', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response contains validation error', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('message');
+      });

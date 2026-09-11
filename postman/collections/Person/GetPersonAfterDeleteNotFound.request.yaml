@@ -1,0 +1,34 @@
+$kind: http-request
+order: 14000
+method: GET
+url: '{{baseUrl}}/api/v1/persons/{{createdPersonId}}'
+description: |
+  ## Get Person After Delete (Not Found)
+  
+  **Метод:** GET  
+  **Endpoint:** `/api/v1/persons/{id}`  
+  **Ожидаемый статус:** 404 Not Found  
+  
+  ### Описание
+  Проверяет, что удалённый Person больше не доступен.  
+  Использует `createdPersonId` из теста CreatePersonValid.
+  
+  ### Path Parameters
+  - `id` - ID удалённого человека
+  
+  ### Ожидаемый результат
+  - Статус: 404 Not Found
+  - Person больше не существует в БД
+  
+  ### Предусловия
+  - Тест DeletePersonValid должен быть выполнен успешно
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 404 Not Found', function () {
+          pm.response.to.have.status(404);
+      });

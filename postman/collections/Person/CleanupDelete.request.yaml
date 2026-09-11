@@ -1,0 +1,32 @@
+$kind: http-request
+order: 18000
+method: DELETE
+url: '{{baseUrl}}/api/v1/persons/{{cleanupPersonId}}'
+description: |
+  ## Cleanup - Delete Test Person
+  
+  **Метод:** DELETE  
+  **Endpoint:** `/api/v1/persons/{id}`  
+  **Ожидаемый статус:** 200 OK  
+  
+  ### Описание
+  Удаляет тестового Person, созданного в тесте CleanupCreate.  
+  Завершает процедуру очистки после основных тестов.
+  
+  ### Path Parameters
+  - `id` - ID тестового человека (из переменной коллекции)
+  
+  ### Предусловия
+  - Тест CleanupCreate должен быть выполнен успешно
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 200 OK', function () {
+          pm.response.to.have.status(200);
+      });
+
+      console.log('Cleanup completed successfully');

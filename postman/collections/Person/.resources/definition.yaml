@@ -1,0 +1,67 @@
+$kind: collection
+name: Person API - E2E Tests
+description: |
+  ## Person API - End-to-End Tests
+  
+  **Курс:** Распределённые системы обработки информации (РСОИ)  
+  **Лабораторная работа:** Lab 01 - CI/CD Pipeline  
+  **Дата:** 2026-09-10
+  
+  ### Описание
+  Коллекция содержит 18 E2E тестов для проверки CRUD операций Person API.  
+  Тесты покрывают все основные сценарии использования API, включая валидацию и обработку ошибок.
+  
+  ### Структура тестов
+  
+  #### 1. Health Check
+  - `HealthCheck` - проверка работоспособности сервиса
+  
+  #### 2. Create Tests
+  - `GetAllPersonsEmpty` - проверка пустой БД
+  - `CreatePersonValid` - создание с валидными данными
+  - `CreatePersonEmptyName` - валидация: пустое имя
+  - `CreatePersonExcessiveAge` - валидация: возраст > 150
+  - `CreatePersonNegativeAge` - валидация: отрицательный возраст
+  
+  #### 3. Read Tests
+  - `GetPersonByIdValid` - получение по ID
+  - `GetPersonByIdInvalid` - невалидный ID (-1)
+  - `GetPersonByIdNotFound` - несуществующий ID
+  
+  #### 4. Update Tests
+  - `UpdatePersonValid` - обновление данных
+  - `UpdatePersonNotFound` - обновление несуществующего
+  
+  #### 5. List Tests
+  - `GetAllPersonsWithData` - получение всех с данными
+  
+  #### 6. Delete Tests
+  - `DeletePersonValid` - удаление
+  - `GetPersonAfterDeleteNotFound` - проверка удаления
+  - `DeletePersonInvalid` - удаление с невалидным ID
+  - `DeletePersonNotFound` - удаление несуществующего
+  
+  #### 7. Cleanup
+  - `CleanupCreate` - создание для очистки
+  - `CleanupDelete` - удаление для очистки
+  
+  ### Переменные коллекции
+  - `createdPersonId` - ID созданного человека (сохраняется из CreatePersonValid)
+  - `cleanupPersonId` - ID тестового человека для очистки
+  
+  ### Environment
+  Используйте один из environment файлов:
+  - `local.environment.yaml` - локальный сервер (http://localhost:8080)
+  - `railway.environment.yaml` - production сервер (https://dsp-project-production.up.railway.app)
+  
+  ### Запуск тестов
+  1. Откройте Postman
+  2. Импортируйте коллекцию из папки `Person/`
+  3. Выберите environment (local или railway)
+  4. Запустите коллекцию
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+variables:
+  createdPersonId: ""
+  cleanupPersonId: ""

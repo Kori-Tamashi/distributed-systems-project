@@ -1,0 +1,36 @@
+$kind: http-request
+order: 12000
+method: GET
+url: '{{baseUrl}}/api/v1/persons'
+description: |
+  ## Get All Persons (With Data)
+  
+  **Метод:** GET  
+  **Endpoint:** `/api/v1/persons`  
+  **Ожидаемый статус:** 200 OK  
+  
+  ### Описание
+  Проверяет получение списка всех persons после выполнения тестов создания.  
+  Должен вернуть массив с хотя бы одним элементом.
+  
+  ### Ожидаемый результат
+  - Статус: 200 OK
+  - Ответ содержит поле `items` с данными
+  - Массив не пустой (содержит созданного человека)
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 200 OK', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response contains items array with data', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('items');
+          pm.expect(jsonData.items).to.be.an('array');
+          pm.expect(jsonData.items.length).to.be.greaterThan(0);
+      });

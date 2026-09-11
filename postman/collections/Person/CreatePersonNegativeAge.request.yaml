@@ -1,0 +1,55 @@
+$kind: http-request
+order: 6000
+method: POST
+url: '{{baseUrl}}/api/v1/persons'
+headers:
+  - key: Content-Type
+    value: application/json
+description: |
+  ## Create Person (Negative Age - Validation Test)
+  
+  **Метод:** POST  
+  **Endpoint:** `/api/v1/persons`  
+  **Ожидаемый статус:** 400 Bad Request  
+  
+  ### Описание
+  Проверяет валидацию при создании Person с отрицательным возрастом.  
+  Возраст должен быть положительным числом.
+  
+  ### Request Body
+  ```json
+  {
+    "name": "Time Traveler",
+    "age": -5,
+    "address": "100 Time St",
+    "work": "Unknown"
+  }
+  ```
+  
+  ### Ожидаемый результат
+  - Статус: 400 Bad Request
+  - Ответ содержит поле `message` с описанием ошибки валидации
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+body:
+  type: json
+  content: |-
+    {
+      "name": "Time Traveler",
+      "age": -5,
+      "address": "100 Time St",
+      "work": "Unknown"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 400 Bad Request', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response contains validation error', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('message');
+      });

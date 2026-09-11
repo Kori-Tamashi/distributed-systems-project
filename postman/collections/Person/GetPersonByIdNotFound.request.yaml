@@ -1,0 +1,31 @@
+$kind: http-request
+order: 9000
+method: GET
+url: '{{baseUrl}}/api/v1/persons/99999'
+description: |
+  ## Get Person By ID (Not Found)
+  
+  **Метод:** GET  
+  **Endpoint:** `/api/v1/persons/{id}`  
+  **Ожидаемый статус:** 404 Not Found  
+  
+  ### Описание
+  Проверяет обработку случая, когда Person с указанным ID не существует в БД.  
+  Используется несуществующий ID (99999).
+  
+  ### Path Parameters
+  - `id` - несуществующий ID (99999)
+  
+  ### Ожидаемый результат
+  - Статус: 404 Not Found
+  - Ответ содержит информацию о несуществующем Person
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 404 Not Found', function () {
+          pm.response.to.have.status(404);
+      });

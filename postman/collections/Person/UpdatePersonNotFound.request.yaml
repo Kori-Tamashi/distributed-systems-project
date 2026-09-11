@@ -1,0 +1,55 @@
+$kind: http-request
+order: 11000
+method: PATCH
+url: '{{baseUrl}}/api/v1/persons/99999'
+headers:
+  - key: Content-Type
+    value: application/json
+description: |
+  ## Update Person (Not Found)
+  
+  **Метод:** PATCH  
+  **Endpoint:** `/api/v1/persons/{id}`  
+  **Ожидаемый статус:** 404 Not Found  
+  
+  ### Описание
+  Проверяет обработку случая, когда попытка обновить несуществующего Person.  
+  Используется несуществующий ID (99999).
+  
+  ### Path Parameters
+  - `id` - несуществующий ID (99999)
+  
+  ### Request Body
+  ```json
+  {
+    "id": 99999,
+    "name": "Not Found",
+    "age": 25,
+    "address": "Test",
+    "work": "Test"
+  }
+  ```
+  
+  ### Ожидаемый результат
+  - Статус: 404 Not Found
+  - Person не найден в БД
+  
+  ### Автор
+  Lab 01 - CI/CD Pipeline (2026-09-10)
+body:
+  type: json
+  content: |-
+    {
+      "id": 99999,
+      "name": "Not Found",
+      "age": 25,
+      "address": "Test",
+      "work": "Test"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 404 Not Found', function () {
+          pm.response.to.have.status(404);
+      });
