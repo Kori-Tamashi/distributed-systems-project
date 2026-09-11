@@ -1,5 +1,0 @@
-name: railway
-values:
-  - key: baseUrl
-    value: 'https://dsp-project-production.up.railway.app'
-color: 0
