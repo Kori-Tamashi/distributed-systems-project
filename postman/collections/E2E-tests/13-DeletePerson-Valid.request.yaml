@@ -1,0 +1,17 @@
+$kind: http-request
+order: 13000
+method: DELETE
+url: '{{baseUrl}}/api/persons/{{createdPersonId}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 200 OK', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Delete returns person data', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('id');
+          pm.expect(jsonData.name).to.equal('Jane Doe');
+      });

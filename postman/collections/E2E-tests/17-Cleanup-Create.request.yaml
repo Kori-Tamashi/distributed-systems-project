@@ -1,0 +1,30 @@
+$kind: http-request
+order: 17000
+method: POST
+url: '{{baseUrl}}/api/persons'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "Cleanup Test",
+      "age": 25,
+      "address": "Cleanup St",
+      "work": "Test"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 201 Created', function () {
+          pm.response.to.have.status(201);
+      });
+
+      // Save cleanup person ID for deletion
+      var jsonData = pm.response.json();
+      if (jsonData && jsonData.id) {
+          pm.collectionVariables.set('cleanupPersonId', jsonData.id);
+          console.log('Cleanup person ID: ' + jsonData.id);
+      }

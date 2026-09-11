@@ -1,0 +1,18 @@
+$kind: collection
+name: Person API - E2E Tests
+description: |-
+  End-to-End тесты для Person API (Lab 01 - CI/CD)
+  
+  Тестирует все CRUD операции:
+  - Health Check
+  - GET /api/persons (получить всех)
+  - GET /api/persons/{id} (получить по ID)
+  - POST /api/persons (создать)
+  - PATCH /api/persons/{id} (обновить)
+  - DELETE /api/persons/{id} (удалить)
+  
+  Автор: Lab 01 - CI/CD Pipeline
+  Дата: 2026-09-10
+variables:
+  createdPersonId: ""
+  cleanupPersonId: ""

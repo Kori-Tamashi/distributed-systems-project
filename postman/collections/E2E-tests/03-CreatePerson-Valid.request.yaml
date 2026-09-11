@@ -1,0 +1,47 @@
+$kind: http-request
+order: 3000
+method: POST
+url: '{{baseUrl}}/api/persons'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "John Doe",
+      "age": 30,
+      "address": "123 Main St",
+      "work": "Software Engineer"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 201 Created', function () {
+          pm.response.to.have.status(201);
+      });
+
+      pm.test('Response has correct structure', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('id');
+          pm.expect(jsonData).to.have.property('name');
+          pm.expect(jsonData).to.have.property('age');
+          pm.expect(jsonData).to.have.property('address');
+          pm.expect(jsonData).to.have.property('work');
+      });
+
+      pm.test('Data matches request', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData.name).to.equal('John Doe');
+          pm.expect(jsonData.age).to.equal(30);
+          pm.expect(jsonData.address).to.equal('123 Main St');
+          pm.expect(jsonData.work).to.equal('Software Engineer');
+      });
+
+      // Save ID for subsequent tests
+      var jsonData = pm.response.json();
+      if (jsonData && jsonData.id) {
+          pm.collectionVariables.set('createdPersonId', jsonData.id);
+          console.log('Created person ID: ' + jsonData.id);
+      }

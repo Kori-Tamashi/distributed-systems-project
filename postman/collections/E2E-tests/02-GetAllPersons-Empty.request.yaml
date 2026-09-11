@@ -1,0 +1,17 @@
+$kind: http-request
+order: 2000
+method: GET
+url: '{{baseUrl}}/api/persons'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 200 OK', function () {
+          pm.response.to.have.status(200);
+      });
+
+      pm.test('Response is an empty array', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.be.an('array');
+          pm.expect(jsonData.length).to.equal(0);
+      });

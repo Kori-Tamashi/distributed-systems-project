@@ -1,0 +1,28 @@
+$kind: http-request
+order: 4000
+method: POST
+url: '{{baseUrl}}/api/persons'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "name": "",
+      "age": 25,
+      "address": "456 Test St",
+      "work": "Tester"
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |-
+      pm.test('Status is 400 Bad Request', function () {
+          pm.response.to.have.status(400);
+      });
+
+      pm.test('Response contains error message', function () {
+          var jsonData = pm.response.json();
+          pm.expect(jsonData).to.have.property('message');
+      });
