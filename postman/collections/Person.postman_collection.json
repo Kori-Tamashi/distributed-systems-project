@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "person-api-e2e-tests",
 		"name": "Person API - E2E Tests",
-		"description": "End-to-End тесты для Person API (Lab 01 - CI/CD)",
+		"description": "End-to-End тесты для Person API (Lab 01 - CI/CD)\n\n18 тестов покрывают:\n- Health Check\n- CRUD операции\n- Валидацию данных\n- Обработку ошибок\n- Cleanup",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -24,6 +24,10 @@
 						"exec": [
 							"pm.test('Status is 200 OK', function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response time is acceptable (< 1000ms)', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -32,7 +36,38 @@
 			]
 		},
 		{
-			"name": "02 Create Person Valid",
+			"name": "02 GetAllPersons Empty",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response contains items array', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('items');",
+							"    pm.expect(jsonData.items).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "03 Create Person Valid",
 			"event": [
 				{
 					"listen": "test",
@@ -40,6 +75,13 @@
 						"exec": [
 							"pm.test('Status is 201 Created', function () {",
 							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Response has correct structure', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('name');",
+							"    pm.expect(jsonData).to.have.property('age');",
 							"});",
 							"",
 							"var jsonData = pm.response.json();",
@@ -75,7 +117,139 @@
 			}
 		},
 		{
-			"name": "03 Get Person By ID Valid",
+			"name": "04 Create Person Empty Name",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"\",\n  \"age\": 25,\n  \"address\": \"456 Test St\",\n  \"work\": \"Tester\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Response contains error message', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "05 Create Person Excessive Age",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Old Person\",\n  \"age\": 200,\n  \"address\": \"789 Age St\",\n  \"work\": \"Retired\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Response contains validation error', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "06 Create Person Negative Age",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Time Traveler\",\n  \"age\": -5,\n  \"address\": \"100 Time St\",\n  \"work\": \"Unknown\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Response contains validation error', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "07 Get Person By ID Valid",
 			"request": {
 				"method": "GET",
 				"header": [],
@@ -92,6 +266,13 @@
 						"exec": [
 							"pm.test('Status is 200 OK', function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Person data matches created data', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.id).to.equal(parseInt(pm.collectionVariables.get('createdPersonId')));",
+							"    pm.expect(jsonData.name).to.equal('John Doe');",
+							"    pm.expect(jsonData.age).to.equal(30);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -100,7 +281,57 @@
 			]
 		},
 		{
-			"name": "04 Update Person Valid",
+			"name": "08 Get Person By ID Invalid",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/-1",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "-1"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "09 Get Person By ID Not Found",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/99999",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "99999"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "10 Update Person Valid",
 			"event": [
 				{
 					"listen": "test",
@@ -108,6 +339,12 @@
 						"exec": [
 							"pm.test('Status is 200 OK', function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Person data updated correctly', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.name).to.equal('Jane Doe');",
+							"    pm.expect(jsonData.age).to.equal(31);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -139,7 +376,55 @@
 			}
 		},
 		{
-			"name": "05 Delete Person Valid",
+			"name": "11 Update Person Not Found",
+			"request": {
+				"method": "PATCH",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"id\": 99999,\n  \"name\": \"Not Found\",\n  \"age\": 25,\n  \"address\": \"Test\",\n  \"work\": \"Test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/99999",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "99999"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "12 GetAllPersons With Data",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			},
 			"event": [
 				{
 					"listen": "test",
@@ -147,6 +432,33 @@
 						"exec": [
 							"pm.test('Status is 200 OK', function () {",
 							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response contains items array', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('items');",
+							"    pm.expect(jsonData.items).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "13 Delete Person Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Delete returns success message', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('message');",
 							"});"
 						],
 						"type": "text/javascript"
@@ -162,11 +474,159 @@
 					"path": ["api", "v1", "persons", "{{createdPersonId}}"]
 				}
 			}
+		},
+		{
+			"name": "14 Get Person After Delete Not Found",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/{{createdPersonId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "{{createdPersonId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "15 Delete Person Invalid",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/-1",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "-1"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "16 Delete Person Not Found",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/99999",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "99999"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "17 Cleanup Create",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"name\": \"Cleanup Test\",\n  \"age\": 25,\n  \"address\": \"Cleanup St\",\n  \"work\": \"Test\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set('cleanupPersonId', jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "18 Cleanup Delete",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/persons/{{cleanupPersonId}}",
+					"host": ["{{baseUrl}}"],
+					"path": ["api", "v1", "persons", "{{cleanupPersonId}}"]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"console.log('Cleanup completed successfully');"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
 		}
 	],
 	"variable": [
 		{
 			"key": "createdPersonId",
+			"value": ""
+		},
+		{
+			"key": "cleanupPersonId",
 			"value": ""
 		}
 	]
