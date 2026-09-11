@@ -29,6 +29,7 @@ RUN mkdir -p /app/test-results
 
 # Default command - run tests with proper configuration
 # Timeout: 600s total, 60s per test
+ENV BASE_URL=http://person-service-e2e:8080
 CMD ["newman", "run", "/app/collections/Person/.resources/definition.yaml", \
     "--environment", "/app/environments/ci.environment.yaml", \
     "--reporters", "cli,junit,html", \
