@@ -54,6 +54,11 @@ dotnet build
 dotnet run
 ```
 
+### Quick Links
+- 📋 [Requirements Check](./LAB01_REQUIREMENTS_CHECK.md) - Lab requirements verification
+- 🧪 [API Tests](./postman/collections/Person.postman_collection.json) - 18 Postman tests
+- 🚀 [CI/CD Workflows](./.github/workflows/) - GitHub Actions pipelines
+
 ### Configuration (.env)
 ```env
 DATABASE_PROVIDER=POSTGRESQL
@@ -146,6 +151,28 @@ DATABASE_PROVIDER=POSTGRESQL  # or MYSQL, SQLITE, SQLSERVER
 - Собственный `Repository` implementation
 - Собственный `Converter` для маппинга
 
+## Postman API Tests
+
+### Collections
+- **Person.postman_collection.json** - 18 API tests in JSON format (for Newman)
+- **Person/** - Native Git format (YAML) for code review
+
+### Environments
+- **ci.postman_environment.json** - CI/CD environment
+- **railway.environment.yaml** - Production (Railway deployment)
+- **local.environment.yaml** - Local development
+
+### Test Coverage
+1. Health Check
+2. GetAllPersons (empty)
+3. CreatePerson (valid, empty name, excessive age, negative age)
+4. GetPersonById (valid, invalid, not found)
+5. UpdatePerson (valid, not found)
+6. GetAllPersons (with data)
+7. DeletePerson (valid, invalid, not found)
+8. GetPersonAfterDelete (not found)
+9. Cleanup (create, delete)
+
 ## SOLID Principles
 - **Single Responsibility**: разделение на слои (core, businesslogic, dataaccess, presentation)
 - **Open/Closed**: легко добавлять новые БД через switch-выражения
@@ -184,3 +211,28 @@ labs/lab_01/
 
 ## License
 Educational project for BMSTU Distributed Systems course.
+
+## Key Features
+
+### 🏗️ Architecture
+- **Clean Architecture** - separation of concerns (core, businesslogic, dataaccess, presentation)
+- **Repository Pattern** - data access abstraction
+- **Dependency Injection** - loose coupling
+- **Factory Pattern** - multi-database support
+
+### 🧪 Testing
+- **Unit Tests** - 67 tests (business logic, controllers, converters)
+- **Integration Tests** - 61 tests (database, API endpoints)
+- **API Tests** - 18 Postman/Newman tests (E2E validation)
+- **Test Coverage** - comprehensive coverage of all endpoints
+
+### 🚀 CI/CD
+- **Automated Build** - every push triggers build
+- **Automated Testing** - unit + integration + API tests
+- **Docker Build & Push** - automatic containerization
+- **Railway Deployment** - auto-update on new image
+
+### 🔒 Security
+- **CodeQL Analysis** - security scanning
+- **Input Validation** - request validation on all endpoints
+- **Error Handling** - proper HTTP status codes
