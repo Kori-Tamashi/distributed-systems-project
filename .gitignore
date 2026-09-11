@@ -130,3 +130,4 @@ PLAN.md
 postman/environments/railway.environment.yaml
 postman/run-tests.sh
 postman/test-results/
+postman/environments/ci.environment.yaml

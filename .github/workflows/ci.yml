@@ -400,10 +400,11 @@ jobs:
   # ===========================================
   # API E2E Tests Job
   # ===========================================
-  api-e2e-tests:
+  api-tests:
     name: API E2E Tests (Postman)
     runs-on: ubuntu-latest
     needs: integration-tests
+    timeout-minutes: 15
     permissions:
       contents: read
       checks: write
@@ -445,14 +446,29 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       - name: Build Docker image for testing
         run: |
           docker build \
             --tag person-service:e2e-test \
             --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
             --build-arg VERSION=${{ github.sha }} \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
             .
           echo "✅ Docker image built: person-service:e2e-test"
+
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache
 
       - name: Build Postman Newman image
         run: |
@@ -520,14 +536,25 @@ jobs:
             --network host \
             -v $(pwd)/postman/test-results:/app/test-results \
             postman-newman:e2e
+        id: e2e-tests
 
-      - name: Upload E2E test results
+      - name: Upload E2E test results (JUnit)
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: api-e2e-test-results
+          name: api-e2e-junit-results
           path: |
-            ./postman/test-results/*.xml
+            ./postman/test-results/results.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Upload E2E test results (HTML)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-e2e-html-report
+          path: |
+            ./postman/test-results/report.html
           retention-days: 7
           if-no-files-found: warn
 

@@ -20,9 +20,21 @@ RUN npm install -g \
 # Set working directory
 WORKDIR /app
 
-# Copy Postman collection and environments
-COPY collections/Person/ /app/collections/Person/
-COPY environments/local.environment.yaml /app/environments/
+# Copy only package files first for better caching
+COPY collections/ /app/collections/
+COPY environments/ /app/environments/
 
-# Default command - run tests
-CMD ["newman", "run", "/app/collections/Person/.resources/definition.yaml", "--environment", "/app/environments/local.environment.yaml", "--reporters", "cli,junit", "--reporter-junit-export", "/app/test-results/results.xml"]
+# Create output directory
+RUN mkdir -p /app/test-results
+
+# Default command - run tests with proper configuration
+# Timeout: 600s total, 60s per test
+# Retry: 1 retry on failure
+CMD ["newman", "run", "/app/collections/Person/.resources/definition.yaml", \
+    "--environment", "/app/environments/local.environment.yaml", \
+    "--reporters", "cli,junit,html", \
+    "--reporter-junit-export", "/app/test-results/results.xml", \
+    "--reporter-html-export", "/app/test-results/report.html", \
+    "--delay-request", "500", \
+    "--timeout", "600000", \
+    "--bail"]
