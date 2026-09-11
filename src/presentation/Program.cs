@@ -17,6 +17,7 @@ var builder = WebApplication.CreateBuilder(args);
 // Configuration
 // ============================================
 // 🚀 Lab 01 - CI/CD Pipeline Test - 2026-09-10
+// ✅ Second deployment verification test
 var appSettings = LoadAppSettings();
 
 // Configure database context based on provider
