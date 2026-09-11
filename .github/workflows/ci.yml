@@ -468,8 +468,17 @@ jobs:
 
       - name: Start PostgreSQL container
         run: |
+          # Clean up any existing containers
+          docker rm -f postgres-api-tests 2>/dev/null || true
+          docker network rm api-test-network 2>/dev/null || true
+          
+          # Create network
+          docker network create api-test-network
+          
+          # Start PostgreSQL
           docker run -d \
             --name postgres-api-tests \
+            --network api-test-network \
             -e POSTGRES_DB=test_persons \
             -e POSTGRES_USER=program \
             -e POSTGRES_PASSWORD=test \
@@ -503,14 +512,15 @@ jobs:
         run: |
           docker run -d \
             --name person-service-e2e \
-            --network host \
+            --network api-test-network \
             -e ASPNETCORE_ENVIRONMENT=Development \
             -e DATABASE_PROVIDER=POSTGRESQL \
-            -e POSTGRESQL_HOST=localhost \
+            -e POSTGRESQL_HOST=postgres-api-tests \
             -e POSTGRESQL_PORT=5432 \
             -e POSTGRESQL_DATABASE=test_persons \
             -e POSTGRESQL_USER=program \
             -e POSTGRESQL_PASSWORD=test \
+            -p 8080:8080 \
             person-service:e2e-test
           echo "⏳ Waiting for application to start..."
           sleep 10
@@ -533,10 +543,10 @@ jobs:
         run: |
           mkdir -p ./postman/test-results
           docker run --rm \
-            --network host \
+            --network api-test-network \
             -v $(pwd)/postman/test-results:/app/test-results \
             postman-newman:e2e
-        id: e2e-tests
+        id: api-tests
 
       - name: Upload API test results (JUnit)
         uses: actions/upload-artifact@v4
@@ -565,3 +575,12 @@ jobs:
           name: API Test Results (Postman)
           path: ./postman/test-results/*.xml
           reporter: jest
+
+      - name: Cleanup Docker containers
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker containers..."
+          docker rm -f person-service-e2e 2>/dev/null || true
+          docker rm -f postgres-api-tests 2>/dev/null || true
+          docker network rm api-test-network 2>/dev/null || true
+          echo "✅ Cleanup completed"

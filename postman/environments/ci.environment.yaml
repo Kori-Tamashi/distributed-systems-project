@@ -1,0 +1,5 @@
+name: ci
+values:
+  - key: baseUrl
+    value: 'http://person-service-e2e:8080'
+color: 5
