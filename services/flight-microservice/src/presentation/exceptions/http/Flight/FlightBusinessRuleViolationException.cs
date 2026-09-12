@@ -25,6 +25,18 @@ public class FlightBusinessRuleViolationException : BaseHttpException
     }
 
     /// <summary>
+    /// Constructor with rule type, message and error data
+    /// </summary>
+    /// <param name="ruleType">Type of business rule violated</param>
+    /// <param name="message">Error message</param>
+    /// <param name="errorData">Additional error data</param>
+    public FlightBusinessRuleViolationException(string ruleType, string message, Dictionary<string, string[]> errorData)
+        : base((int)HttpStatusCode.Conflict, "FLIGHT_BUSINESS_RULE_VIOLATION", message, errorData)
+    {
+        RuleType = ruleType;
+    }
+
+    /// <summary>
     /// Constructor for unique constraint violation
     /// </summary>
     /// <param name="fieldName">Field name with duplicate value</param>
