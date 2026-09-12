@@ -2,12 +2,12 @@ using presentation.dto.http;
 using presentation.dto.http.Airport;
 using presentation.dto.http.Flight;
 
-namespace presentation.converters;
+namespace presentation.converters.http;
 
 /// <summary>
-/// Converter for Flight between domain and DTO representations
+/// Converter for Flight between domain and HTTP DTO representations
 /// </summary>
-public static class FlightConverter
+public static class FlightHttpConverter
 {
     /// <summary>
     /// Converts domain Flight to FlightDTO

@@ -1,11 +1,11 @@
 using presentation.dto.http.Airport;
 
-namespace presentation.converters;
+namespace presentation.converters.http;
 
 /// <summary>
-/// Converter for Airport between domain and DTO representations
+/// Converter for Airport between domain and HTTP DTO representations
 /// </summary>
-public static class AirportConverter
+public static class AirportHttpConverter
 {
     /// <summary>
     /// Converts domain Airport to AirportDTO
