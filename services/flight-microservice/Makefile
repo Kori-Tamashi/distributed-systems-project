@@ -17,33 +17,51 @@ NC := \033[0m # No Color
 help:
 	@echo "$(BLUE)Flight Microservice - Available Commands$(NC)"
 	@echo ""
+	@echo "$(GREEN)Docker (Test Database):$(NC)"
+	@echo "  $(YELLOW)make test-db-up$(NC)    - Start test database for integration tests"
+	@echo "  $(YELLOW)make test-db-down$(NC)  - Stop test database"
+	@echo "  $(YELLOW)make test-db-reset$(NC) - Reset test database (destroys all test data)"
+	@echo ""
 	@echo "$(GREEN)Development:$(NC)"
-	@echo "  $(YELLOW)make run$(NC)              - Run application in development mode"
-	@echo "  $(YELLOW)make build$(NC)            - Build the application"
-	@echo "  $(YELLOW)make clean$(NC)            - Clean build artifacts"
-	@echo "  $(YELLOW)make test$(NC)             - Run all tests"
-	@echo "  $(YELLOW)make test-unit$(NC)        - Run unit tests only"
-	@echo "  $(YELLOW)make test-integration$(NC) - Run integration tests"
-	@echo ""
-	@echo "$(GREEN)Docker:$(NC)"
-	@echo "  $(YELLOW)make docker-up$(NC)        - Start all containers"
-	@echo "  $(YELLOW)make docker-down$(NC)      - Stop all containers"
-	@echo "  $(YELLOW)make docker-restart$(NC)   - Restart all containers"
-	@echo "  $(YELLOW)make docker-logs$(NC)      - View API logs"
-	@echo "  $(YELLOW)make docker-build$(NC)     - Build Docker images"
-	@echo "  $(YELLOW)make docker-clean$(NC)     - Remove all containers and volumes"
-	@echo ""
-	@echo "$(GREEN)Database:$(NC)"
-	@echo "  $(YELLOW)make db-migrate$(NC)       - Run database migrations"
-	@echo "  $(YELLOW)make db-seed$(NC)          - Seed database with initial data"
-	@echo "  $(YELLOW)make db-reset$(NC)         - Reset database (WARNING: destroys data)"
+	@echo "  $(YELLOW)make run$(NC)           - Run application"
+	@echo "  $(YELLOW)make build$(NC)         - Build the application"
+	@echo "  $(YELLOW)make clean$(NC)         - Clean build artifacts"
+	@echo "  $(YELLOW)make test$(NC)          - Run all tests"
 	@echo ""
 	@echo "$(GREEN)Code Quality:$(NC)"
-	@echo "  $(YELLOW)make format$(NC)           - Format code"
-	@echo "  $(YELLOW)make lint$(NC)             - Run linter"
+	@echo "  $(YELLOW)make format$(NC)        - Format code"
 	@echo ""
+	@echo "$(GREEN)Info:$(NC)"
+	@echo "  $(YELLOW)make info$(NC)          - Show service information"
 
+# =============================================================================
+# Docker - Test Database (MINIMAL SET)
+# =============================================================================
+
+.PHONY: test-db-up
+test-db-up:
+	@echo "$(BLUE)Starting test database for integration tests...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) up -d postgres-test
+
+.PHONY: test-db-down
+test-db-down:
+	@echo "$(YELLOW)Stopping test database...$(NC)"
+	docker-compose -f $(COMPOSE_FILE) down postgres-test
+
+.PHONY: test-db-reset
+test-db-reset:
+	@echo "$(RED)WARNING: This will destroy all test data!$(NC)"
+	@echo "Stopping and removing test database container..."
+	docker-compose -f $(COMPOSE_FILE) down postgres-test
+	@echo "Starting fresh test database..."
+	docker-compose -f $(COMPOSE_FILE) up -d postgres-test
+	@echo "$(GREEN)Test database reset complete!$(NC)"
+	@echo "Connect to: localhost:$(shell grep POSTGRES_TEST_PORT_EXTERNAL .env | cut -d'=' -f2)"
+
+# =============================================================================
 # Development
+# =============================================================================
+
 .PHONY: run
 run:
 	@echo "$(BLUE)Running application...$(NC)"
@@ -66,80 +84,11 @@ test:
 	@echo "$(BLUE)Running all tests...$(NC)"
 	cd $(SRC_DIR) && dotnet test --verbosity normal
 
-.PHONY: test-unit
-test-unit:
-	@echo "$(BLUE)Running unit tests...$(NC)"
-	cd $(SRC_DIR) && dotnet test --filter "Category=Unit" --verbosity normal
-
-.PHONY: test-integration
-test-integration:
-	@echo "$(BLUE)Running integration tests...$(NC)"
-	cd $(SRC_DIR) && dotnet test --filter "Category=Integration" --verbosity normal
-
-# Docker
-.PHONY: docker-up
-docker-up:
-	@echo "$(BLUE)Starting containers...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) up -d
-
-.PHONY: docker-down
-docker-down:
-	@echo "$(YELLOW)Stopping containers...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) down
-
-.PHONY: docker-restart
-docker-restart:
-	@echo "$(YELLOW)Restarting containers...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) restart
-
-.PHONY: docker-logs
-docker-logs:
-	docker-compose -f $(COMPOSE_FILE) logs -f flight-api
-
-.PHONY: docker-build
-docker-build:
-	@echo "$(BLUE)Building Docker images...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) build
-
-.PHONY: docker-clean
-docker-clean:
-	@echo "$(RED)Removing all containers and volumes...$(NC)"
-	docker-compose -f $(COMPOSE_FILE) down -v
-	docker system prune -f
-
-# Database
-.PHONY: db-migrate
-db-migrate:
-	@echo "$(BLUE)Running database migrations...$(NC)"
-	@echo "TODO: Add EF Core migrations command"
-
-.PHONY: db-seed
-db-seed:
-	@echo "$(BLUE)Seeding database...$(NC)"
-	@echo "TODO: Add database seeding command"
-
-.PHONY: db-reset
-db-reset:
-	@echo "$(RED)WARNING: This will destroy all data!$(NC)"
-	read -p "Are you sure? (y/N) " confirm && \
-	if [ "$$confirm" = "y" ]; then \
-		docker-compose -f $(COMPOSE_FILE) down -v; \
-		docker-compose -f $(COMPOSE_FILE) up -d postgres; \
-		echo "$(GREEN)Database reset complete$(NC)"; \
-	else \
-		echo "$(YELLOW)Operation cancelled$(NC)"; \
-	fi
-
 # Code Quality
 .PHONY: format
 format:
 	@echo "$(BLUE)Formatting code...$(NC)"
 	cd $(SRC_DIR) && dotnet format
-
-.PHONY: lint
-lint:
-	@echo "$(BLUE)Running linter...$(NC)"
-	cd $(SRC_DIR) && dotnet format --verify-no-changes
 
 # Info
 .PHONY: info
@@ -149,5 +98,13 @@ info:
 	@echo "Service Name: $(SERVICE_NAME)"
 	@echo "API URL: http://localhost:8080"
 	@echo "Swagger: http://localhost:8080/swagger"
-	@echo "Database: postgres://postgres:postgres@localhost:5432/flight_db"
+	@echo ""
+	@echo "$(GREEN)Databases:$(NC)"
+	@echo "  Production: localhost:$(shell grep POSTGRES_PROD_PORT_EXTERNAL .env | cut -d'=' -f2)/flights"
+	@echo "  Test:       localhost:$(shell grep POSTGRES_TEST_PORT_EXTERNAL .env | cut -d'=' -f2)/test_flights"
+	@echo ""
+	@echo "$(GREEN)Quick Start:$(NC)"
+	@echo "  1. make test-db-up      - Start test database"
+	@echo "  2. make run             - Run application"
+	@echo "  3. make test            - Run tests"
 	@echo ""

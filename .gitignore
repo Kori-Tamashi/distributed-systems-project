@@ -15,6 +15,7 @@ obj/
 .DS_Store
 
 # Project-specific files
+TASK.md
 NOTES.md
 MEMORY.md
 AGENTS.md
@@ -26,3 +27,5 @@ logs/
 # Environment files
 .env
 .env.local
+# Allow .env in services directory for development
+!services/**/.env
