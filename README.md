@@ -55,7 +55,6 @@ dotnet run
 ```
 
 ### Quick Links
-- 📋 [Requirements Check](./LAB01_REQUIREMENTS_CHECK.md) - Lab requirements verification
 - 🧪 [API Tests](./postman/collections/Person.postman_collection.json) - 18 Postman tests
 - 🚀 [CI/CD Workflows](./.github/workflows/) - GitHub Actions pipelines
 
