@@ -33,8 +33,8 @@ public static class AirportMother
         return _defaultBuilder
             .WithId(2)
             .WithName("Airport")
-            .WithCity("City")
-            .WithCountry("Country")
+            .WithCity(string.Empty)
+            .WithCountry(string.Empty)
             .Build();
     }
 

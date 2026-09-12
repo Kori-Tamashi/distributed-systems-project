@@ -11,7 +11,7 @@ public class FlightBuilder
     private int _id = 1;
     private Guid _flightUid = Guid.NewGuid();
     private string _flightNumber = "SU1234";
-    private DateTime _dateTime = DateTime.Now.AddHours(2);
+    private DateTime _dateTime = DateTime.UtcNow.AddHours(2);
     private int _fromAirportId = 1;
     private int _toAirportId = 2;
     private int _price = 15000;
@@ -57,7 +57,7 @@ public class FlightBuilder
     /// </summary>
     public FlightBuilder WithFutureDateTime()
     {
-        _dateTime = DateTime.Now.AddDays(1);
+        _dateTime = DateTime.UtcNow.AddDays(1);
         return this;
     }
 
@@ -66,7 +66,7 @@ public class FlightBuilder
     /// </summary>
     public FlightBuilder WithPastDateTime()
     {
-        _dateTime = DateTime.Now.AddDays(-1);
+        _dateTime = DateTime.UtcNow.AddDays(-1);
         return this;
     }
 
