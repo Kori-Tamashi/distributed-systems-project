@@ -12,7 +12,7 @@ using tests.fixtures.mothers;
 using AirportDomain = core.domain.Airport;
 using AirportPostgresqlModel = dataaccess.models.postgres.AirportPostgresqlModel;
 
-namespace tests.dataaccess.repositories.postgres.unit;
+namespace tests.dataaccess.repositories.unit.postgres;
 
 /// <summary>
 /// Unit tests for AirportPostgresqlRepository

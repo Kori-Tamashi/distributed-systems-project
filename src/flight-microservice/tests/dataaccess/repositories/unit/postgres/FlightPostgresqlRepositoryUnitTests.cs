@@ -12,7 +12,7 @@ using tests.fixtures.mothers;
 using FlightDomain = core.domain.Flight;
 using FlightPostgresqlModel = dataaccess.models.postgres.FlightPostgresqlModel;
 
-namespace tests.dataaccess.repositories.postgres.unit;
+namespace tests.dataaccess.repositories.unit.postgres;
 
 /// <summary>
 /// Unit tests for FlightPostgresqlRepository
