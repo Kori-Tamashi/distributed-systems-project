@@ -1,6 +1,8 @@
+using core.interfaces.businesslogic.services;
 using core.interfaces.dataaccess.repositories;
 using dataaccess.contexts.postgres;
 using dataaccess.repositories.postgres;
+using businesslogic.services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,9 +30,9 @@ builder.Services.AddDbContext<FlightDatabaseContext>(options =>
 builder.Services.AddScoped<IFlightRepository, FlightPostgresqlRepository>();
 builder.Services.AddScoped<IAirportRepository, AirportPostgresqlRepository>();
 
-// TODO: Register services after Business Logic Layer implementation
-// builder.Services.AddScoped<IFlightService, FlightService>();
-// builder.Services.AddScoped<IAirportService, AirportService>();
+// Register services (Business Logic Layer)
+builder.Services.AddScoped<IFlightService, FlightService>();
+builder.Services.AddScoped<IAirportService, AirportService>();
 
 var app = builder.Build();
 
