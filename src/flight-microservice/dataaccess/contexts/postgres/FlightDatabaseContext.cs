@@ -1,5 +1,6 @@
 using dataaccess.models.postgres;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using core.interfaces.dataaccess.contexts;
 
 namespace dataaccess.contexts.postgres;
@@ -20,6 +21,13 @@ public class FlightDatabaseContext : DbContext, IDatabaseContext
     /// DbSet for Airport entities
     /// </summary>
     public virtual DbSet<AirportPostgresqlModel> Airports => Set<AirportPostgresqlModel>();
+
+    private IDbContextTransaction? _transaction;
+
+    /// <summary>
+    /// Gets the database connection string
+    /// </summary>
+    public string ConnectionString => GetConnectionStringFromEnvironment();
 
     /// <summary>
     /// Default constructor
@@ -181,5 +189,48 @@ public class FlightDatabaseContext : DbContext, IDatabaseContext
     public Task EnsureDatabaseCreatedAsync()
     {
         return Database.EnsureCreatedAsync();
+    }
+
+    /// <inheritdoc/>
+    public Task OpenAsync()
+    {
+        return Database.OpenConnectionAsync();
+    }
+
+    /// <inheritdoc/>
+    public void Close()
+    {
+        Database.CloseConnection();
+    }
+
+    /// <inheritdoc/>
+    public Task BeginTransactionAsync()
+    {
+        _transaction = Database.BeginTransaction();
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task CommitTransactionAsync()
+    {
+        if (_transaction != null)
+        {
+            _transaction.Commit();
+            _transaction.Dispose();
+            _transaction = null;
+        }
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task RollbackTransactionAsync()
+    {
+        if (_transaction != null)
+        {
+            _transaction.Rollback();
+            _transaction.Dispose();
+            _transaction = null;
+        }
+        return Task.CompletedTask;
     }
 }
