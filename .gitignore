@@ -1,0 +1,28 @@
+# IDE and Editor files
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build files
+bin/
+obj/
+*.pidb
+*.pdb
+
+# OS files
+.DS_Store
+
+# Project-specific files
+NOTES.md
+MEMORY.md
+AGENTS.md
+
+# Logs
+*.log
+logs/
+
+# Environment files
+.env
+.env.local
