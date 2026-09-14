@@ -16,7 +16,7 @@ using tests.fixtures.mothers;
 
 using ServiceAirportNotFoundException = core.exceptions.businesslogic.services.AirportNotFoundException;
 using ServiceAirportValidationException = core.exceptions.businesslogic.services.AirportValidationException;
-using AirportDomain = core.domain.Airport;
+using DotNetEnv;
 
 namespace tests.businesslogic.services.integration.postgres;
 
@@ -93,6 +93,12 @@ public class AirportServiceIntegrationTests : IDisposable
     private readonly TestPostgresqlDatabaseContext _testContext;
     private readonly IAirportRepository _repository;
     private readonly IAirportService _service;
+
+    static AirportServiceIntegrationTests()
+    {
+        // Load .env file to get TEST_POSTGRESQL_* environment variables
+        DotNetEnv.Env.Load();
+    }
 
     public AirportServiceIntegrationTests()
     {

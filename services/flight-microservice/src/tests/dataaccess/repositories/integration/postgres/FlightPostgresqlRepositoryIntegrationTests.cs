@@ -12,6 +12,7 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
+using DotNetEnv;
 
 using FlightDomain = core.domain.Flight;
 
@@ -82,6 +83,12 @@ public class FlightPostgresqlRepositoryIntegrationTests : IDisposable
     private readonly IFlightRepository _repository;
     private readonly IAirportRepository _airportRepository;
     private readonly List<FlightDomain> _createdFlights;
+
+    static FlightPostgresqlRepositoryIntegrationTests()
+    {
+        // Load .env file to get TEST_POSTGRESQL_* environment variables
+        DotNetEnv.Env.Load();
+    }
 
     public FlightPostgresqlRepositoryIntegrationTests()
     {

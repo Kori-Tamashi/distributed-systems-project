@@ -6,7 +6,7 @@ services:
   # =============================================================================
   flight-api:
     build:
-      context: ./src
+      context: .
       dockerfile: Dockerfile
     container_name: flight-microservice-api
     ports:
@@ -14,8 +14,13 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
-      - Flight__ConnectionStrings__DefaultConnection=${Flight__ConnectionStrings__DefaultConnection}
       - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      # PostgreSQL Connection Settings
+      - POSTGRESQL_HOST=${POSTGRES_PROD_HOST}
+      - POSTGRESQL_PORT=${POSTGRES_PROD_PORT}
+      - POSTGRESQL_DATABASE=${POSTGRES_PROD_DATABASE}
+      - POSTGRESQL_USER=${POSTGRES_PROD_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PROD_PASSWORD}
     depends_on:
       postgres-prod:
         condition: service_healthy

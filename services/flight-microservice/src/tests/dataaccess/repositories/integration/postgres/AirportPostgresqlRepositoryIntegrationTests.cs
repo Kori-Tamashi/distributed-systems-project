@@ -12,6 +12,7 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
+using DotNetEnv;
 
 using AirportDomain = core.domain.Airport;
 
@@ -24,6 +25,8 @@ namespace tests.dataaccess.repositories.unit.postgres;
 /// TEST STRATEGY:
 /// These tests use a real PostgreSQL database via TestPostgresqlDatabaseContext fixture.
 /// Tests are isolated by using a dedicated test database (test_flights).
+/// 
+/// ENVIRONMENT: Loads .env file using DotNetEnv to get TEST_POSTGRESQL_* variables
 /// 
 /// CLASS EQUIVALENCE PARTITIONING APPLIED:
 /// 
@@ -76,11 +79,18 @@ namespace tests.dataaccess.repositories.unit.postgres;
 /// - Act: Execute the method under test
 /// - Assert: Verify the results
 /// </summary>
+[CollectionDefinition("PostgresIntegrationTests")]
 public class AirportPostgresqlRepositoryIntegrationTests : IDisposable
 {
     private readonly TestPostgresqlDatabaseContext _context;
     private readonly IAirportRepository _repository;
     private readonly List<AirportDomain> _createdAirports;
+
+    static AirportPostgresqlRepositoryIntegrationTests()
+    {
+        // Load .env file to get TEST_POSTGRESQL_* environment variables
+        DotNetEnv.Env.Load();
+    }
 
     public AirportPostgresqlRepositoryIntegrationTests()
     {
