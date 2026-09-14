@@ -1,0 +1,94 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Ticket Microservice API
+  # =============================================================================
+  ticket-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ticket-microservice-api
+    ports:
+      - "${APP_PORT}:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      # PostgreSQL Connection Settings
+      - POSTGRESQL_HOST=${POSTGRES_PROD_HOST}
+      - POSTGRESQL_PORT=${POSTGRES_PROD_PORT}
+      - POSTGRESQL_DATABASE=${POSTGRES_PROD_DATABASE}
+      - POSTGRESQL_USER=${POSTGRES_PROD_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PROD_PASSWORD}
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    networks:
+      - ticket-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # PostgreSQL Production Database
+  # =============================================================================
+  postgres-prod:
+    image: postgres:14-alpine
+    container_name: ticket-microservice-db-prod
+    ports:
+      - "${POSTGRES_PROD_PORT_EXTERNAL}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_PROD_DATABASE}
+      - POSTGRES_USER=${POSTGRES_PROD_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PROD_PASSWORD}
+    volumes:
+      - postgres_prod_data:/var/lib/postgresql/data
+    networks:
+      - ticket-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_PROD_USER} -d ${POSTGRES_PROD_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # =============================================================================
+  # PostgreSQL Test Database (for Integration Tests)
+  # =============================================================================
+  postgres-test:
+    image: postgres:14-alpine
+    container_name: ticket-microservice-db-test
+    ports:
+      - "${POSTGRES_TEST_PORT_EXTERNAL}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_TEST_DATABASE}
+      - POSTGRES_USER=${POSTGRES_TEST_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_TEST_PASSWORD}
+    networks:
+      - ticket-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER} -d ${POSTGRES_TEST_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  ticket-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_prod_data:
