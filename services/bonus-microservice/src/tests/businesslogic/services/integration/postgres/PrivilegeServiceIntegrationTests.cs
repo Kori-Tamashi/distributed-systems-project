@@ -162,6 +162,33 @@ public class PrivilegeServiceIntegrationTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Clean up all data from database before each test
+    /// </summary>
+    private void CleanupDatabase()
+    {
+        try
+        {
+            var histories = _testContext.PrivilegeHistories.ToList();
+            if (histories.Any())
+            {
+                _testContext.PrivilegeHistories.RemoveRange(histories);
+            }
+            
+            var privileges = _testContext.Privileges.ToList();
+            if (privileges.Any())
+            {
+                _testContext.Privileges.RemoveRange(privileges);
+            }
+            
+            _testContext.SaveChanges();
+        }
+        catch
+        {
+            // Ignore errors during cleanup
+        }
+    }
+
     #region GetByIdAsync Tests
 
     /// <summary>
@@ -287,13 +314,24 @@ public class PrivilegeServiceIntegrationTests : IDisposable
     [Integration]
     public async Task GetAllAsync_FilterByStatus_ShouldReturnMatchingPrivileges()
     {
-        // Arrange
-        var goldPrivilege = PrivilegeMother.CreateValidPrivilege();
-        goldPrivilege.Status = PrivilegeStatus.GOLD;
+        // Clean up before test to ensure isolation
+        CleanupDatabase();
+        
+        // Arrange - use unique IDs to avoid conflicts
+        var goldPrivilege = new PrivilegeBuilder()
+            .WithId(0)
+            .WithUsername("gold.user.test1")
+            .WithStatus(PrivilegeStatus.GOLD)
+            .WithBalance(1000)
+            .Build();
         await _privilegeRepository.CreateAsync(goldPrivilege);
 
-        var silverPrivilege = PrivilegeMother.CreateValidPrivilege();
-        silverPrivilege.Status = PrivilegeStatus.SILVER;
+        var silverPrivilege = new PrivilegeBuilder()
+            .WithId(0)
+            .WithUsername("silver.user.test1")
+            .WithStatus(PrivilegeStatus.SILVER)
+            .WithBalance(500)
+            .Build();
         await _privilegeRepository.CreateAsync(silverPrivilege);
 
         var filter = new PrivilegeFilter { Status = PrivilegeStatus.GOLD };
@@ -314,9 +352,16 @@ public class PrivilegeServiceIntegrationTests : IDisposable
     [Integration]
     public async Task GetAllAsync_FilterWithNoMatches_ShouldReturnEmptyList()
     {
-        // Arrange
-        var privilege = PrivilegeMother.CreateValidPrivilege();
-        privilege.Status = PrivilegeStatus.BRONZE;
+        // Clean up before test to ensure isolation
+        CleanupDatabase();
+        
+        // Arrange - use unique username to avoid conflicts
+        var privilege = new PrivilegeBuilder()
+            .WithId(0)
+            .WithUsername("bronze.user.test1")
+            .WithStatus(PrivilegeStatus.BRONZE)
+            .WithBalance(100)
+            .Build();
         await _privilegeRepository.CreateAsync(privilege);
 
         var filter = new PrivilegeFilter { Status = PrivilegeStatus.GOLD };

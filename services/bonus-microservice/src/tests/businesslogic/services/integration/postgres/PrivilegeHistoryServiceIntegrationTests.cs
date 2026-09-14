@@ -137,6 +137,27 @@ public class PrivilegeHistoryServiceIntegrationTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// Clean up all data from database before each test
+    /// </summary>
+    private void CleanupDatabase()
+    {
+        try
+        {
+            var histories = _testContext.PrivilegeHistories.ToList();
+            if (histories.Any())
+            {
+                _testContext.PrivilegeHistories.RemoveRange(histories);
+            }
+            
+            _testContext.SaveChanges();
+        }
+        catch
+        {
+            // Ignore errors during cleanup
+        }
+    }
+
     #region GetByIdAsync Tests
 
     /// <summary>
@@ -262,13 +283,26 @@ public class PrivilegeHistoryServiceIntegrationTests : IDisposable
     [Integration]
     public async Task GetAllAsync_FilterByPrivilegeId_ShouldReturnMatchingHistories()
     {
-        // Arrange
-        var history1 = PrivilegeHistoryMother.CreateValidHistory();
-        history1.PrivilegeId = 100;
+        // Clean up before test to ensure isolation
+        CleanupDatabase();
+        
+        // Arrange - use unique PrivilegeId values
+        var history1 = new PrivilegeHistoryBuilder()
+            .WithId(0)
+            .WithPrivilegeId(100)
+            .WithTicketUid(Guid.NewGuid())
+            .WithPositiveBalanceDiff()
+            .WithFillInBalance()
+            .Build();
         await _privilegeHistoryRepository.CreateAsync(history1);
 
-        var history2 = PrivilegeHistoryMother.CreateValidHistory();
-        history2.PrivilegeId = 200;
+        var history2 = new PrivilegeHistoryBuilder()
+            .WithId(0)
+            .WithPrivilegeId(200)
+            .WithTicketUid(Guid.NewGuid())
+            .WithPositiveBalanceDiff()
+            .WithFillInBalance()
+            .Build();
         await _privilegeHistoryRepository.CreateAsync(history2);
 
         var filter = new PrivilegeHistoryFilter { PrivilegeId = 100 };
@@ -289,9 +323,17 @@ public class PrivilegeHistoryServiceIntegrationTests : IDisposable
     [Integration]
     public async Task GetAllAsync_FilterWithNoMatches_ShouldReturnEmptyList()
     {
-        // Arrange
-        var history = PrivilegeHistoryMother.CreateValidHistory();
-        history.PrivilegeId = 100;
+        // Clean up before test to ensure isolation
+        CleanupDatabase();
+        
+        // Arrange - use unique PrivilegeId
+        var history = new PrivilegeHistoryBuilder()
+            .WithId(0)
+            .WithPrivilegeId(100)
+            .WithTicketUid(Guid.NewGuid())
+            .WithPositiveBalanceDiff()
+            .WithFillInBalance()
+            .Build();
         await _privilegeHistoryRepository.CreateAsync(history);
 
         var filter = new PrivilegeHistoryFilter { PrivilegeId = 999 };

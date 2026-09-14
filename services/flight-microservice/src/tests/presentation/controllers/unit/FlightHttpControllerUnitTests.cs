@@ -1,3 +1,4 @@
+using core.domain;
 using core.interfaces.businesslogic.services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -256,15 +257,51 @@ public class FlightHttpControllerUnitTests
 
 
     /// <summary>
-    /// EP2: Invalid flight (empty name) - should return 400 Bad Request
+    /// EP2: Valid flight - should return 201 Created
     /// </summary>
-    [Fact(Skip = "Url.Action requires routing configuration")]
+    [Fact]
     [Unit]
     public async Task CreateFlight_ValidFlight_ShouldReturnCreatedWithLocation()
     {
-        // Skip - requires full ASP.NET Core routing setup
-        // This is tested in integration tests
-        Assert.True(true);
+        // Arrange
+        var createDto = new CreateFlightDTO
+        {
+            FlightNumber = "SU1234",
+            FlightUid = Guid.NewGuid(),
+            DateTime = DateTime.UtcNow.AddDays(1),
+            FromAirportId = 1,
+            ToAirportId = 2,
+            Price = 15000
+        };
+        
+        var flightDomain = new Flight
+        {
+            Id = 1,
+            FlightNumber = createDto.FlightNumber,
+            FlightUid = createDto.FlightUid,
+            DateTime = createDto.DateTime,
+            FromAirportId = createDto.FromAirportId,
+            ToAirportId = createDto.ToAirportId,
+            Price = createDto.Price
+        };
+        
+        _mockService.Setup(s => s.CreateAsync(It.IsAny<Flight>())).ReturnsAsync(flightDomain);
+        
+        // Setup mock UrlHelper to avoid routing errors
+        var urlHelperMock = new Mock<IUrlHelper>();
+        urlHelperMock.Setup(u => u.Action(It.IsAny<UrlActionContext>()))
+            .Returns($"/api/v1/flights/{flightDomain.Id}");
+        
+        // Update controller with mocked UrlHelper
+        _controller.Url = urlHelperMock.Object;
+
+        // Act
+        var result = await _controller.CreateFlight(createDto);
+
+        // Assert
+        var actionResult = Assert.IsType<CreatedAtActionResult>(result.Result);
+        Assert.Equal("GetFlightById", actionResult.ActionName);
+        Assert.Equal(flightDomain.Id, ((RouteValueDictionary)actionResult.RouteValues)["flightId"]);
     }
 
     /// <summary>
