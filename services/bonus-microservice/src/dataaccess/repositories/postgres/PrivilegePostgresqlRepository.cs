@@ -104,8 +104,10 @@ public class PrivilegePostgresqlRepository : IPrivilegeRepository
             _context.Privileges.Add(model);
             await _context.SaveChangesAsync();
 
-            // Return updated entity with generated Id
-            return await GetByIdAsync(model.Id);
+
+            // Return the created model directly (it's already tracked with the generated ID)
+            var result = PrivilegePostgresqlConverter.ToDomain(model);
+            return result;
         }
         catch (PrivilegeAlreadyExistsException)
         {

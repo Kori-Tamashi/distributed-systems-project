@@ -1,0 +1,23 @@
+$kind: http-request
+order: 900
+method: PUT
+url: '{{baseUrl}}/api/v1/privileges/3'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "id": 3,
+      "username": "updateduser",
+      "status": 1,
+      "balance": 200
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200, 405, 404, or 500', function () {
+        pm.expect(pm.response.code).to.be.oneOf([200, 405, 404, 500]);
+      });

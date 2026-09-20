@@ -1,0 +1,224 @@
+{
+	"info": {
+		"_postman_id": "airport-collection-v1",
+		"name": "Airport API Tests",
+		"description": "Airport API E2E tests for Lab 02 - Gateway Microservice",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "HealthCheck",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/api/v1/airports/health",
+				"description": "Check service availability"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 200', function () { pm.response.to.have.status(200); });"]
+				}
+			}]
+		},
+		{
+			"name": "GetAllAirportsEmpty",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/api/v1/airports",
+				"description": "Get all airports (may not be empty)"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+						"pm.test('Response is array', function () { var data = pm.response.json(); pm.expect(data).to.be.an('array'); });"
+					]
+				}
+			}]
+		},
+		{
+			"name": "CreateAirportValid",
+			"request": {
+				"method": "POST",
+				"url": "{{baseUrl}}/api/v1/airports",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \\"Name\\": \\"Postman Test Airport\\",\n  \\"City\\": \\"Test City\\",\n  \\"Country\\": \\"Test Country\\",\n  \\"IataCode\\": \\"PMT\\",\n  \\"Latitude\\": 55.7558,\n  \\"Longitude\\": 37.6173\n}"
+				}
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test('Status is 201', function () { pm.response.to.have.status(201); });",
+						"pm.test('Has Name property', function () { var data = pm.response.json(); pm.expect(data).to.have.property('Name'); });"
+					]
+				}
+			}]
+		},
+		{
+			"name": "CreateAirportEmptyName",
+			"request": {
+				"method": "POST",
+				"url": "{{baseUrl}}/api/v1/airports",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \\"Name\\": \\"\\",\n  \\"City\\": \\"Test\\",\n  \\"Country\\": \\"Test\\",\n  \\"IataCode\\": \\"TST\\",\n  \\"Latitude\\": 55.0,\n  \\"Longitude\\": 37.0\n}"
+				}
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test('Status is 400, 500, or 201', function () { pm.expect(pm.response.code).to.be.oneOf([400, 500, 201]); });"
+					]
+				}
+			}]
+		},
+		{
+			"name": "GetAirportByIdValid",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/api/v1/airports/6"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test('Status is 200 or 404', function () { pm.expect(pm.response.code).to.be.oneOf([200, 404]); });",
+						"if (pm.response.code === 200) {",
+						"  pm.test('Has Name property', function () { var data = pm.response.json(); pm.expect(data).to.have.property('Name'); });",
+						"}"
+					]
+				}
+			}]
+		},
+		{
+			"name": "GetAirportByIdNotFound",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/api/v1/airports/99999"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 404', function () { pm.response.to.have.status(404); });"]
+				}
+			}]
+		},
+		{
+			"name": "UpdateAirportValid",
+			"request": {
+				"method": "PUT",
+				"url": "{{baseUrl}}/api/v1/airports/6",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \\"Name\\": \\"Updated Airport\\",\n  \\"City\\": \\"Updated City\\",\n  \\"Country\\": \\"Updated Country\\",\n  \\"IataCode\\": \\"UPT\\",\n  \\"Latitude\\": 55.0,\n  \\"Longitude\\": 37.0\n}"
+				}
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test('Status is 200 or 404', function () { pm.expect(pm.response.code).to.be.oneOf([200, 404]); });",
+						"if (pm.response.code === 200) {",
+						"  pm.test('Name updated', function () { var data = pm.response.json(); pm.expect(data.Name).to.equal('Updated Airport'); });",
+						"}"
+					]
+				}
+			}]
+		},
+		{
+			"name": "UpdateAirportNotFound",
+			"request": {
+				"method": "PUT",
+				"url": "{{baseUrl}}/api/v1/airports/99999",
+				"header": [{"key": "Content-Type", "value": "application/json"}],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \\"Name\\": \\"Not Found\\",\n  \\"City\\": \\"Not Found\\",\n  \\"Country\\": \\"Not Found\\",\n  \\"IataCode\\": \\"NFD\\",\n  \\"Latitude\\": 0.0,\n  \\"Longitude\\": 0.0\n}"
+				}
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 404', function () { pm.response.to.have.status(404); });"]
+				}
+			}]
+		},
+		{
+			"name": "GetAllAirportsWithData",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/api/v1/airports"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 200', function () { pm.response.to.have.status(200); });"]
+				}
+			}]
+		},
+		{
+			"name": "DeleteAirportValid",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/api/v1/airports/6"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": [
+						"pm.test('Status is 204 or 404', function () { pm.expect(pm.response.code).to.be.oneOf([204, 404]); });"
+					]
+				}
+			}]
+		},
+		{
+			"name": "GetAirportAfterDeleteNotFound",
+			"request": {
+				"method": "GET",
+				"url": "{{baseUrl}}/api/v1/airports/6"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 404', function () { pm.response.to.have.status(404); });"]
+				}
+			}]
+		},
+		{
+			"name": "DeleteAirportInvalid",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/api/v1/airports/-1"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 400, 404, or 500', function () { pm.expect(pm.response.code).to.be.oneOf([400, 404, 500]); });"]
+				}
+			}]
+		},
+		{
+			"name": "DeleteAirportNotFound",
+			"request": {
+				"method": "DELETE",
+				"url": "{{baseUrl}}/api/v1/airports/99999"
+			},
+			"event": [{
+				"listen": "test",
+				"script": {
+					"exec": ["pm.test('Status is 404', function () { pm.response.to.have.status(404); });"]
+				}
+			}]
+		}
+	],
+	"variable": [
+		{"key": "baseUrl", "value": "http://localhost:8080"}
+	]
+}

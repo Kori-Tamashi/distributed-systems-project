@@ -35,7 +35,7 @@ public static class BookingPostgresqlConverter
             BookingDate = model.BookingDate,
             Status = (BookingStatus)model.Status,
             PaymentMethod = (PaymentMethod)model.PaymentMethod,
-            PaymentTransactionId = model.PaymentTransactionId
+            PaymentTransactionId = model.PaymentTransactionId,
         };
     }
 
@@ -58,10 +58,12 @@ public static class BookingPostgresqlConverter
             CustomerEmail = domain.CustomerEmail,
             CustomerPhone = domain.CustomerPhone,
             TotalPrice = domain.TotalPrice,
-            BookingDate = domain.BookingDate,
+            BookingDate = domain.BookingDate.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(domain.BookingDate, DateTimeKind.Utc) 
+                : domain.BookingDate,
             Status = (int)domain.Status,
             PaymentMethod = (int)domain.PaymentMethod,
-            PaymentTransactionId = domain.PaymentTransactionId
+            PaymentTransactionId = domain.PaymentTransactionId,
         };
     }
 

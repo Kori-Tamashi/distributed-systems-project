@@ -1,5 +1,7 @@
 using core.enums;
 
+using System;
+
 namespace core.domain;
 
 /// <summary>
@@ -61,4 +63,12 @@ public class Ticket
     /// Ticket status (Confirmed, Cancelled, Refunded)
     /// </summary>
     public TicketStatus Status { get; set; }
+
+    /// <summary>
+    /// Timestamp when the ticket was created (UTC)
+    /// </summary>
+
+    /// <summary>
+    /// Timestamp when the ticket was last updated (UTC)
+    /// </summary>
 }

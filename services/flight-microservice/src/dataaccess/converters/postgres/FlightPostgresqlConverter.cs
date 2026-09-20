@@ -30,7 +30,7 @@ public static class FlightPostgresqlConverter
             DateTime = model.DateTime,
             FromAirportId = model.FromAirportId,
             ToAirportId = model.ToAirportId,
-            Price = model.Price
+            Price = model.Price,
         };
     }
 
@@ -52,7 +52,7 @@ public static class FlightPostgresqlConverter
             DateTime = domain.DateTime,
             FromAirportId = domain.FromAirportId,
             ToAirportId = domain.ToAirportId,
-            Price = domain.Price
+            Price = domain.Price,
         };
     }
 

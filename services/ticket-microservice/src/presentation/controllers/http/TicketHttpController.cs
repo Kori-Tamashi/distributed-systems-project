@@ -211,7 +211,7 @@ public class TicketHttpController : ControllerBase
     /// <response code="404">Ticket not found</response>
     /// <response code="409">Ticket already exists</response>
     /// <response code="500">Server error</response>
-    [HttpPatch("{ticketId}")]
+    [HttpPut("{ticketId}")]
     [ProducesResponseType(typeof(TicketDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpTicketValidationException), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(HttpTicketNotFoundException), StatusCodes.Status404NotFound)]

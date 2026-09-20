@@ -39,6 +39,8 @@ public class AirportPostgresqlModel
     public string Country { get; set; } = string.Empty;
 
     /// <summary>
+
+    /// <summary>
     /// Navigation property - flights departing from this airport
     /// </summary>
     [InverseProperty(nameof(FlightPostgresqlModel.FromAirport))]

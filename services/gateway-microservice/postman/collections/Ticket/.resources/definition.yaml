@@ -1,0 +1,12 @@
+$kind: collection
+description: |
+  ## Ticket API Tests - Lab 02
+  
+  **Микросервис:** Gateway (port 8080)  
+  **Дата:** 2026-09-20
+  
+  ### Особенности API:
+  - Возвращает массив напрямую (не {items: [...]})
+  - PascalCase свойства
+  - DELETE возвращает 204 NoContent
+  - PUT может возвращать 405 (не поддерживается)

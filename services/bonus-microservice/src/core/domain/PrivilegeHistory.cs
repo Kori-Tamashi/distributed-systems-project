@@ -1,5 +1,7 @@
 using core.enums;
 
+using System;
+
 namespace core.domain;
 
 /// <summary>
@@ -36,4 +38,12 @@ public class PrivilegeHistory
     /// Operation type (FILL_IN_BALANCE, DEBIT_THE_ACCOUNT)
     /// </summary>
     public OperationType OperationType { get; set; }
+
+    /// <summary>
+    /// Timestamp when the history record was created (UTC)
+    /// </summary>
+
+    /// <summary>
+    /// Timestamp when the history record was last updated (UTC)
+    /// </summary>
 }

@@ -30,7 +30,7 @@ public static class PrivilegeHistoryPostgresqlConverter
             TicketUid = model.TicketUid,
             DateTime = model.DateTime,
             BalanceDiff = model.BalanceDiff,
-            OperationType = (OperationType)model.OperationType
+            OperationType = (OperationType)model.OperationType,
         };
     }
 
@@ -51,7 +51,7 @@ public static class PrivilegeHistoryPostgresqlConverter
             TicketUid = domain.TicketUid,
             DateTime = domain.DateTime,
             BalanceDiff = domain.BalanceDiff,
-            OperationType = (int)domain.OperationType
+            OperationType = (int)domain.OperationType,
         };
     }
 

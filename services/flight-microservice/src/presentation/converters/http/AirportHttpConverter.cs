@@ -17,7 +17,7 @@ public static class AirportHttpConverter
             Id = airport.Id,
             Name = airport.Name,
             City = airport.City,
-            Country = airport.Country
+            Country = airport.Country,
         };
     }
 
@@ -74,7 +74,7 @@ public static class AirportHttpConverter
             Id = 0,
             Name = dto.Name,
             City = dto.City,
-            Country = dto.Country
+            Country = dto.Country,
         };
     }
 

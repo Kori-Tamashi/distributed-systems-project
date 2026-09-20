@@ -104,8 +104,8 @@ public class AirportPostgresqlRepository : IAirportRepository
             _context.Airports.Add(model);
             await _context.SaveChangesAsync();
 
-            // Return updated entity with generated Id
-            return await GetByIdAsync(model.Id);
+            // Return the created model directly (it's already tracked with the generated ID)
+            return AirportPostgresqlConverter.ToDomain(model);
         }
         catch (AirportAlreadyExistsException)
         {

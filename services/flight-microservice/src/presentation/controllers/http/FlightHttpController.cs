@@ -220,7 +220,7 @@ public class FlightHttpController : ControllerBase
     /// <response code="404">Flight not found</response>
     /// <response code="409">Flight already exists</response>
     /// <response code="500">Server error</response>
-    [HttpPatch("{flightId}")]
+    [HttpPut("{flightId}")]
     [ProducesResponseType(typeof(FlightDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpFlightValidationException), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(HttpFlightNotFoundException), StatusCodes.Status404NotFound)]

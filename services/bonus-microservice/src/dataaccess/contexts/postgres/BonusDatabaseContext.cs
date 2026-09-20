@@ -166,6 +166,30 @@ public class BonusDatabaseContext : DbContext, IDatabaseContext
     /// <inheritdoc/>
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        var addedPrivileges = ChangeTracker.Entries<PrivilegePostgresqlModel>()
+            .Where(e => e.State == EntityState.Added);
+        foreach (var entry in addedPrivileges)
+        {
+        }
+
+        var modifiedPrivileges = ChangeTracker.Entries<PrivilegePostgresqlModel>()
+            .Where(e => e.State == EntityState.Modified);
+        foreach (var entry in modifiedPrivileges)
+        {
+        }
+
+        var addedHistories = ChangeTracker.Entries<PrivilegeHistoryPostgresqlModel>()
+            .Where(e => e.State == EntityState.Added);
+        foreach (var entry in addedHistories)
+        {
+        }
+
+        var modifiedHistories = ChangeTracker.Entries<PrivilegeHistoryPostgresqlModel>()
+            .Where(e => e.State == EntityState.Modified);
+        foreach (var entry in modifiedHistories)
+        {
+        }
+
         return base.SaveChangesAsync(cancellationToken);
     }
 

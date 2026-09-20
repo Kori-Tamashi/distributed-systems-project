@@ -211,7 +211,7 @@ public class BookingHttpController : ControllerBase
     /// <response code="404">Booking not found</response>
     /// <response code="409">Booking already exists</response>
     /// <response code="500">Server error</response>
-    [HttpPatch("{bookingId}")]
+    [HttpPut("{bookingId}")]
     [ProducesResponseType(typeof(BookingDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpBookingValidationException), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(HttpBookingNotFoundException), StatusCodes.Status404NotFound)]

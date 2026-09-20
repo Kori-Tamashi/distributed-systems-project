@@ -24,7 +24,7 @@ public static class FlightHttpConverter
             ToAirportId = flight.ToAirportId,
             Price = flight.Price,
             FromAirport = null, // Will be populated by controller if needed
-            ToAirport = null    // Will be populated by controller if needed
+            ToAirport = null,   // Will be populated by controller if needed
         };
     }
 
@@ -86,11 +86,11 @@ public static class FlightHttpConverter
         {
             Id = 0,
             FlightNumber = dto.FlightNumber,
-            FlightUid = dto.FlightUid,
+            FlightUid = dto.FlightUid == Guid.Empty ? Guid.NewGuid() : dto.FlightUid,
             DateTime = dto.DateTime,
             FromAirportId = dto.FromAirportId,
             ToAirportId = dto.ToAirportId,
-            Price = dto.Price
+            Price = dto.Price,
         };
     }
 

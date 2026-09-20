@@ -25,7 +25,7 @@ public static class BookingHttpConverter
             TotalPrice = booking.TotalPrice,
             Status = (int)booking.Status,
             PaymentMethod = (int)booking.PaymentMethod,
-            PaymentTransactionId = booking.PaymentTransactionId
+            PaymentTransactionId = booking.PaymentTransactionId,
         };
     }
 
@@ -102,7 +102,7 @@ public static class BookingHttpConverter
             TotalPrice = dto.TotalPrice,
             Status = core.enums.BookingStatus.Confirmed,
             PaymentMethod = (core.enums.PaymentMethod)dto.PaymentMethod,
-            PaymentTransactionId = dto.PaymentTransactionId
+            PaymentTransactionId = dto.PaymentTransactionId,
         };
     }
 

@@ -162,7 +162,10 @@ public class PrivilegeHttpController : ControllerBase
             
             var privilege = PrivilegeHttpConverter.ToCreateDomain(createDto);
             var createdPrivilege = await _privilegeService.CreateAsync(privilege);
+            
+            
             var dto = PrivilegeHttpConverter.ToDTO(createdPrivilege);
+            
             
             _logger.LogInformation("Privilege created successfully: {PrivilegeId}", createdPrivilege.Id);
             return CreatedAtAction(

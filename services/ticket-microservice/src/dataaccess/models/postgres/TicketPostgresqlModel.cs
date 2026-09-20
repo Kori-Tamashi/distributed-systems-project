@@ -90,4 +90,6 @@ public class TicketPostgresqlModel
     [Column("status")]
     [Required]
     public int Status { get; set; }
+
+    /// <summary>
 }

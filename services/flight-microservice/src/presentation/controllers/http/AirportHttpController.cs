@@ -210,7 +210,7 @@ public class AirportHttpController : ControllerBase
     /// <response code="404">Airport not found</response>
     /// <response code="409">Airport already exists</response>
     /// <response code="500">Server error</response>
-    [HttpPatch("{airportId}")]
+    [HttpPut("{airportId}")]
     [ProducesResponseType(typeof(AirportDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpAirportValidationException), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(HttpAirportNotFoundException), StatusCodes.Status404NotFound)]

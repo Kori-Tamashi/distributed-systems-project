@@ -90,4 +90,6 @@ public class BookingPostgresqlModel
     [Column("payment_transaction_id")]
     [MaxLength(255)]
     public string? PaymentTransactionId { get; set; }
+
+    /// <summary>
 }

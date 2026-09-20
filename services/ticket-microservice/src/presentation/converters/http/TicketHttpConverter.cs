@@ -25,7 +25,7 @@ public static class TicketHttpConverter
             Class = (int)ticket.Class,
             Price = ticket.Price,
             BookingDate = ticket.BookingDate,
-            Status = (int)ticket.Status
+            Status = (int)ticket.Status,
         };
     }
 
@@ -103,7 +103,7 @@ public static class TicketHttpConverter
             Class = (core.enums.TicketClass)dto.Class,
             Price = dto.Price,
             BookingDate = dto.BookingDate,
-            Status = (core.enums.TicketStatus)dto.Status
+            Status = (core.enums.TicketStatus)dto.Status,
         };
     }
 

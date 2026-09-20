@@ -1,5 +1,7 @@
 namespace core.domain;
 
+using System;
+
 /// <summary>
 /// Domain entity representing an Airport
 /// </summary>
@@ -24,6 +26,14 @@ public class Airport
     /// Country where the airport is located
     /// </summary>
     public string Country { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Timestamp when the airport was created (UTC)
+    /// </summary>
+
+    /// <summary>
+    /// Timestamp when the airport was last updated (UTC)
+    /// </summary>
 
     /// <summary>
     /// Navigation property - flights departing from this airport

@@ -28,7 +28,7 @@ public static class PrivilegePostgresqlConverter
             Id = model.Id,
             Username = model.Username,
             Status = (PrivilegeStatus)model.Status,
-            Balance = model.Balance
+            Balance = model.Balance,
         };
     }
 
@@ -47,7 +47,7 @@ public static class PrivilegePostgresqlConverter
             Id = domain.Id,
             Username = domain.Username,
             Status = (int)domain.Status,
-            Balance = domain.Balance
+            Balance = domain.Balance,
         };
     }
 

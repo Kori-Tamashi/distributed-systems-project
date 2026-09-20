@@ -1,0 +1,11 @@
+$kind: http-request
+order: 1200
+method: DELETE
+url: '{{baseUrl}}/api/v1/airports/6'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 204 or 404', function () {
+        pm.expect(pm.response.code).to.be.oneOf([204, 404]);
+      });

@@ -1,0 +1,26 @@
+$kind: http-request
+order: 1000
+method: PUT
+url: '{{baseUrl}}/api/v1/flights/99999'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "Id": 99999,
+      "FlightNumber": "SU300",
+      "FlightUid": "550e8400-e29b-41d4-a716-446655440002",
+      "DateTime": "2026-12-17T10:00:00Z",
+      "FromAirportId": 1,
+      "ToAirportId": 2,
+      "Price": 25000
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 404 or 405', function () {
+        pm.expect(pm.response.code).to.be.oneOf([404, 405]);
+      });

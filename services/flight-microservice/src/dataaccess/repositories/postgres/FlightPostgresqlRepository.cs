@@ -104,8 +104,8 @@ public class FlightPostgresqlRepository : IFlightRepository
             _context.Flights.Add(model);
             await _context.SaveChangesAsync();
 
-            // Return updated entity with generated Id
-            return await GetByIdAsync(model.Id);
+            // Return the created model directly (it's already tracked with the generated ID)
+            return FlightPostgresqlConverter.ToDomain(model);
         }
         catch (FlightAlreadyExistsException)
         {

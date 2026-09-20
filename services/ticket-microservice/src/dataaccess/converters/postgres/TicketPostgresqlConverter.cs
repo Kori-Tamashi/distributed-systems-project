@@ -35,7 +35,7 @@ public static class TicketPostgresqlConverter
             Class = (TicketClass)model.Class,
             Price = model.Price,
             BookingDate = model.BookingDate,
-            Status = (TicketStatus)model.Status
+            Status = (TicketStatus)model.Status,
         };
     }
 
@@ -61,7 +61,7 @@ public static class TicketPostgresqlConverter
             Class = (int)domain.Class,
             Price = domain.Price,
             BookingDate = domain.BookingDate,
-            Status = (int)domain.Status
+            Status = (int)domain.Status,
         };
     }
 

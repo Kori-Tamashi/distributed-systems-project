@@ -20,7 +20,7 @@ public static class PrivilegeHistoryHttpConverter
             TicketUid = privilegeHistory.TicketUid,
             DateTime = privilegeHistory.DateTime,
             BalanceDiff = privilegeHistory.BalanceDiff,
-            OperationType = (int)privilegeHistory.OperationType
+            OperationType = (int)privilegeHistory.OperationType,
         };
     }
 
@@ -83,7 +83,7 @@ public static class PrivilegeHistoryHttpConverter
             TicketUid = dto.TicketUid,
             DateTime = dto.DateTime,
             BalanceDiff = dto.BalanceDiffNegative,
-            OperationType = (core.enums.OperationType)dto.OperationType
+            OperationType = (core.enums.OperationType)dto.OperationType,
         };
     }
 

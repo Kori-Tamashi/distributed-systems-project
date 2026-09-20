@@ -182,6 +182,30 @@ public class FlightDatabaseContext : DbContext, IDatabaseContext
     /// <inheritdoc/>
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        var addedFlights = ChangeTracker.Entries<FlightPostgresqlModel>()
+            .Where(e => e.State == EntityState.Added);
+        foreach (var entry in addedFlights)
+        {
+        }
+
+        var modifiedFlights = ChangeTracker.Entries<FlightPostgresqlModel>()
+            .Where(e => e.State == EntityState.Modified);
+        foreach (var entry in modifiedFlights)
+        {
+        }
+
+        var addedAirports = ChangeTracker.Entries<AirportPostgresqlModel>()
+            .Where(e => e.State == EntityState.Added);
+        foreach (var entry in addedAirports)
+        {
+        }
+
+        var modifiedAirports = ChangeTracker.Entries<AirportPostgresqlModel>()
+            .Where(e => e.State == EntityState.Modified);
+        foreach (var entry in modifiedAirports)
+        {
+        }
+
         return base.SaveChangesAsync(cancellationToken);
     }
 

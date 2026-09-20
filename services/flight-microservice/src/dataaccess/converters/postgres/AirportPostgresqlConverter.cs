@@ -27,7 +27,7 @@ public static class AirportPostgresqlConverter
             Id = model.Id,
             Name = model.Name,
             City = model.City,
-            Country = model.Country
+            Country = model.Country,
         };
     }
 
@@ -46,7 +46,7 @@ public static class AirportPostgresqlConverter
             Id = domain.Id,
             Name = domain.Name,
             City = domain.City,
-            Country = domain.Country
+            Country = domain.Country,
         };
     }
 

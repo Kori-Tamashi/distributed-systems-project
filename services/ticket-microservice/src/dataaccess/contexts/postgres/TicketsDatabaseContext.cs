@@ -225,6 +225,30 @@ public class TicketsDatabaseContext : DbContext, IDatabaseContext
     /// <inheritdoc/>
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
+        var addedTickets = ChangeTracker.Entries<TicketPostgresqlModel>()
+            .Where(e => e.State == EntityState.Added);
+        foreach (var entry in addedTickets)
+        {
+        }
+
+        var modifiedTickets = ChangeTracker.Entries<TicketPostgresqlModel>()
+            .Where(e => e.State == EntityState.Modified);
+        foreach (var entry in modifiedTickets)
+        {
+        }
+
+        var addedBookings = ChangeTracker.Entries<BookingPostgresqlModel>()
+            .Where(e => e.State == EntityState.Added);
+        foreach (var entry in addedBookings)
+        {
+        }
+
+        var modifiedBookings = ChangeTracker.Entries<BookingPostgresqlModel>()
+            .Where(e => e.State == EntityState.Modified);
+        foreach (var entry in modifiedBookings)
+        {
+        }
+
         return base.SaveChangesAsync(cancellationToken);
     }
 

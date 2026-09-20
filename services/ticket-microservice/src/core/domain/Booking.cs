@@ -1,5 +1,7 @@
 using core.enums;
 
+using System;
+
 namespace core.domain;
 
 /// <summary>
@@ -66,4 +68,12 @@ public class Booking
     /// Navigation property - tickets in this booking
     /// </summary>
     public List<Ticket> Tickets { get; set; } = new();
+
+    /// <summary>
+    /// Timestamp when the booking was created (UTC)
+    /// </summary>
+
+    /// <summary>
+    /// Timestamp when the booking was last updated (UTC)
+    /// </summary>
 }

@@ -13,12 +13,13 @@ public static class PrivilegeHttpConverter
     /// </summary>
     public static PrivilegeDTO ToDTO(core.domain.Privilege privilege)
     {
+        
         return new PrivilegeDTO
         {
             Id = privilege.Id,
             Username = privilege.Username,
             Status = (int)privilege.Status,
-            Balance = privilege.Balance
+            Balance = privilege.Balance,
         };
     }
 
@@ -75,7 +76,7 @@ public static class PrivilegeHttpConverter
             Id = 0,
             Username = dto.Username,
             Status = (core.enums.PrivilegeStatus)dto.Status,
-            Balance = dto.Balance
+            Balance = dto.Balance,
         };
     }
 
