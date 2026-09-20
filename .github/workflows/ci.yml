@@ -1,0 +1,424 @@
+# ===========================================
+# CI Pipeline - Build and Test All Microservices
+# ===========================================
+# Lab 02: Distributed Systems
+# Services: Gateway, Flight, Ticket, Bonus
+
+name: CI - Build and Test All Microservices
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+# ===========================================
+# Concurrency Control
+# ===========================================
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+# ===========================================
+# Default Settings
+# ===========================================
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ===========================================
+  # Security: CodeQL Analysis
+  # ===========================================
+  codeql:
+    name: CodeQL Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          queries: +security-and-quality
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:csharp"
+
+  # ===========================================
+  # Build All Microservices
+  # ===========================================
+  build:
+    name: Build ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - flight
+          - ticket
+          - bonus
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Get commit info
+        id: commit
+        run: |
+          echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+          echo "branch=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+
+      - name: Restore dependencies
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet restore presentation/presentation.csproj
+          dotnet restore tests/tests.csproj
+          echo "✅ Dependencies restored for ${{ matrix.service }}"
+
+      - name: Build application
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet build presentation/presentation.csproj --no-restore --configuration Release --verbosity normal
+          echo "✅ Build completed for ${{ matrix.service }}"
+
+      - name: Analyze dependencies
+        uses: actions/dependency-review-action@v4
+        if: github.event_name == 'pull_request'
+        with:
+          fail-on-severity: moderate
+          allow-licenses: MIT,Apache-2.0,MIT AND Apache-2.0
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build-artifacts
+          path: services/${{ matrix.service }}-microservice/src/
+          retention-days: 7
+
+  # ===========================================
+  # Unit Tests All Microservices
+  # ===========================================
+  unit-tests:
+    name: Unit Tests - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - flight
+          - ticket
+          - bonus
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build-artifacts
+          path: services/${{ matrix.service }}-microservice/src/
+
+      - name: Restore dependencies
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet restore presentation/presentation.csproj
+          dotnet restore tests/tests.csproj
+
+      - name: Run unit tests
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          mkdir -p ./TestResults
+          dotnet test tests/tests.csproj \
+            --configuration Release \
+            --filter "FullyQualifiedName~Unit" \
+            --verbosity normal \
+            --logger "trx;LogFileName=unit-tests.trx" \
+            --results-directory ./TestResults \
+            --collect:"XPlat Code Coverage"
+        continue-on-error: false
+
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.service }}-unit-test-results
+          path: |
+            services/${{ matrix.service }}-microservice/src/TestResults/*.trx
+            services/${{ matrix.service }}-microservice/src/TestResults/**/coverage.cobertura.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Test summary
+        uses: test-summary/action@v2
+        if: always()
+        with:
+          paths: "services/${{ matrix.service }}-microservice/src/TestResults/*.trx"
+          output: ${{ matrix.service }}-test-summary.md
+
+      - name: Upload test summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.service }}-test-summary
+          path: ${{ matrix.service }}-test-summary.md
+          retention-days: 7
+
+      - name: Publish test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: ${{ matrix.service }} - Unit Test Results
+          path: services/${{ matrix.service }}-microservice/src/TestResults/*.trx
+          reporter: dotnet-trx
+
+  # ===========================================
+  # Integration Tests All Microservices
+  # ===========================================
+  integration-tests:
+    name: Integration Tests - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - flight
+          - ticket
+          - bonus
+    
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_DB: test_${{ matrix.service }}
+          POSTGRES_USER: program
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build-artifacts
+          path: services/${{ matrix.service }}-microservice/src/
+
+      - name: Restore dependencies
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet restore presentation/presentation.csproj
+          dotnet restore tests/tests.csproj
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U program; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL is ready"
+
+      - name: Run integration tests
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          mkdir -p ./TestResults
+          dotnet test tests/tests.csproj \
+            --configuration Release \
+            --filter "FullyQualifiedName~Integration" \
+            --verbosity normal \
+            --logger "trx;LogFileName=integration-tests.trx" \
+            --results-directory ./TestResults \
+            --collect:"XPlat Code Coverage"
+        env:
+          DATABASE_PROVIDER: POSTGRESQL
+          POSTGRESQL_HOST: localhost
+          POSTGRESQL_PORT: 5432
+          POSTGRESQL_DATABASE: test_${{ matrix.service }}
+          POSTGRESQL_USER: program
+          POSTGRESQL_PASSWORD: test
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.service }}-integration-test-results
+          path: |
+            services/${{ matrix.service }}-microservice/src/TestResults/*.trx
+            services/${{ matrix.service }}-microservice/src/TestResults/**/coverage.cobertura.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Test summary
+        uses: test-summary/action@v2
+        if: always()
+        with:
+          paths: "services/${{ matrix.service }}-microservice/src/TestResults/*.trx"
+          output: ${{ matrix.service }}-integration-summary.md
+
+      - name: Upload integration test summary
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.service }}-integration-summary
+          path: ${{ matrix.service }}-integration-summary.md
+          retention-days: 7
+
+      - name: Publish integration test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: ${{ matrix.service }} - Integration Test Results
+          path: services/${{ matrix.service }}-microservice/src/TestResults/*.trx
+          reporter: dotnet-trx
+
+  # ===========================================
+  # Docker Build Test All Microservices
+  # ===========================================
+  docker-test:
+    name: Docker Build Test - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - flight
+          - ticket
+          - bonus
+    
+    steps:
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build-artifacts
+          path: services/${{ matrix.service }}-microservice/src/
+
+      - name: Restore dependencies
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet restore presentation/presentation.csproj
+
+      - name: Build Docker image (test)
+        id: docker-build
+        working-directory: services/${{ matrix.service }}-microservice
+        run: |
+          docker build \
+            --tag ${{ matrix.service }}-microservice:test \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VERSION=${{ github.sha }} \
+            --progress=plain \
+            .
+          echo "image=${{ matrix.service }}-microservice:test" >> $GITHUB_OUTPUT
+
+      - name: Test Docker image
+        run: |
+          echo "🐳 Starting Docker container in background..."
+          
+          # Start container in background (detach mode)
+          docker run -d --name ${{ matrix.service }}-test -p 8080:8080 ${{ matrix.service }}-microservice:test
+          
+          echo "⏳ Waiting for application to start..."
+          
+          # Wait for application to be ready (max 60 seconds)
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/ > /dev/null 2>&1 || \
+               curl -sf http://localhost:8080/health > /dev/null 2>&1; then
+              echo "✅ Application is responding!"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Application failed to start within 60 seconds"
+              echo "📋 Container logs:"
+              docker logs ${{ matrix.service }}-test
+              docker rm -f ${{ matrix.service }}-test
+              exit 1
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          echo "✅ Docker image verification completed!"
+          echo "🧹 Cleaning up..."
+          
+          # Cleanup
+          docker rm -f ${{ matrix.service }}-test
+
+      - name: Check Docker image size
+        id: image-size
+        run: |
+          SIZE=$(docker images ${{ matrix.service }}-microservice:test --format "{{.Size}}")
+          echo "size=$SIZE" >> $GITHUB_OUTPUT
+          echo "Docker image size: $SIZE"
+
+      - name: Run Docker security scan
+        uses: aquasecurity/trivy-action@master
+        if: github.event_name == 'pull_request'
+        with:
+          image-ref: '${{ matrix.service }}-microservice:test'
+          format: 'table'
+          exit-code: '0'
+          severity: 'CRITICAL,HIGH'

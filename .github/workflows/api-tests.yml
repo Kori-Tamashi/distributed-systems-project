@@ -1,0 +1,225 @@
+# ===========================================
+# API Tests Pipeline - Postman Newman Tests
+# ===========================================
+# Lab 02: Distributed Systems
+# Services: Gateway, Flight, Ticket, Bonus
+
+name: API Tests - All Microservices
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Test All Microservices"]
+    types:
+      - completed
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+
+# ===========================================
+# Default Settings
+# ===========================================
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  # ===========================================
+  # API Tests for All Microservices
+  # ===========================================
+  api-tests:
+    name: API Tests - ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - flight
+          - ticket
+          - bonus
+    
+    services:
+      postgres:
+        image: postgres:14-alpine
+        env:
+          POSTGRES_DB: test_${{ matrix.service }}
+          POSTGRES_USER: program
+          POSTGRES_PASSWORD: test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build-artifacts
+          path: services/${{ matrix.service }}-microservice/src/
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Cache Docker layers
+        uses: actions/cache@v4
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}-${{ matrix.service }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-${{ matrix.service }}
+
+      - name: Restore dependencies
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet restore presentation/presentation.csproj
+
+      - name: Build Docker image for testing
+        working-directory: services/${{ matrix.service }}-microservice
+        run: |
+          docker buildx build \
+            --tag ${{ matrix.service }}-microservice:e2e-test \
+            --build-arg BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ') \
+            --build-arg VERSION=${{ github.sha }} \
+            --cache-from type=local,src=/tmp/.buildx-cache \
+            --cache-to type=local,dest=/tmp/.buildx-cache-new,mode=max \
+            --load \
+            .
+          echo "✅ Docker image built: ${{ matrix.service }}-microservice:e2e-test"
+
+      - name: Move cache
+        if: always()
+        run: |
+          rm -rf /tmp/.buildx-cache
+          mv /tmp/.buildx-cache-new /tmp/.buildx-cache || true
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432 -U program; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "✅ PostgreSQL is ready"
+
+      - name: Start application container
+        run: |
+          # Clean up any existing containers
+          docker rm -f ${{ matrix.service }}-e2e 2>/dev/null || true
+          docker network rm e2e-network 2>/dev/null || true
+          
+          # Create network
+          docker network create e2e-network
+          
+          # Determine port based on service
+          case ${{ matrix.service }} in
+            gateway) PORT=8080 ;;
+            flight) PORT=8060 ;;
+            ticket) PORT=8070 ;;
+            bonus) PORT=8050 ;;
+          esac
+          
+          # Start container
+          docker run -d \
+            --name ${{ matrix.service }}-e2e \
+            --network e2e-network \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e DATABASE_PROVIDER=POSTGRESQL \
+            -e POSTGRESQL_HOST=postgres \
+            -e POSTGRESQL_PORT=5432 \
+            -e POSTGRESQL_DATABASE=test_${{ matrix.service }} \
+            -e POSTGRESQL_USER=program \
+            -e POSTGRESQL_PASSWORD=test \
+            -p $PORT:8080 \
+            ${{ matrix.service }}-microservice:e2e-test
+          
+          echo "⏳ Waiting for application to start..."
+          sleep 15
+
+      - name: Wait for application to be ready
+        run: |
+          case ${{ matrix.service }} in
+            gateway) PORT=8080 ;;
+            flight) PORT=8060 ;;
+            ticket) PORT=8070 ;;
+            bonus) PORT=8050 ;;
+          esac
+          
+          for i in {1..30}; do
+            if curl -sf http://localhost:$PORT/health > /dev/null 2>&1; then
+              echo "✅ Application is ready!"
+              exit 0
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "❌ Application failed to start"
+          docker logs ${{ matrix.service }}-e2e
+          exit 1
+
+      - name: Run Postman API tests
+        run: |
+          case ${{ matrix.service }} in
+            gateway) BASE_URL="http://${{ matrix.service }}-e2e:8080" ;;
+            flight) BASE_URL="http://${{ matrix.service }}-e2e:8060" ;;
+            ticket) BASE_URL="http://${{ matrix.service }}-e2e:8070" ;;
+            bonus) BASE_URL="http://${{ matrix.service }}-e2e:8050" ;;
+          esac
+          
+          mkdir -p ./postman/test-results
+          docker run --rm \
+            --network e2e-network \
+            -e BASE_URL=$BASE_URL \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman/collections/${{ matrix.service }}-*:/etc/newman/collections \
+            node:20-alpine \
+            sh -c "npm install -g newman newman-reporter-junit && \
+                   newman run /etc/newman/collections/ \
+                   -e /etc/newman/environments/local.environment.yaml \
+                   --reporters cli,junit \
+                   --reporter-junit-export /etc/newman/results/results.xml" || true
+
+      - name: Upload API test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.service }}-api-test-results
+          path: |
+            ./postman/test-results/results.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Publish API test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: ${{ matrix.service }} - API Test Results
+          path: ./postman/test-results/results.xml
+          reporter: java-junit
+
+      - name: Cleanup Docker containers
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker containers..."
+          docker rm -f ${{ matrix.service }}-e2e 2>/dev/null || true
+          docker network rm e2e-network 2>/dev/null || true
+          echo "✅ Cleanup completed"

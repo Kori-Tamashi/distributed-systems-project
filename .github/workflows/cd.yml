@@ -1,0 +1,98 @@
+# ===========================================
+# CD Pipeline - Push Docker Images to Docker Hub
+# ===========================================
+# Lab 02: Distributed Systems
+# Services: Gateway, Flight, Ticket, Bonus
+
+name: CD - Push Docker Images
+
+on:
+  workflow_run:
+    workflows: ["CI - Build and Test All Microservices"]
+    types:
+      - completed
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+
+jobs:
+  # ===========================================
+  # Build and Push All Microservices
+  # ===========================================
+  docker-build-and-push:
+    name: Build and Push ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - gateway
+          - flight
+          - ticket
+          - bonus
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ matrix.service }}-build-artifacts
+          path: services/${{ matrix.service }}-microservice/src/
+
+      - name: Restore dependencies
+        working-directory: services/${{ matrix.service }}-microservice/src
+        run: |
+          dotnet restore presentation/presentation.csproj
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}-microservice
+          tags: |
+            type=sha,prefix=
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: services/${{ matrix.service }}-microservice/
+          file: services/${{ matrix.service }}-microservice/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILD_DATE=${{ github.event.workflow_run.head_commit.timestamp }}
+            VERSION=${{ github.event.workflow_run.head_sha }}
+
+      - name: Deployment summary
+        run: |
+          echo "✅ ${{ matrix.service }} Docker image pushed successfully!"
+          echo "Image: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}-microservice"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Commit: ${{ github.event.workflow_run.head_sha }}"
+          echo "CI Run: ${{ github.event.workflow_run.html_url }}"
+          echo ""
+          echo "📦 Image available at:"
+          echo "https://hub.docker.com/r/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}-microservice"

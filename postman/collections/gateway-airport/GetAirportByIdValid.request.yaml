@@ -1,0 +1,14 @@
+# Gateway - Airport Get By ID
+name: Get Airport By ID Valid
+event:
+  - listen: test
+    script:
+      exec:
+        - pm.test("Status code is 200", function () {
+            pm.response.to.have.status(200);
+          });
+        - pm.test("Response has required fields", function () {
+            var jsonData = pm.response.json();
+            pm.expect(jsonData).to.have.property('Id');
+            pm.expect(jsonData).to.have.property('Name');
+          });
