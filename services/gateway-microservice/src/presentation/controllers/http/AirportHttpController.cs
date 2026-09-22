@@ -213,6 +213,15 @@ public class AirportHttpController : ControllerBase
             _logger.LogDebug("Updating airport: {AirportId}", airportId);
             
             var existingAirport = await _airportService.GetByIdAsync(airportId);
+            
+            // Ensure IDs match
+            if (existingAirport != null && existingAirport.Id != airportId)
+            {
+                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", airportId, existingAirport.Id);
+                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
+                return BadRequest(new HttpAirportValidationException(errorData));
+            }
+            
             var updatedAirport = AirportHttpConverter.ToUpdateDomain(updateDto, existingAirport);
             var result = await _airportService.UpdateAsync(updatedAirport);
             var dto = AirportHttpConverter.ToDTO(result);

@@ -213,6 +213,15 @@ public class PrivilegeHistoryHttpController : ControllerBase
             _logger.LogDebug("Updating privilege history: {PrivilegeHistoryId}", privilegeHistoryId);
             
             var existingHistory = await _privilegeHistoryService.GetByIdAsync(privilegeHistoryId);
+            
+            // Ensure IDs match
+            if (existingHistory != null && existingHistory.Id != privilegeHistoryId)
+            {
+                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", privilegeHistoryId, existingHistory.Id);
+                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
+                return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+            }
+            
             var updatedHistory = PrivilegeHistoryHttpConverter.ToUpdateDomain(updateDto, existingHistory);
             var result = await _privilegeHistoryService.UpdateAsync(updatedHistory);
             var dto = PrivilegeHistoryHttpConverter.ToDTO(result);

@@ -14,7 +14,6 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
-using DotNetEnv;
 using Xunit;
 
 using ServiceTicketNotFoundException = core.exceptions.businesslogic.services.TicketNotFoundException;
@@ -100,8 +99,8 @@ public class TicketServiceIntegrationTests : IDisposable
 
     static TicketServiceIntegrationTests()
     {
-        // Load .env file to get TEST_POSTGRESQL_* environment variables
-        DotNetEnv.Env.Load();
+        // Environment variables are read directly from Docker environment (no .env file needed)
+        // TEST_POSTGRESQL_* variables are set in CI/CD workflow
     }
 
     public TicketServiceIntegrationTests()

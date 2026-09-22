@@ -13,7 +13,6 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
-using DotNetEnv;
 using Xunit;
 
 using TicketDomain = core.domain.Ticket;
@@ -91,7 +90,6 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     static TicketPostgresqlRepositoryIntegrationTests()
     {
         // Load .env file to get TEST_POSTGRESQL_* environment variables
-        DotNetEnv.Env.Load();
     }
 
     public TicketPostgresqlRepositoryIntegrationTests()

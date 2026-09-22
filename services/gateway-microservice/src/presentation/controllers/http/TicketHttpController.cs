@@ -220,6 +220,15 @@ public class TicketHttpController : ControllerBase
             _logger.LogDebug("Updating ticket: {TicketId}", ticketId);
             
             var existingTicket = await _ticketService.GetByIdAsync(ticketId);
+            
+            // Ensure IDs match
+            if (existingTicket != null && existingTicket.Id != ticketId)
+            {
+                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", ticketId, existingTicket.Id);
+                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
+                return BadRequest(new HttpTicketValidationException(errorData));
+            }
+            
             var updatedTicket = TicketHttpConverter.ToUpdateDomain(updateDto, existingTicket);
             var result = await _ticketService.UpdateAsync(updatedTicket);
             var dto = TicketHttpConverter.ToDTO(result);

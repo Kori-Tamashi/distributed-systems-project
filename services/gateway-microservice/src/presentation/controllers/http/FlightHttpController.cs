@@ -213,6 +213,15 @@ public class FlightHttpController : ControllerBase
             _logger.LogDebug("Updating flight: {FlightId}", flightId);
             
             var existingFlight = await _flightService.GetByIdAsync(flightId);
+            
+            // Ensure IDs match
+            if (existingFlight != null && existingFlight.Id != flightId)
+            {
+                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", flightId, existingFlight.Id);
+                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
+                return BadRequest(new HttpFlightValidationException(errorData));
+            }
+            
             var updatedFlight = FlightHttpConverter.ToUpdateDomain(updateDto, existingFlight);
             var result = await _flightService.UpdateAsync(updatedFlight);
             var dto = FlightHttpConverter.ToDTO(result);

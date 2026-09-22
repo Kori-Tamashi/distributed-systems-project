@@ -14,7 +14,6 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
-using DotNetEnv;
 using Xunit;
 
 using ServicePrivilegeHistoryNotFoundException = core.exceptions.businesslogic.services.PrivilegeHistoryNotFoundException;
@@ -99,7 +98,6 @@ public class PrivilegeHistoryServiceIntegrationTests : IDisposable
     static PrivilegeHistoryServiceIntegrationTests()
     {
         // Load .env file to get TEST_* environment variables
-        DotNetEnv.Env.Load();
     }
 
     public PrivilegeHistoryServiceIntegrationTests()

@@ -13,7 +13,6 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
-using DotNetEnv;
 
 using ServiceFlightNotFoundException = core.exceptions.businesslogic.services.FlightNotFoundException;
 using ServiceFlightValidationException = core.exceptions.businesslogic.services.FlightValidationException;
@@ -104,7 +103,6 @@ public class FlightServiceIntegrationTests : IDisposable
     static FlightServiceIntegrationTests()
     {
         // Load .env file to get TEST_POSTGRESQL_* environment variables
-        DotNetEnv.Env.Load();
     }
 
     public FlightServiceIntegrationTests()

@@ -213,6 +213,15 @@ public class PrivilegeHttpController : ControllerBase
             _logger.LogDebug("Updating privilege: {PrivilegeId}", privilegeId);
             
             var existingPrivilege = await _privilegeService.GetByIdAsync(privilegeId);
+            
+            // Ensure IDs match
+            if (existingPrivilege != null && existingPrivilege.Id != privilegeId)
+            {
+                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", privilegeId, existingPrivilege.Id);
+                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
+                return BadRequest(new HttpPrivilegeValidationException(errorData));
+            }
+            
             var updatedPrivilege = PrivilegeHttpConverter.ToUpdateDomain(updateDto, existingPrivilege);
             var result = await _privilegeService.UpdateAsync(updatedPrivilege);
             var dto = PrivilegeHttpConverter.ToDTO(result);
@@ -266,6 +275,11 @@ public class PrivilegeHttpController : ControllerBase
         {
             _logger.LogWarning(ex, "Privilege not found for deletion: {PrivilegeId}", privilegeId);
             return NotFound(new HttpPrivilegeNotFoundException(privilegeId));
+        }
+        catch (ValidationException ex)
+        {
+            _logger.LogWarning(ex, "Validation error deleting privilege: {PrivilegeId}", privilegeId);
+            return BadRequest(new { error = "Validation failed", message = ex.Message });
         }
         catch (Exception ex)
         {

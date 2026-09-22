@@ -17,7 +17,6 @@
     </PackageReference>
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.4" />
-    <PackageReference Include="DotNetEnv" Version="3.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,12 +24,6 @@
     <ProjectReference Include="../businesslogic/businesslogic.csproj" />
     <ProjectReference Include="../dataaccess/dataaccess.csproj" />
     <ProjectReference Include="../presentation/presentation.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Update=".env">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
 
 </Project>

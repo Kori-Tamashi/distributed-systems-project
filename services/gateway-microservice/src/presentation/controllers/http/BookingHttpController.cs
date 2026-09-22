@@ -346,6 +346,15 @@ public class BookingHttpController : ControllerBase
             _logger.LogDebug("Updating booking: {BookingId}", bookingId);
             
             var existingBooking = await _bookingService.GetByIdAsync(bookingId);
+            
+            // Ensure IDs match
+            if (existingBooking != null && existingBooking.Id != bookingId)
+            {
+                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", bookingId, existingBooking.Id);
+                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
+                return BadRequest(new HttpBookingValidationException(errorData));
+            }
+            
             var updatedBooking = BookingHttpConverter.ToUpdateDomain(updateDto, existingBooking);
             var result = await _bookingService.UpdateAsync(updatedBooking);
             var dto = BookingHttpConverter.ToDTO(result);

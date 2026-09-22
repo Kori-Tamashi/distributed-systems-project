@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
-using DotNetEnv;
 using Microsoft.Extensions.Configuration;
 
 namespace tests.fixtures.contexts.http;
@@ -18,7 +17,6 @@ public class HttpGatewayIntegrationTestContext : IDisposable
     static HttpGatewayIntegrationTestContext()
     {
         // Load .env file to get API URLs
-        DotNetEnv.Env.Load();
     }
 
     public HttpGatewayIntegrationTestContext()

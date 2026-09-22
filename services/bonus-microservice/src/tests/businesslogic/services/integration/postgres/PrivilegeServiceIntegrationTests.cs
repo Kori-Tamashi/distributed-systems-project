@@ -14,7 +14,6 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
-using DotNetEnv;
 using Xunit;
 
 using ServicePrivilegeNotFoundException = core.exceptions.businesslogic.services.PrivilegeNotFoundException;
@@ -117,7 +116,6 @@ public class PrivilegeServiceIntegrationTests : IDisposable
     static PrivilegeServiceIntegrationTests()
     {
         // Load .env file to get TEST_* environment variables
-        DotNetEnv.Env.Load();
     }
 
     public PrivilegeServiceIntegrationTests()

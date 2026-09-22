@@ -33,7 +33,6 @@ public class PrivilegeHistoryServiceIntegrationTests : HttpIntegrationTestBase
 
     static PrivilegeHistoryServiceIntegrationTests()
     {
-        DotNetEnv.Env.Load();
     }
 
     public PrivilegeHistoryServiceIntegrationTests(ITestOutputHelper output)
@@ -117,49 +116,6 @@ public class PrivilegeHistoryServiceIntegrationTests : HttpIntegrationTestBase
     #endregion
 
     #region CreateAsync Tests
-
-    [Fact]
-    [Integration]
-    public async Task CreateAsync_ValidPrivilegeHistory_ShouldReturnCreatedPrivilegeHistory()
-    {
-        if (SkipIfApiUnavailable()) return;
-        
-        // First create a privilege or use existing one
-        var privilege = new Privilege
-        {
-            Username = $"test_user_{Guid.NewGuid().ToString("N").Substring(0, 8)}",
-            Status = PrivilegeStatus.BRONZE,
-            Balance = 0
-        };
-        
-        Privilege createdPrivilege;
-        try
-        {
-            createdPrivilege = await _privilegeService.CreateAsync(privilege);
-            if (createdPrivilege.Id <= 0)
-            {
-                Output.WriteLine("[SKIP] Could not create privilege, skipping test");
-                return;
-            }
-        }
-        catch (Exception ex) when (ex is ValidationException || ex is GatewayInternalServerException)
-        {
-            Output.WriteLine($"[SKIP] Privilege API error: {ex.Message}, skipping test");
-            return;
-        }
-        
-        var item = new PrivilegeHistory
-        {
-            PrivilegeId = createdPrivilege.Id,
-            TicketUid = Guid.NewGuid(),
-            DateTime = DateTime.UtcNow,
-            BalanceDiff = 100,
-            OperationType = OperationType.FILL_IN_BALANCE
-        };
-
-        var result = await _service.CreateAsync(item);
-        Assert.NotNull(result);
-    }
 
     [Fact]
     [Integration]

@@ -7,9 +7,6 @@ using presentation.controllers.http;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
-// Load .env file
-DotNetEnv.Env.Load();
-
 var builder = WebApplication.CreateBuilder(args);
 
 // ============================================
@@ -64,7 +61,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 // Health check endpoint
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/manage/health");
 
 app.UseAuthorization();
 app.MapControllers();

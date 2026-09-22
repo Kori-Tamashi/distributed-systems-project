@@ -3,12 +3,8 @@ using core.interfaces.dataaccess.gateways;
 using businesslogic.services;
 using dataaccess.gateways.http;
 using presentation.controllers.http;
-using presentation.controllers.http;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-
-// Load .env file
-DotNetEnv.Env.Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -105,7 +101,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 
 // Health check endpoint
-app.MapHealthChecks("/health");
+app.MapHealthChecks("/manage/health");
 
 app.UseAuthorization();
 app.MapControllers();

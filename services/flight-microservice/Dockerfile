@@ -8,11 +8,14 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
 # Set working directory
 WORKDIR /src
 
-# Install curl for health checks
+# Install curl for health checks and EF Core CLI for migrations
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install EF Core tools
+RUN dotnet tool install --global dotnet-ef --version 10.0.0
 
 # =============================================================================
 # Stage 2: BUILD - Restore Dependencies
@@ -87,17 +90,18 @@ RUN chown -R appuser:appgroup /app
 USER appuser
 
 # Environment variables
-ENV ASPNETCORE_URLS=http://+:8080 \
+ENV ASPNETCORE_URLS=http://+:8060 \
+    APP_PORT=8060 \
     ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_EnableDiagnostics=0 \
     DOTNET_GCServer=1
 
 # Expose port
-EXPOSE 8080
+EXPOSE 8060
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/health || exit 1
+    CMD curl -f http://localhost:8060/health || exit 1
 
 # Graceful shutdown timeout
 ENV DOTNET_SYSTEM_Threading_Thread_Abort_CrossAppDomain=false

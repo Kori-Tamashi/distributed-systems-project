@@ -1,0 +1,503 @@
+{
+  "info": {
+    "_postman_id": "flight-gateway-collection",
+    "name": "Flight API - Gateway E2E Tests",
+    "description": "End-to-End tests for Flight API through Gateway Service",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "createdFlightId",
+      "value": ""
+    },
+    {
+      "key": "createdAirportId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "01 GetAllFlights Empty",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights?page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "03 Use Tokyo Airport (ID 7)",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response has correct structure', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('name');",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.collectionVariables.set('createdAirportId', jsonData.Id || jsonData.id);",
+              "console.log('Using airport ID: ' + (jsonData.Id || jsonData.id));"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "body": {},
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/airports/7",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "airports",
+            "7"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "04 Create Flight Valid",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
+              "});",
+              "pm.test('Response has correct structure', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('flightUid');",
+              "    pm.expect(jsonData).to.have.property('flightNumber');",
+              "});",
+              "var jsonData = pm.response.json();",
+              "pm.collectionVariables.set('createdFlightId', jsonData.Id || jsonData.id);",
+              "console.log('Created flight ID: ' + (jsonData.Id || jsonData.id));"
+            ],
+            "type": "text/javascript"
+          }
+        },
+        {
+          "listen": "prerequest",
+          "script": {
+            "exec": [
+              "var airportId = pm.collectionVariables.get('createdAirportId');",
+              "if (!airportId) {",
+              "    console.error('No airport created. Please run 03 Create Airport For Flight first.');",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"FlightNumber\": \"AFL031\",\n  \"DateTime\": \"2026-11-21T20:00:00Z\",\n  \"FromAirportId\": 7,\n  \"ToAirportId\": 52,\n  \"Price\": 1500\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "05 Get Flight By ID Valid",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Flight data matches created data', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData.FlightNumber || jsonData.flightNumber).to.equal('AFL031');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/{{createdFlightId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "{{createdFlightId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "06 Get Flight By ID Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404 Not Found', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/99999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "99999"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "07 GetAllFlights With Data",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Response contains items array', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData).to.be.an('array');",
+              "    pm.expect(jsonData.length).to.be.greaterThan(0);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights?page=0&size=10",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights"
+          ],
+          "query": [
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "08 Update Flight Valid",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 OK', function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test('Flight data updated correctly', function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.FlightNumber || jsonData.flightNumber).to.equal('AFL032');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Id\": {{createdFlightId}},\n  \"FlightNumber\": \"AFL032\",\n  \"DateTime\": \"2026-11-22T20:00:00Z\",\n  \"FromAirportId\": 7,\n  \"ToAirportId\": 52,\n  \"Price\": 2000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/{{createdFlightId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "{{createdFlightId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "09 Update Flight Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404 Not Found', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"Id\": 99999,\n  \"FlightNumber\": \"AFL999\",\n  \"DateTime\": \"2024-12-01T20:00:00Z\",\n  \"FromAirportId\": 1,\n  \"ToAirportId\": 1,\n  \"Price\": 1000\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/99999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "99999"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "10 Delete Flight Valid",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 204 No Content', function () {",
+              "    pm.response.to.have.status(204);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/{{createdFlightId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "{{createdFlightId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "11 Get Flight After Delete Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404 Not Found', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/{{createdFlightId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "{{createdFlightId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "12 Delete Flight Invalid",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 500 Internal Server Error', function () {",
+              "    pm.response.to.have.status(500);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/-1",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "-1"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "13 Delete Flight Not Found",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404 Not Found', function () {",
+              "    pm.response.to.have.status(404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/99999",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "99999"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

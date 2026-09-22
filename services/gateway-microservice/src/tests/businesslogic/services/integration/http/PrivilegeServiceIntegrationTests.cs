@@ -32,7 +32,6 @@ public class PrivilegeServiceIntegrationTests : HttpIntegrationTestBase
 
     static PrivilegeServiceIntegrationTests()
     {
-        DotNetEnv.Env.Load();
     }
 
     public PrivilegeServiceIntegrationTests(ITestOutputHelper output)

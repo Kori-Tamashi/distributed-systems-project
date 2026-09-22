@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Stage 2: Restore dependencies
 FROM base AS build-deps
@@ -48,9 +52,12 @@ COPY --from=publish /app/publish .
 # Set permissions
 RUN chown -R appuser:appgroup /app
 
+# Set environment variable for port
+ENV APP_PORT=8080
+
 # Switch to non-root user
 USER appuser
 
-EXPOSE 8040
+EXPOSE 8080
 
 ENTRYPOINT ["dotnet", "presentation.dll"]

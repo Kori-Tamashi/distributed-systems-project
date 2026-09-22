@@ -32,7 +32,6 @@ public class BookingServiceIntegrationTests : HttpIntegrationTestBase
 
     static BookingServiceIntegrationTests()
     {
-        DotNetEnv.Env.Load();
     }
 
     public BookingServiceIntegrationTests(ITestOutputHelper output)

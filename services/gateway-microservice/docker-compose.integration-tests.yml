@@ -1,0 +1,213 @@
+services:
+  # PostgreSQL for Gateway
+  gateway-postgres:
+    image: postgres:15-alpine
+    container_name: gateway-microservice-postgres-integration
+    environment:
+      POSTGRES_DB: gateway
+      POSTGRES_USER: program
+      POSTGRES_PASSWORD: program
+    ports:
+      - "5442:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U program -d gateway"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rsoi-network
+
+  # Bonus Microservice
+  bonus-api:
+    build:
+      context: ../bonus-microservice
+      dockerfile: Dockerfile
+    container_name: bonus-microservice-api-integration
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8050
+      APP_PORT: "8050"
+      POSTGRESQL_HOST: "bonus-postgres"
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_DATABASE: "bonus"
+      POSTGRESQL_USER: "program"
+      POSTGRESQL_PASSWORD: "program"
+      Redis__Host: "bonus-redis"
+      Redis__Port: "6379"
+      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
+      JwtSettings__Issuer: "BonusMicroservice"
+      JwtSettings__Audience: "BonusMicroserviceClient"
+    ports:
+      - "8053:8050"
+    depends_on:
+      bonus-postgres:
+        condition: service_healthy
+      bonus-redis:
+        condition: service_started
+    networks:
+      - rsoi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8050/manage/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  bonus-postgres:
+    image: postgres:15-alpine
+    container_name: bonus-microservice-postgres-integration
+    environment:
+      POSTGRES_DB: bonus
+      POSTGRES_USER: program
+      POSTGRES_PASSWORD: program
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U program -d bonus"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rsoi-network
+
+  bonus-redis:
+    image: redis:7-alpine
+    container_name: bonus-microservice-redis-integration
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - rsoi-network
+
+  # Flight Microservice
+  flight-api:
+    build:
+      context: ../flight-microservice
+      dockerfile: Dockerfile
+    container_name: flight-microservice-api-integration
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8060
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      APP_PORT: "8060"
+      POSTGRESQL_HOST: "flight-postgres"
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_DATABASE: "flight"
+      POSTGRESQL_USER: "program"
+      POSTGRESQL_PASSWORD: "program"
+      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
+      JwtSettings__Issuer: "FlightMicroservice"
+      JwtSettings__Audience: "FlightMicroserviceClient"
+    ports:
+      - "8063:8060"
+    depends_on:
+      flight-postgres:
+        condition: service_healthy
+    networks:
+      - rsoi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8060/manage/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  flight-postgres:
+    image: postgres:15-alpine
+    container_name: flight-microservice-postgres-integration
+    environment:
+      POSTGRES_DB: flight
+      POSTGRES_USER: program
+      POSTGRES_PASSWORD: program
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U program -d flight"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rsoi-network
+
+  # Ticket Microservice
+  ticket-api:
+    build:
+      context: ../ticket-microservice
+      dockerfile: Dockerfile
+    container_name: ticket-microservice-api-integration
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8070
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      APP_PORT: "8070"
+      POSTGRESQL_HOST: "ticket-postgres"
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_DATABASE: "ticket"
+      POSTGRESQL_USER: "program"
+      POSTGRESQL_PASSWORD: "program"
+      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
+      JwtSettings__Issuer: "TicketMicroservice"
+      JwtSettings__Audience: "TicketMicroserviceClient"
+    ports:
+      - "8073:8070"
+    depends_on:
+      ticket-postgres:
+        condition: service_healthy
+    networks:
+      - rsoi-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8070/manage/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  ticket-postgres:
+    image: postgres:15-alpine
+    container_name: ticket-microservice-postgres-integration
+    environment:
+      POSTGRES_DB: ticket
+      POSTGRES_USER: program
+      POSTGRES_PASSWORD: program
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U program -d ticket"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rsoi-network
+
+  # Gateway Microservice
+  gateway-api:
+    build:
+      context: ../gateway-microservice
+      dockerfile: Dockerfile
+    container_name: gateway-microservice-api-integration
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      APP_PORT: "8080"
+      POSTGRESQL_HOST: "gateway-postgres"
+      POSTGRESQL_PORT: "5432"
+      POSTGRESQL_DATABASE: "gateway"
+      POSTGRESQL_USER: "program"
+      POSTGRESQL_PASSWORD: "program"
+      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
+      JwtSettings__Issuer: "GatewayMicroservice"
+      JwtSettings__Audience: "GatewayMicroserviceClient"
+      FlightService__Url: "http://flight-api:8060"
+      TicketService__Url: "http://ticket-api:8070"
+      BonusService__Url: "http://bonus-api:8050"
+    ports:
+      - "8083:8080"
+    depends_on:
+      gateway-postgres:
+        condition: service_healthy
+    networks:
+      - rsoi-network
+
+networks:
+  rsoi-network:
+    driver: bridge

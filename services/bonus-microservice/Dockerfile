@@ -8,11 +8,15 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS base
 # Set working directory
 WORKDIR /src
 
-# Install curl for health checks
+# Install curl for health checks and EF Core CLI for migrations
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libgssapi-krb5-2 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# Install EF Core tools
+RUN dotnet tool install --global dotnet-ef --version 10.0.0
 
 # =============================================================================
 # Stage 2: BUILD - Restore Dependencies
@@ -88,6 +92,7 @@ USER appuser
 
 # Environment variables
 ENV ASPNETCORE_URLS=http://+:8050 \
+    APP_PORT=8050 \
     ASPNETCORE_ENVIRONMENT=Production \
     DOTNET_EnableDiagnostics=0 \
     DOTNET_GCServer=1

@@ -31,7 +31,6 @@ public class TicketServiceIntegrationTests : HttpIntegrationTestBase
 
     static TicketServiceIntegrationTests()
     {
-        DotNetEnv.Env.Load();
     }
 
     public TicketServiceIntegrationTests(ITestOutputHelper output)

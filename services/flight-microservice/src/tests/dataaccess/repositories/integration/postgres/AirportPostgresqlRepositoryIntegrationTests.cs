@@ -12,7 +12,6 @@ using tests.config.attributes;
 using tests.fixtures.builders;
 using tests.fixtures.contexts.postgres;
 using tests.fixtures.mothers;
-using DotNetEnv;
 
 using AirportDomain = core.domain.Airport;
 
@@ -89,7 +88,6 @@ public class AirportPostgresqlRepositoryIntegrationTests : IDisposable
     static AirportPostgresqlRepositoryIntegrationTests()
     {
         // Load .env file to get TEST_POSTGRESQL_* environment variables
-        DotNetEnv.Env.Load();
     }
 
     public AirportPostgresqlRepositoryIntegrationTests()

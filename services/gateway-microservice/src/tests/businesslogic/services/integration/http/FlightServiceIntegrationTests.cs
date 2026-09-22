@@ -30,7 +30,6 @@ public class FlightServiceIntegrationTests : HttpIntegrationTestBase
 
     static FlightServiceIntegrationTests()
     {
-        DotNetEnv.Env.Load();
     }
 
     public FlightServiceIntegrationTests(ITestOutputHelper output)
