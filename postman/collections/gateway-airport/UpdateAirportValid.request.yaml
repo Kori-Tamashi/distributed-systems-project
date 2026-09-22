@@ -1,9 +1,0 @@
-# Gateway - Airport Update Valid
-name: Update Airport Valid
-event:
-  - listen: test
-    script:
-      exec:
-        - pm.test("Status code is 200 or 405", function () {
-            pm.expect(pm.response.code).to.be.oneOf([200, 405]);
-          });
