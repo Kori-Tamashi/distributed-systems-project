@@ -1,0 +1,132 @@
+services:
+  # =============================================================================
+  # Flight Microservice API (Production)
+  # =============================================================================
+  flight-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flight-microservice-api
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - ASPNETCORE_URLS=${ASPNETCORE_URLS}
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      # PostgreSQL Connection Settings
+      - POSTGRESQL_HOST=postgres-prod
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_DATABASE=${POSTGRES_PROD_DATABASE}
+      - POSTGRESQL_USER=${POSTGRES_PROD_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_PROD_PASSWORD}
+    ports:
+      - "${APP_PORT}:8060"
+    depends_on:
+      postgres-prod:
+        condition: service_healthy
+    networks:
+      - rsoi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8060/manage/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # Flight Microservice API (Test)
+  # =============================================================================
+  flight-api-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: flight-microservice-api-test
+    profiles:
+      - test
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8060
+      - DATABASE_PROVIDER=${DATABASE_PROVIDER}
+      # Connect to Test Database
+      - POSTGRESQL_HOST=postgres-test
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_DATABASE=${POSTGRES_TEST_DATABASE}
+      - POSTGRESQL_USER=${POSTGRES_TEST_USER}
+      - POSTGRESQL_PASSWORD=${POSTGRES_TEST_PASSWORD}
+    ports:
+      - "${TEST_APP_PORT}:8060"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - rsoi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8060/manage/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # PostgreSQL Production Database
+  # =============================================================================
+  postgres-prod:
+    image: postgres:14-alpine
+    container_name: flight-microservice-db-prod
+    ports:
+      - "${POSTGRES_PROD_PORT_EXTERNAL}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_PROD_DATABASE}
+      - POSTGRES_USER=${POSTGRES_PROD_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PROD_PASSWORD}
+    volumes:
+      - postgres_flight_prod_data:/var/lib/postgresql/data
+    networks:
+      - rsoi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_PROD_USER} -d ${POSTGRES_PROD_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # =============================================================================
+  # PostgreSQL Test Database (for Integration Tests)
+  # =============================================================================
+  postgres-test:
+    image: postgres:14-alpine
+    container_name: flight-microservice-db-test
+    ports:
+      - "${POSTGRES_TEST_PORT_EXTERNAL}:5432"
+    environment:
+      - POSTGRES_DB=${POSTGRES_TEST_DATABASE}
+      - POSTGRES_USER=${POSTGRES_TEST_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_TEST_PASSWORD}
+    volumes:
+      - postgres_flight_test_data:/var/lib/postgresql/data
+    networks:
+      - rsoi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_TEST_USER} -d ${POSTGRES_TEST_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  rsoi-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_flight_prod_data:
+  postgres_flight_test_data:

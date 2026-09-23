@@ -1,0 +1,164 @@
+{
+	"info": {
+		"_postman_id": "booking-api-e2e-tests",
+		"name": "Booking API - E2E Tests",
+		"description": "End-to-End \u0442\u0435\u0441\u0442\u044b \u0434\u043b\u044f Booking API Gateway \u043c\u0438\u043a\u0440\u043e\u0441\u0435\u0440\u0432\u0438\u0441\u0430 (Lab 02 - Microservices)\n\nCRUD \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438 \u0434\u043b\u044f \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u0431\u0440\u043e\u043d\u0438\u0440\u043e\u0432\u0430\u043d\u0438\u044f\u043c\u0438",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/manage/health",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"manage",
+						"health"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"pm.test('Response time is acceptable (< 1000ms)', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "02 GetAllBookings Empty",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/bookings",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"bookings"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"pm.test('Response is array', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "03 Create Booking Valid",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"BookingReference\": \"BK001\",\n  \"CustomerName\": \"Test Customer\",\n  \"CustomerEmail\": \"test@example.com\",\n  \"CustomerPhone\": \"+79001234567\",\n  \"TotalPrice\": 10000,\n  \"BookingDate\": \"2024-01-01T10:00:00Z\"\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/bookings",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"bookings"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test('Response has correct structure', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('bookingUid');",
+							"});",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set('createdBookingId', jsonData.id);",
+							"console.log('Created booking ID: ' + jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "04 Delete Booking Valid",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/bookings/{{createdBookingId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"bookings",
+						"{{createdBookingId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "createdBookingId",
+			"value": ""
+		}
+	]
+}

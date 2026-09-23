@@ -1,0 +1,88 @@
+services:
+  # =============================================================================
+  # Gateway Microservice API (Production)
+  # =============================================================================
+  gateway-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gateway-microservice-api
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
+      - DATABASE_PROVIDER=POSTGRESQL
+      - ASPNETCORE_URLS=http://+:8080
+      # Inter-Service Communication (via rsoi-network)
+      - FLIGHT_CONNECTIONSTRINGS_DEFAULTCONNECTION=${FLIGHT_CONNECTIONSTRINGS_DEFAULTCONNECTION}
+      - TICKET_CONNECTIONSTRINGS_DEFAULTCONNECTION=${TICKET_CONNECTIONSTRINGS_DEFAULTCONNECTION}
+      - BONUS_CONNECTIONSTRINGS_DEFAULTCONNECTION=${BONUS_CONNECTIONSTRINGS_DEFAULTCONNECTION}
+      # PostgreSQL Connection Settings
+      - POSTGRES_PROD_HOST=postgres-prod
+      - POSTGRES_PROD_PORT=5432
+      - POSTGRES_PROD_DATABASE=gateway
+      - POSTGRES_PROD_USER=program
+      - POSTGRES_PROD_PASSWORD=prod_secret_password_2024
+    ports:
+      - "${API_PORT}:8080"
+    networks:
+      - rsoi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/manage/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # =============================================================================
+  # Gateway Microservice API (Test)
+  # =============================================================================
+  gateway-api-test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gateway-microservice-api-test
+    profiles:
+      - test
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DATABASE_PROVIDER=POSTGRESQL
+      - ASPNETCORE_URLS=http://+:8040
+      - FLIGHT_CONNECTIONSTRINGS_DEFAULTCONNECTION=${FLIGHT_CONNECTIONSTRINGS_DEFAULTCONNECTION}
+      - TICKET_CONNECTIONSTRINGS_DEFAULTCONNECTION=${TICKET_CONNECTIONSTRINGS_DEFAULTCONNECTION}
+      - BONUS_CONNECTIONSTRINGS_DEFAULTCONNECTION=${BONUS_CONNECTIONSTRINGS_DEFAULTCONNECTION}
+      # Connect to Test Database
+      - POSTGRES_PROD_HOST=postgres-test
+      - POSTGRES_PROD_PORT=5432
+      - POSTGRES_PROD_DATABASE=test_gateway
+      - POSTGRES_PROD_USER=program
+      - POSTGRES_PROD_PASSWORD=test
+    ports:
+      - "${TEST_API_PORT}:8040"
+    depends_on:
+      postgres-test:
+        condition: service_healthy
+    networks:
+      - rsoi-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8040/manage/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  rsoi-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  postgres_gateway_prod_data:
+  postgres_gateway_test_data:

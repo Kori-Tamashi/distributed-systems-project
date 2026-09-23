@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="businesslogic/businesslogic.csproj" />
+  <Project Path="core/core.csproj" />
+  <Project Path="dataaccess/dataaccess.csproj" />
+  <Project Path="presentation/presentation.csproj" />
+  <Project Path="tests/tests.csproj" />
+</Solution>

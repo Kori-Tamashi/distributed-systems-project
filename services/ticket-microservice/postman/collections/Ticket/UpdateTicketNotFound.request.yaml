@@ -1,0 +1,30 @@
+$kind: http-request
+order: 1000
+method: PUT
+url: '{{baseUrl}}/api/v1/tickets/99999'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "Id": 99999,
+      "TicketUid": "550e8400-e29b-41d4-a716-446655440002",
+      "FlightId": 1,
+      "PassengerName": "Not Found",
+      "PassengerEmail": "notfound@example.com",
+      "PassengerPhone": "+79000000000",
+      "SeatNumber": "3C",
+      "Class": 0,
+      "Price": 10000,
+      "BookingDate": "2024-01-17T10:00:00Z",
+      "Status": 0
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 404 or 405', function () {
+        pm.expect(pm.response.code).to.be.oneOf([404, 405]);
+      });

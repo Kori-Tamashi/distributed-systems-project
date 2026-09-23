@@ -1,0 +1,245 @@
+{
+	"info": {
+		"_postman_id": "airport-api-e2e-tests",
+		"name": "Airport API - E2E Tests",
+		"description": "End-to-End \u0442\u0435\u0441\u0442\u044b \u0434\u043b\u044f Airport API Gateway \u043c\u0438\u043a\u0440\u043e\u0441\u0435\u0440\u0432\u0438\u0441\u0430 (Lab 02 - Microservices)\n\nCRUD \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438 \u0434\u043b\u044f \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u0430\u044d\u0440\u043e\u043f\u043e\u0440\u0442\u0430\u043c\u0438",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/manage/health",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"manage",
+						"health"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"pm.test('Response time is acceptable (< 1000ms)', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "02 GetAllAirports Empty",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/airports",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"airports"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"pm.test('Response is array', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "03 Create Airport Valid",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Name\": \"Sheremetyevo International Airport\",\n  \"City\": \"Moscow\",\n  \"Country\": \"Russia\",\n  \"IataCode\": \"SVO\",\n  \"Latitude\": 55.9726,\n  \"Longitude\": 37.4146\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/airports",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"airports"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"pm.test('Response has correct structure', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('name');",
+							"});",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set('createdAirportId', jsonData.Id || jsonData.id);",
+							"console.log('Created airport ID: ' + jsonData.Id || jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "04 Get Airport By ID Valid",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/airports/{{createdAirportId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"airports",
+						"{{createdAirportId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"pm.test('Airport data matches created data', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.id).to.equal(Number(pm.collectionVariables.get('createdAirportId')));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "05 Update Airport Valid",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Id\": \"{{createdAirportId}}\",\n  \"Name\": \"Vnukovo Updated\",\n  \"City\": \"Moscow\",\n  \"Country\": \"Russia\",\n  \"IataCode\": \"VKO\",\n  \"Latitude\": 55.5915,\n  \"Longitude\": 37.2615\n}"
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/airports/{{createdAirportId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"airports",
+						"{{createdAirportId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"pm.test('Airport data updated correctly', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.name).to.equal('Vnukovo Updated');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "06 Delete Airport Valid",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/airports/{{createdAirportId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"airports",
+						"{{createdAirportId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "createdAirportId",
+			"value": ""
+		}
+	]
+}

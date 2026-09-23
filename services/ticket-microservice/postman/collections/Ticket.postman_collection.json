@@ -1,0 +1,611 @@
+{
+	"info": {
+		"_postman_id": "ticket-api-e2e-tests",
+		"name": "Ticket API - E2E Tests",
+		"description": "End-to-End \u0442\u0435\u0441\u0442\u044b \u0434\u043b\u044f Ticket API (Lab 02 - Microservices)\n\nCRUD \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438 \u0434\u043b\u044f \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u0431\u0438\u043b\u0435\u0442\u0430\u043c\u0438",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "01 Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/manage/health",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"manage",
+						"health"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"",
+							"pm.test('Response time is acceptable (< 1000ms)', function () {",
+							"    pm.expect(pm.response.responseTime).to.be.below(1000);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "02 GetAllTickets Empty",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"",
+							"pm.test('Response contains items array', function () {",
+							"    var jsonData = pm.response.json();",
+							"    // Array response - no items wrapper",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "03 Create Ticket Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 201 Created', function () {",
+							"    pm.response.to.have.status(201);",
+							"});",
+							"",
+							"pm.test('Response has correct structure', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('id');",
+							"    pm.expect(jsonData).to.have.property('flightId');",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.collectionVariables.set('createdTicketId', jsonData.id);",
+							"console.log('Created ticket ID: ' + jsonData.id);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"TicketUid\": \"550e8400-e29b-41d4-a716-446655440000\",\n  \"FlightId\": 1,\n  \"PassengerName\": \"Ivanov Ivan\",\n  \"PassengerEmail\": \"ivanov@example.com\",\n  \"PassengerPhone\": \"+79001234567\",\n  \"SeatNumber\": \"1A\",\n  \"Class\": 0,\n  \"Price\": 15000,\n  \"BookingDate\": \"2024-01-15T10:00:00Z\",\n  \"Status\": 0\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets"
+					]
+				}
+			}
+		},
+		{
+			"name": "04 Create Ticket Empty Name",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"FlightId\": 1,\n  \"PassengerName\": \"\",\n  \"SeatNumber\": \"12B\",\n  \"Class\": 0,\n  \"Price\": 50000\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Response contains error message', function () {",
+							"    var jsonData = pm.response.json();",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "05 Create Ticket Invalid Class",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"FlightId\": 1,\n  \"PassengerName\": \"Petrov Petr\",\n  \"SeatNumber\": \"12C\",\n  \"Class\": 999,\n  \"Price\": 50000\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});",
+							"",
+							"pm.test('Response contains validation error', function () {",
+							"    var jsonData = pm.response.json();",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "06 Get Ticket By ID Valid",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"{{createdTicketId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"",
+							"pm.test('Ticket data matches created data', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.id).to.equal(parseInt(pm.collectionVariables.get('createdTicketId')));",
+							"    pm.expect(jsonData.passengerName).to.equal('Ivanov Ivan');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "07 Get Ticket By ID Invalid",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/-1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"-1"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "08 Get Ticket By ID Not Found",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/99999",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"99999"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "09 Update Ticket Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"",
+							"pm.test('Ticket data updated correctly', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.passengerName).to.equal('Updated Passenger');",
+							"    pm.expect(jsonData.seatNumber).to.equal('15B');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Id\": {{createdTicketId}},\n  \"FlightId\": 1,\n  \"PassengerName\": \"Updated Passenger\",\n  \"SeatNumber\": \"15B\",\n  \"Class\": 1,\n  \"Price\": 75000\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"{{createdTicketId}}"
+					]
+				}
+			}
+		},
+		{
+			"name": "10 Update Ticket Not Found",
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"Id\": 99999,\n  \"FlightId\": 1,\n  \"PassengerName\": \"Not Found\",\n  \"SeatNumber\": \"00A\",\n  \"Class\": 0,\n  \"Price\": 0\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/99999",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"99999"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "11 GetAllTickets With Data",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK or 204 No Content', function () {",
+							"    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+							"});",
+							"",
+							"pm.test('Response contains items array', function () {",
+							"    var jsonData = pm.response.json();",
+							"    // Array response - no items wrapper",
+							"    pm.expect(jsonData).to.be.an('array');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "12 Delete Ticket Valid",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 200 OK', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test('Response has confirmation message', function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData).to.have.property('message');",
+							"    pm.expect(jsonData.message).to.include('deleted successfully');",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"{{createdTicketId}}"
+					]
+				}
+			}
+		},
+		{
+			"name": "13 Get Ticket After Delete Not Found",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketId}}",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"{{createdTicketId}}"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "14 Delete Ticket Invalid",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/-1",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"-1"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 400 Bad Request', function () {",
+							"    pm.response.to.have.status(400);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		},
+		{
+			"name": "15 Delete Ticket Not Found",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseUrl}}/api/v1/tickets/99999",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"tickets",
+						"99999"
+					]
+				}
+			},
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test('Status is 404 Not Found', function () {",
+							"    pm.response.to.have.status(404);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "createdTicketId",
+			"value": ""
+		}
+	]
+}

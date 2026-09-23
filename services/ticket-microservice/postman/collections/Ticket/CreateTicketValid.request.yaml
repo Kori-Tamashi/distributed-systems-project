@@ -1,0 +1,28 @@
+$kind: http-request
+order: 300
+method: POST
+url: '{{baseUrl}}/api/v1/tickets'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "TicketUid": "550e8400-e29b-41d4-a716-446655440000",
+      "FlightId": 1,
+      "PassengerName": "Ivanov Ivan",
+      "PassengerEmail": "ivanov@example.com",
+      "PassengerPhone": "+79001234567",
+      "SeatNumber": "1A",
+      "Class": 0,
+      "Price": 15000,
+      "BookingDate": "2024-01-15T10:00:00Z",
+      "Status": 0
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 201', function () { pm.response.to.have.status(201); });
+      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('Id'); });
