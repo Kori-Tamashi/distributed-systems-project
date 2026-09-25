@@ -70,7 +70,7 @@ public class TestPostgresqlDatabaseContext : FlightDatabaseContext
 
         // Build from individual environment variables with TEST_ prefix
         var host = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_HOST") ?? "localhost";
-        var port = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_PORT") ?? "5432";
+        var port = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_PORT") ?? "5462";
         var database = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_DATABASE") ?? "test_flights";
         var username = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_USER") ?? "program";
         var password = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_PASSWORD") ?? "test";

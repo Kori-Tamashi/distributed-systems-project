@@ -23,14 +23,24 @@ public class FlightDTO : BaseHttpDTO
     public DateTime DateTime { get; set; }
 
     /// <summary>
-    /// Departure airport ID
+    /// Departure airport ID (internal use)
     /// </summary>
     public int FromAirportId { get; set; }
 
     /// <summary>
-    /// Arrival airport ID
+    /// Arrival airport ID (internal use)
     /// </summary>
     public int ToAirportId { get; set; }
+
+    /// <summary>
+    /// Departure airport full name (e.g., "Санкт-Петербург Пулково")
+    /// </summary>
+    public string FromAirport { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Arrival airport full name (e.g., "Москва Шереметьево")
+    /// </summary>
+    public string ToAirport { get; set; } = string.Empty;
 
     /// <summary>
     /// Flight price in rubles
@@ -53,8 +63,8 @@ public class FlightDTO : BaseHttpDTO
         Guid flightUid,
         string flightNumber,
         DateTime dateTime,
-        int fromAirportId,
-        int toAirportId,
+        string fromAirport,
+        string toAirport,
         int price)
         : base(id)
     {
@@ -62,8 +72,8 @@ public class FlightDTO : BaseHttpDTO
         FlightUid = flightUid;
         FlightNumber = flightNumber;
         DateTime = dateTime;
-        FromAirportId = fromAirportId;
-        ToAirportId = toAirportId;
+        FromAirport = fromAirport;
+        ToAirport = toAirport;
         Price = price;
     }
 }

@@ -147,7 +147,7 @@ public class TicketServiceIntegrationTests : IDisposable
     public async Task GetByIdAsync_ValidId_TicketExists_ShouldReturnTicket()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithId(0).WithPassengerName("John Doe").WithPassengerEmail("john@example.com").Build();
+        var ticket = new TicketBuilder().WithId(0).WithUsername("John Doe").WithFlightNumber("AFL031").Build();
         var created = await _service.CreateAsync(ticket);
 
         // Act
@@ -156,7 +156,7 @@ public class TicketServiceIntegrationTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.Equal(created.Id, result.Id);
-        Assert.Equal(created.PassengerName, result.PassengerName);
+        Assert.Equal(created.Username, result.Username);
     }
 
     /// <summary>
@@ -262,18 +262,18 @@ public class TicketServiceIntegrationTests : IDisposable
     public async Task GetAllAsync_WithEmailFilter_ShouldReturnMatchingTickets()
     {
         // Arrange
-        var ticket1 = new TicketBuilder().WithId(0).WithPassengerEmail("test@example.com").Build();
-        var ticket2 = new TicketBuilder().WithId(0).WithPassengerEmail("other@example.com").Build();
+        var ticket1 = new TicketBuilder().WithId(0).WithUsername("test@example.com").Build();
+        var ticket2 = new TicketBuilder().WithId(0).WithUsername("other@example.com").Build();
         await _service.CreateAsync(ticket1);
         await _service.CreateAsync(ticket2);
 
         // Act
-        var result = await _service.GetAllAsync(new TicketFilter { PassengerEmail = "test@example.com" });
+        var result = await _service.GetAllAsync(new TicketFilter { Username = "test@example.com" });
 
         // Assert
         Assert.NotNull(result);
         Assert.Single(result);
-        Assert.Equal("test@example.com", result[0].PassengerEmail);
+        Assert.Equal("test@example.com", result[0].Username);
     }
 
     /// <summary>
@@ -284,18 +284,18 @@ public class TicketServiceIntegrationTests : IDisposable
     public async Task GetAllAsync_WithClassFilter_ShouldReturnMatchingTickets()
     {
         // Arrange
-        var ticket1 = new TicketBuilder().WithId(0).WithEconomyClass().Build();
-        var ticket2 = new TicketBuilder().WithId(0).WithBusinessClass().Build();
+        var ticket1 = new TicketBuilder().WithId(0).WithConfirmedStatus().Build();
+        var ticket2 = new TicketBuilder().WithId(0).WithCancelledStatus().Build();
         await _service.CreateAsync(ticket1);
         await _service.CreateAsync(ticket2);
 
         // Act
-        var result = await _service.GetAllAsync(new TicketFilter { Class = (int)TicketClass.Economy });
+        var result = await _service.GetAllAsync(new TicketFilter { Status = TicketStatus.Paid });
 
         // Assert
         Assert.NotNull(result);
         Assert.Single(result);
-        Assert.Equal((int)TicketClass.Economy, (int)result[0].Class);
+        Assert.Equal((int)TicketClass.Economy, (int)result[0].Status);
     }
 
     /// <summary>
@@ -311,7 +311,7 @@ public class TicketServiceIntegrationTests : IDisposable
         await _service.CreateAsync(ticket);
 
         // Act
-        var result = await _service.GetAllAsync(new TicketFilter { PassengerEmail = "nonexistent@example.com" });
+        var result = await _service.GetAllAsync(new TicketFilter { Username = "nonexistent@example.com" });
 
         // Assert
         Assert.NotNull(result);
@@ -330,7 +330,7 @@ public class TicketServiceIntegrationTests : IDisposable
     public async Task CreateAsync_ValidTicket_ShouldCreateTicket()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithId(0).WithPassengerName("John Doe").WithPassengerEmail("john@example.com").Build();
+        var ticket = new TicketBuilder().WithId(0).WithUsername("John Doe").WithFlightNumber("AFL031").Build();
 
         // Act
         var result = await _service.CreateAsync(ticket);
@@ -338,7 +338,7 @@ public class TicketServiceIntegrationTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.NotEqual(0, result.Id);
-        Assert.Equal("John Doe", result.PassengerName);
+        Assert.Equal("John Doe", result.Username);
     }
 
     /// <summary>
@@ -365,12 +365,12 @@ public class TicketServiceIntegrationTests : IDisposable
     /// </summary>
     [Fact]
     [Integration]
-    public async Task CreateAsync_EmptyPassengerName_ShouldThrowTicketValidationException()
+    public async Task CreateAsync_EmptyUsername_ShouldThrowTicketValidationException()
     {
         // Arrange
         var ticket = TicketMother.CreateValidTicket();
         ticket.Id = 0;
-        ticket.PassengerName = "";
+        ticket.Username = "";
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ServiceTicketValidationException>(
@@ -389,26 +389,7 @@ public class TicketServiceIntegrationTests : IDisposable
         // Arrange
         var ticket = TicketMother.CreateValidTicket();
         ticket.Id = 0;
-        ticket.PassengerEmail = "";
-
-        // Act & Assert
-        var exception = await Assert.ThrowsAsync<ServiceTicketValidationException>(
-            () => _service.CreateAsync(ticket)
-        );
-        Assert.Contains("validation failed", exception.Message);
-    }
-
-    /// <summary>
-    /// EP5: Ticket with future booking date - should throw TicketValidationException
-    /// </summary>
-    [Fact]
-    [Integration]
-    public async Task CreateAsync_FutureBookingDate_ShouldThrowTicketValidationException()
-    {
-        // Arrange
-        var ticket = TicketMother.CreateValidTicket();
-        ticket.Id = 0;
-        ticket.BookingDate = DateTime.UtcNow.AddDays(1);
+        ticket.Username = "";
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ServiceTicketValidationException>(
@@ -451,14 +432,14 @@ public class TicketServiceIntegrationTests : IDisposable
         var ticket = TicketMother.CreateValidTicket();
         ticket.Id = 0;
         var created = await _service.CreateAsync(ticket);
-        created.PassengerName = "Jane Doe";
+        created.Username = "Jane Doe";
 
         // Act
         var result = await _service.UpdateAsync(created);
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal("Jane Doe", result.PassengerName);
+        Assert.Equal("Jane Doe", result.Username);
     }
 
     /// <summary>
@@ -484,13 +465,13 @@ public class TicketServiceIntegrationTests : IDisposable
     /// </summary>
     [Fact]
     [Integration]
-    public async Task UpdateAsync_InvalidPassengerName_ShouldThrowTicketValidationException()
+    public async Task UpdateAsync_InvalidUsername_ShouldThrowTicketValidationException()
     {
         // Arrange
         var ticket = TicketMother.CreateValidTicket();
         ticket.Id = 0;
         var created = await _service.CreateAsync(ticket);
-        created.PassengerName = "";
+        created.Username = "";
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ServiceTicketValidationException>(
@@ -613,7 +594,7 @@ public class TicketServiceIntegrationTests : IDisposable
     public async Task ExistsAsync_TicketExists_ShouldReturnTrue()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithId(0).WithPassengerName("John Doe").WithPassengerEmail("john@example.com").Build();
+        var ticket = new TicketBuilder().WithId(0).WithUsername("John Doe").WithFlightNumber("AFL031").Build();
         var created = await _service.CreateAsync(ticket);
 
         // Act
@@ -648,7 +629,7 @@ public class TicketServiceIntegrationTests : IDisposable
     public async Task ExistsAsync_AfterDeletion_ShouldReturnFalse()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithId(0).WithPassengerName("John Doe").WithPassengerEmail("john@example.com").Build();
+        var ticket = new TicketBuilder().WithId(0).WithUsername("John Doe").WithFlightNumber("AFL031").Build();
         var created = await _service.CreateAsync(ticket);
         await _service.DeleteAsync(created.Id);
 

@@ -323,14 +323,13 @@ public class PrivilegeHttpController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PrivilegeDTO>> CreditBalance(
         int privilegeId,
-        [FromQuery] int amount,
-        [FromQuery] Guid ticketUid)
+        [FromBody] CreditDebitBonusRequest request)
     {
         try
         {
-            _logger.LogDebug("Crediting balance to privilege: {PrivilegeId}, Amount: {Amount}", privilegeId, amount);
+            _logger.LogDebug("Crediting balance to privilege: {PrivilegeId}, Amount: {Amount}", privilegeId, request.Amount);
             
-            var updatedPrivilege = await _privilegeService.CreditBalanceAsync(privilegeId, amount, ticketUid);
+            var updatedPrivilege = await _privilegeService.CreditBalanceAsync(privilegeId, request.Amount, request.TicketUid);
             var dto = PrivilegeHttpConverter.ToDTO(updatedPrivilege);
             
             _logger.LogInformation("Balance credited successfully: {PrivilegeId}, New balance: {Balance}", privilegeId, updatedPrivilege.Balance);
@@ -375,14 +374,13 @@ public class PrivilegeHttpController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<PrivilegeDTO>> DebitBalance(
         int privilegeId,
-        [FromQuery] int amount,
-        [FromQuery] Guid ticketUid)
+        [FromBody] CreditDebitBonusRequest request)
     {
         try
         {
-            _logger.LogDebug("Debiting balance from privilege: {PrivilegeId}, Amount: {Amount}", privilegeId, amount);
+            _logger.LogDebug("Debiting balance from privilege: {PrivilegeId}, Amount: {Amount}", privilegeId, request.Amount);
             
-            var updatedPrivilege = await _privilegeService.DebitBalanceAsync(privilegeId, amount, ticketUid);
+            var updatedPrivilege = await _privilegeService.DebitBalanceAsync(privilegeId, request.Amount, request.TicketUid);
             var dto = PrivilegeHttpConverter.ToDTO(updatedPrivilege);
             
             _logger.LogInformation("Balance debited successfully: {PrivilegeId}, New balance: {Balance}", privilegeId, updatedPrivilege.Balance);

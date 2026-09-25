@@ -22,87 +22,6 @@ namespace dataaccess.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("dataaccess.models.postgres.BookingPostgresqlModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("BookingDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("booking_date");
-
-                    b.Property<string>("BookingReference")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("booking_reference");
-
-                    b.Property<Guid>("BookingUid")
-                        .HasColumnType("uuid")
-                        .HasColumnName("booking_uid");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("CustomerEmail")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("customer_email");
-
-                    b.Property<string>("CustomerName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("customer_name");
-
-                    b.Property<string>("CustomerPhone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("customer_phone");
-
-                    b.Property<int>("PaymentMethod")
-                        .HasColumnType("integer")
-                        .HasColumnName("payment_method");
-
-                    b.Property<string>("PaymentTransactionId")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("payment_transaction_id");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer")
-                        .HasColumnName("status");
-
-                    b.Property<int>("TotalPrice")
-                        .HasColumnType("integer")
-                        .HasColumnName("total_price");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BookingDate");
-
-                    b.HasIndex("BookingReference");
-
-                    b.HasIndex("BookingUid");
-
-                    b.HasIndex("CustomerEmail");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("bookings", (string)null);
-                });
-
             modelBuilder.Entity("dataaccess.models.postgres.TicketPostgresqlModel", b =>
                 {
                     b.Property<int>("Id")
@@ -112,49 +31,15 @@ namespace dataaccess.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<DateTime>("BookingDate")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("booking_date");
-
-                    b.Property<int>("Class")
-                        .HasColumnType("integer")
-                        .HasColumnName("class");
-
-                    b.Property<DateTime?>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("FlightId")
-                        .HasColumnType("integer")
-                        .HasColumnName("flight_id");
-
-                    b.Property<string>("PassengerEmail")
+                    b.Property<string>("FlightNumber")
                         .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("passenger_email");
-
-                    b.Property<string>("PassengerName")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("passenger_name");
-
-                    b.Property<string>("PassengerPhone")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("passenger_phone");
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("flight_number");
 
                     b.Property<int>("Price")
                         .HasColumnType("integer")
                         .HasColumnName("price");
-
-                    b.Property<string>("SeatNumber")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("character varying(10)")
-                        .HasColumnName("seat_number");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer")
@@ -164,23 +49,24 @@ namespace dataaccess.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ticket_uid");
 
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("updated_at");
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("username");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("BookingDate");
-
-                    b.HasIndex("FlightId");
-
-                    b.HasIndex("PassengerEmail");
+                    b.HasIndex("FlightNumber");
 
                     b.HasIndex("Status");
 
-                    b.HasIndex("TicketUid");
+                    b.HasIndex("TicketUid")
+                        .IsUnique();
 
-                    b.ToTable("tickets", (string)null);
+                    b.HasIndex("Username");
+
+                    b.ToTable("ticket", (string)null);
                 });
 #pragma warning restore 612, 618
         }

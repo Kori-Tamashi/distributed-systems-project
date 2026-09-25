@@ -73,7 +73,13 @@ public abstract class BaseHttpGateway
             if (typeof(T) == typeof(bool))
                 return (T)(object)true;
             
-            if (content == "[]") return default!; return string.IsNullOrEmpty(content) ? default! : JsonSerializer.Deserialize<T>(content, JsonOptions)!;
+            if (content == "[]")
+            {
+                // Deserialize empty array directly - this works for all IEnumerable<T> types
+                return JsonSerializer.Deserialize<T>("[]", JsonOptions)!;
+            }
+            
+            return string.IsNullOrEmpty(content) ? default! : JsonSerializer.Deserialize<T>(content, JsonOptions)!;
         }
 
         // Not found

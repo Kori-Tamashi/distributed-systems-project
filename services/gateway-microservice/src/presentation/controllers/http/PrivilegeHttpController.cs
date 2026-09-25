@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
 using presentation.dto.http.Privilege;
+using dataaccess.dto.http.Privilege;
+using dataaccess.dto.http.PrivilegeHistory;
 using presentation.exceptions.http;
 using presentation.exceptions.http.Privilege;
 
@@ -12,6 +14,10 @@ using ServicePrivilegeValidationException = core.exceptions.businesslogic.servic
 
 using HttpPrivilegeNotFoundException = presentation.exceptions.http.Privilege.PrivilegeNotFoundException;
 using HttpPrivilegeValidationException = presentation.exceptions.http.Privilege.PrivilegeValidationException;
+
+using PrivilegeDTO = presentation.dto.http.Privilege.PrivilegeDTO;
+using CreatePrivilegeDTO = presentation.dto.http.Privilege.CreatePrivilegeDTO;
+using UpdatePrivilegeDTO = presentation.dto.http.Privilege.UpdatePrivilegeDTO;
 
 using System.Linq;
 
@@ -22,12 +28,13 @@ namespace presentation.controllers.http;
 /// Implements RESTful API endpoints for managing Privilege entities
 /// </summary>
 [ApiController]
-[Route("api/v1/privileges")]
+[Route("api/v1/privilege")]
 [Produces("application/json")]
 [Consumes("application/json")]
 public class PrivilegeHttpController : ControllerBase
 {
     private readonly IPrivilegeService _privilegeService;
+    private readonly IPrivilegeHistoryService _privilegeHistoryService;
     private readonly ILogger<PrivilegeHttpController> _logger;
 
     /// <summary>
@@ -37,9 +44,11 @@ public class PrivilegeHttpController : ControllerBase
     /// <param name="logger">The logger for the controller</param>
     public PrivilegeHttpController(
         IPrivilegeService privilegeService,
+        IPrivilegeHistoryService privilegeHistoryService,
         ILogger<PrivilegeHttpController> logger)
     {
         _privilegeService = privilegeService ?? throw new ArgumentNullException(nameof(privilegeService));
+        _privilegeHistoryService = privilegeHistoryService ?? throw new ArgumentNullException(nameof(privilegeHistoryService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -94,7 +103,7 @@ public class PrivilegeHttpController : ControllerBase
     /// <returns>List of all Privileges with HTTP 200 OK</returns>
     /// <response code="200">Returns the list of Privileges</response>
     /// <response code="500">Server error</response>
-    [HttpGet]
+    [HttpGet("all")]
     [ProducesResponseType(typeof(List<PrivilegeDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<List<PrivilegeDTO>>> GetAllPrivileges(
@@ -122,6 +131,59 @@ public class PrivilegeHttpController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting all privileges");
+            throw new PrivilegeInternalServerException(ex);
+        }
+    }
+
+    /// <summary>
+    /// Gets privilege by username with history
+    /// </summary>
+    /// <param name="username">Username from header</param>
+    /// <returns>Privilege with history with HTTP 200 OK</returns>
+    /// <response code="200">Returns the privilege</response>
+    /// <response code="404">Privilege not found</response>
+    /// <response code="500">Server error</response>
+    [HttpGet]
+    [ProducesResponseType(typeof(dataaccess.dto.http.Privilege.PrivilegeWithHistoryDTO), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(HttpPrivilegeNotFoundException), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult<dataaccess.dto.http.Privilege.PrivilegeWithHistoryDTO>> GetPrivilegeByUser(
+        [FromHeader(Name = "X-User-Name")] string username)
+    {
+        try
+        {
+            _logger.LogDebug("Getting privilege for user: {Username}", username);
+            
+            // Get privilege
+            var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
+            var privilege = privileges.FirstOrDefault();
+            
+            if (privilege == null)
+            {
+                _logger.LogWarning("Privilege not found for user: {Username}", username);
+                return NotFound(new HttpPrivilegeNotFoundException(0));
+            }
+            
+            // Get history
+            var history = await _privilegeHistoryService.GetAllAsync(
+                new core.filters.PrivilegeHistoryFilter { PrivilegeId = privilege.Id });
+            var historyDtos = dataaccess.converters.http.PrivilegeHistoryHttpConverter.ToDTO(history.ToList());
+            
+            // Build response
+            var result = new dataaccess.dto.http.Privilege.PrivilegeWithHistoryDTO
+            {
+                Username = privilege.Username,
+                Balance = privilege.Balance,
+                Status = privilege.Status.ToString(),
+                History = historyDtos.ToList()
+            };
+            
+            _logger.LogInformation("Privilege retrieved successfully for user: {Username}", username);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting privilege for user: {Username}", username);
             throw new PrivilegeInternalServerException(ex);
         }
     }

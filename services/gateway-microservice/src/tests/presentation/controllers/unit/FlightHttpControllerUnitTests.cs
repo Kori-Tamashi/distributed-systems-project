@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using presentation.controllers.http;
 using presentation.converters.http;
+using presentation.dto.http;
 using presentation.dto.http.Flight;
 using presentation.exceptions.http;
 using presentation.exceptions.http.Flight;
@@ -166,11 +167,11 @@ public class FlightHttpControllerUnitTests
         var result = await _controller.GetAllFlights(null, null);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<List<FlightDTO>>>(result);
+        var actionResult = Assert.IsType<ActionResult<PaginationResponse<FlightDTO>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var dtos = Assert.IsType<List<FlightDTO>>(okResult.Value);
+        var response = Assert.IsType<PaginationResponse<FlightDTO>>(okResult.Value);
         
-        Assert.Equal(5, dtos.Count);
+        Assert.Equal(5, response.Items.Count);
     }
 
     /// <summary>
@@ -187,11 +188,11 @@ public class FlightHttpControllerUnitTests
         var result = await _controller.GetAllFlights(null, null);
 
         // Assert
-        var actionResult = Assert.IsType<ActionResult<List<FlightDTO>>>(result);
+        var actionResult = Assert.IsType<ActionResult<PaginationResponse<FlightDTO>>>(result);
         var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var dtos = Assert.IsType<List<FlightDTO>>(okResult.Value);
+        var response = Assert.IsType<PaginationResponse<FlightDTO>>(okResult.Value);
         
-        Assert.Empty(dtos);
+        Assert.Empty(response.Items);
     }
 
     /// <summary>

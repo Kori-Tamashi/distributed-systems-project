@@ -72,10 +72,10 @@ public class UserHttpController : ControllerBase
                 return NotFound(new { error = "User not found", message = $"No privilege account found for username: {username}" });
             }
 
-            // Get all tickets for this user (filter by passenger name)
+            // Get all tickets for this user (filter by username)
             var allTickets = await _ticketService.GetAllAsync(null);
             var userTickets = allTickets
-                .Where(t => t.PassengerName.Equals(username, StringComparison.OrdinalIgnoreCase))
+                .Where(t => t.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             // Use converter to build DTO

@@ -9,6 +9,21 @@ namespace dataaccess.converters.http;
 public static class PrivilegeHistoryHttpConverter
 {
     /// <summary>
+    /// Converts domain PrivilegeHistory to CreatePrivilegeHistoryDTO (for POST requests)
+    /// </summary>
+    public static CreatePrivilegeHistoryDTO ToCreateDTO(core.domain.PrivilegeHistory privilegeHistory)
+    {
+        return new CreatePrivilegeHistoryDTO
+        {
+            PrivilegeId = privilegeHistory.PrivilegeId,
+            TicketUid = privilegeHistory.TicketUid,
+            DateTime = privilegeHistory.DateTime,
+            BalanceDiffNegative = privilegeHistory.BalanceDiff,
+            OperationType = (int)privilegeHistory.OperationType
+        };
+    }
+
+    /// <summary>
     /// Converts domain PrivilegeHistory to PrivilegeHistoryDTO
     /// </summary>
     public static PrivilegeHistoryDTO ToDTO(core.domain.PrivilegeHistory privilegeHistory)
@@ -75,6 +90,22 @@ public static class PrivilegeHistoryHttpConverter
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Converts domain PrivilegeHistory to UpdatePrivilegeHistoryDTO (for PUT requests)
+    /// </summary>
+    public static UpdatePrivilegeHistoryDTO ToUpdateDTO(core.domain.PrivilegeHistory privilegeHistory)
+    {
+        return new UpdatePrivilegeHistoryDTO
+        {
+            Id = privilegeHistory.Id,
+            PrivilegeId = privilegeHistory.PrivilegeId,
+            TicketUid = privilegeHistory.TicketUid,
+            DateTime = privilegeHistory.DateTime,
+            BalanceDiffNegative = privilegeHistory.BalanceDiff,
+            OperationType = (int)privilegeHistory.OperationType
+        };
     }
 
     /// <summary>

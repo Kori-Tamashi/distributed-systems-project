@@ -175,7 +175,7 @@ public class PrivilegeHistoryHttpControllerUnitTests
         _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(histories);
 
         // Act
-        var result = await _controller.GetAllPrivilegeHistories(null, null);
+        var result = await _controller.GetAllPrivilegeHistories(null, null, null);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<List<PrivilegeHistoryDTO>>>(result);
@@ -198,7 +198,7 @@ public class PrivilegeHistoryHttpControllerUnitTests
         _mockService.Setup(s => s.GetAllAsync()).ReturnsAsync(histories);
 
         // Act
-        var result = await _controller.GetAllPrivilegeHistories(null, null);
+        var result = await _controller.GetAllPrivilegeHistories(null, null, null);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<List<PrivilegeHistoryDTO>>>(result);
@@ -220,7 +220,7 @@ public class PrivilegeHistoryHttpControllerUnitTests
             .ThrowsAsync(new System.Exception("Database error"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<PrivilegeHistoryInternalServerException>(() => _controller.GetAllPrivilegeHistories(null, null));
+        await Assert.ThrowsAsync<PrivilegeHistoryInternalServerException>(() => _controller.GetAllPrivilegeHistories(null, null, null));
     }
 
     #endregion

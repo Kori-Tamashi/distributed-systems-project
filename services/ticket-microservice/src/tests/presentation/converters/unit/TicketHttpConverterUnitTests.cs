@@ -10,7 +10,7 @@ using Xunit;
 namespace tests.presentation.converters.unit;
 
 /// <summary>
-/// Unit tests for TicketHttpConverter
+/// Unit tests for TicketHttpConverter (per lab2-template v1 spec)
 /// Using London-style testing (pure unit tests, no dependencies to mock)
 /// AAA Structure: Arrange - Act - Assert
 /// 
@@ -59,15 +59,10 @@ public class TicketHttpConverterUnitTests
         Assert.NotNull(dto);
         Assert.Equal(ticket.Id, dto.Id);
         Assert.Equal(ticket.TicketUid, dto.TicketUid);
-        Assert.Equal(ticket.FlightId, dto.FlightId);
-        Assert.Equal(ticket.PassengerName, dto.PassengerName);
-        Assert.Equal(ticket.PassengerEmail, dto.PassengerEmail);
-        Assert.Equal(ticket.PassengerPhone, dto.PassengerPhone);
-        Assert.Equal(ticket.SeatNumber, dto.SeatNumber);
-        Assert.Equal((int)ticket.Class, dto.Class);
+        Assert.Equal(ticket.FlightNumber, dto.FlightNumber);
+        Assert.Equal(ticket.Username, dto.Username);
         Assert.Equal(ticket.Price, dto.Price);
-        Assert.Equal(ticket.BookingDate, dto.BookingDate);
-        Assert.Equal((int)ticket.Status, dto.Status);
+        Assert.Equal(ticket.Status, dto.Status);
     }
 
     /// <summary>
@@ -86,7 +81,7 @@ public class TicketHttpConverterUnitTests
         // Assert
         Assert.NotNull(dto);
         Assert.Equal(ticket.Id, dto.Id);
-        Assert.Equal(ticket.PassengerName, dto.PassengerName);
+        Assert.Equal(ticket.Username, dto.Username);
         Assert.Equal(ticket.Price, dto.Price);
     }
 
@@ -122,15 +117,10 @@ public class TicketHttpConverterUnitTests
         {
             Id = ticket.Id,
             TicketUid = ticket.TicketUid,
-            FlightId = ticket.FlightId,
-            PassengerName = ticket.PassengerName,
-            PassengerEmail = ticket.PassengerEmail,
-            PassengerPhone = ticket.PassengerPhone,
-            SeatNumber = ticket.SeatNumber,
-            Class = (int)ticket.Class,
+            Username = ticket.Username,
+            FlightNumber = ticket.FlightNumber,
             Price = ticket.Price,
-            BookingDate = ticket.BookingDate,
-            Status = (int)ticket.Status
+            Status = ticket.Status
         };
 
         // Act
@@ -138,16 +128,10 @@ public class TicketHttpConverterUnitTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(dto.Id, result.Id);
         Assert.Equal(dto.TicketUid, result.TicketUid);
-        Assert.Equal(dto.FlightId, result.FlightId);
-        Assert.Equal(dto.PassengerName, result.PassengerName);
-        Assert.Equal(dto.PassengerEmail, result.PassengerEmail);
-        Assert.Equal(dto.PassengerPhone, result.PassengerPhone);
-        Assert.Equal(dto.SeatNumber, result.SeatNumber);
-        Assert.Equal((TicketClass)dto.Class, result.Class);
+        Assert.Equal(dto.Username, result.Username);
+        Assert.Equal(dto.FlightNumber, result.FlightNumber);
         Assert.Equal(dto.Price, result.Price);
-        Assert.Equal(dto.BookingDate, result.BookingDate);
         Assert.Equal((TicketStatus)dto.Status, result.Status);
     }
 
@@ -166,16 +150,10 @@ public class TicketHttpConverterUnitTests
         var result = TicketHttpConverter.ToDomain(dto);
 
         // Assert
-        Assert.Equal(ticket.Id, result.Id);
         Assert.Equal(ticket.TicketUid, result.TicketUid);
-        Assert.Equal(ticket.FlightId, result.FlightId);
-        Assert.Equal(ticket.PassengerName, result.PassengerName);
-        Assert.Equal(ticket.PassengerEmail, result.PassengerEmail);
-        Assert.Equal(ticket.PassengerPhone, result.PassengerPhone);
-        Assert.Equal(ticket.SeatNumber, result.SeatNumber);
-        Assert.Equal(ticket.Class, result.Class);
+        Assert.Equal(ticket.Username, result.Username);
+        Assert.Equal(ticket.FlightNumber, result.FlightNumber);
         Assert.Equal(ticket.Price, result.Price);
-        Assert.Equal(ticket.BookingDate, result.BookingDate);
         Assert.Equal(ticket.Status, result.Status);
     }
 
@@ -199,15 +177,10 @@ public class TicketHttpConverterUnitTests
         // Assert
         Assert.NotNull(dto);
         Assert.Equal(ticket.TicketUid, dto.TicketUid);
-        Assert.Equal(ticket.FlightId, dto.FlightId);
-        Assert.Equal(ticket.PassengerName, dto.PassengerName);
-        Assert.Equal(ticket.PassengerEmail, dto.PassengerEmail);
-        Assert.Equal(ticket.PassengerPhone, dto.PassengerPhone);
-        Assert.Equal(ticket.SeatNumber, dto.SeatNumber);
-        Assert.Equal((int)ticket.Class, dto.Class);
+        Assert.Equal(ticket.Username, dto.Username);
+        Assert.Equal(ticket.FlightNumber, dto.FlightNumber);
         Assert.Equal(ticket.Price, dto.Price);
-        Assert.Equal(ticket.BookingDate, dto.BookingDate);
-        Assert.Equal((int)ticket.Status, dto.Status);
+        Assert.Equal(ticket.Status, dto.Status);
     }
 
     /// <summary>
@@ -221,15 +194,10 @@ public class TicketHttpConverterUnitTests
         var dto = new CreateTicketDTO
         {
             TicketUid = Guid.NewGuid(),
-            FlightId = 1,
-            PassengerName = "John Doe",
-            PassengerEmail = "john@example.com",
-            PassengerPhone = "+79000000000",
-            SeatNumber = "12A",
-            Class = (int)TicketClass.Economy,
+            Username = "john_doe",
+            FlightNumber = "AFL031",
             Price = 15000,
-            BookingDate = DateTime.UtcNow.AddDays(-1),
-            Status = (int)TicketStatus.Confirmed
+            Status = TicketStatus.Paid
         };
 
         // Act
@@ -239,7 +207,10 @@ public class TicketHttpConverterUnitTests
         Assert.NotNull(result);
         Assert.Equal(0, result.Id);
         Assert.Equal(dto.TicketUid, result.TicketUid);
-        Assert.Equal(dto.FlightId, result.FlightId);
+        Assert.Equal(dto.Username, result.Username);
+        Assert.Equal(dto.FlightNumber, result.FlightNumber);
+        Assert.Equal(dto.Price, result.Price);
+        Assert.Equal((TicketStatus)dto.Status, result.Status);
     }
 
     /// <summary>
@@ -258,98 +229,10 @@ public class TicketHttpConverterUnitTests
 
         // Assert
         Assert.Equal(ticket.TicketUid, result.TicketUid);
-        Assert.Equal(ticket.FlightId, result.FlightId);
-        Assert.Equal(ticket.PassengerName, result.PassengerName);
-        Assert.Equal(ticket.PassengerEmail, result.PassengerEmail);
-        Assert.Equal(ticket.PassengerPhone, result.PassengerPhone);
-        Assert.Equal(ticket.SeatNumber, result.SeatNumber);
-        Assert.Equal(ticket.Class, result.Class);
+        Assert.Equal(ticket.Username, result.Username);
+        Assert.Equal(ticket.FlightNumber, result.FlightNumber);
         Assert.Equal(ticket.Price, result.Price);
-        Assert.Equal(ticket.BookingDate, result.BookingDate);
         Assert.Equal(ticket.Status, result.Status);
-    }
-
-    #endregion
-
-    #region ToUpdateDTO / ToUpdateDomain Tests
-
-    /// <summary>
-    /// EP1: Valid ticket to update DTO should map all fields
-    /// </summary>
-    [Fact]
-    [Unit]
-    public void ToUpdateDTO_ValidTicket_ShouldMapAllFields()
-    {
-        // Arrange
-        var ticket = TicketMother.CreateValidTicket();
-
-        // Act
-        var dto = TicketHttpConverter.ToUpdateDTO(ticket);
-
-        // Assert
-        Assert.NotNull(dto);
-        Assert.Equal(ticket.Id, dto.Id);
-        Assert.Equal(ticket.TicketUid, dto.TicketUid);
-        Assert.Equal(ticket.FlightId, dto.FlightId);
-        Assert.Equal(ticket.PassengerName, dto.PassengerName);
-        Assert.Equal(ticket.PassengerEmail, dto.PassengerEmail);
-        Assert.Equal(ticket.PassengerPhone, dto.PassengerPhone);
-        Assert.Equal(ticket.SeatNumber, dto.SeatNumber);
-        Assert.Equal((int)ticket.Class, dto.Class);
-        Assert.Equal(ticket.Price, dto.Price);
-        Assert.Equal(ticket.BookingDate, dto.BookingDate);
-        Assert.Equal((int)ticket.Status, dto.Status);
-    }
-
-    /// <summary>
-    /// EP2: ToUpdateDomain should preserve ID
-    /// </summary>
-    [Fact]
-    [Unit]
-    public void ToUpdateDomain_UpdateDto_ShouldPreserveId()
-    {
-        // Arrange
-        var existingTicket = TicketMother.CreateValidTicket();
-        var updateDto = new UpdateTicketDTO(existingTicket.Id)
-        {
-            PassengerName = "Jane Doe"
-        };
-
-        // Act
-        var result = TicketHttpConverter.ToUpdateDomain(updateDto, existingTicket);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.Equal(existingTicket.Id, result.Id);
-        Assert.Equal("Jane Doe", result.PassengerName);
-    }
-
-    /// <summary>
-    /// EP3: UpdateDomain merges nullable properties correctly
-    /// </summary>
-    [Fact]
-    [Unit]
-    public void ToUpdateDomain_WithPartialUpdate_ShouldMergeCorrectly()
-    {
-        // Arrange
-        var existingTicket = TicketMother.CreateValidTicket();
-        var originalEmail = existingTicket.PassengerEmail;
-        var originalPrice = existingTicket.Price;
-        
-        var updateDto = new UpdateTicketDTO(existingTicket.Id)
-        {
-            PassengerName = "Jane Doe",
-            Price = 20000
-        };
-
-        // Act
-        var result = TicketHttpConverter.ToUpdateDomain(updateDto, existingTicket);
-
-        // Assert
-        Assert.Equal(existingTicket.Id, result.Id);
-        Assert.Equal("Jane Doe", result.PassengerName);
-        Assert.Equal(20000, result.Price);
-        Assert.Equal(originalEmail, result.PassengerEmail); // Should remain unchanged
     }
 
     #endregion

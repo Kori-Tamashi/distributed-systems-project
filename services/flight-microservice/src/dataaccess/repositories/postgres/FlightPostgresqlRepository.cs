@@ -41,7 +41,10 @@ public class FlightPostgresqlRepository : IFlightRepository
     {
         try
         {
-            var model = await _context.Flights.FindAsync(id)
+            var model = await _context.Flights
+                .Include(f => f.FromAirport)
+                .Include(f => f.ToAirport)
+                .FirstOrDefaultAsync(f => f.Id == id)
                 ?? throw new FlightNotFoundException(id);
 
             return FlightPostgresqlConverter.ToDomain(model);
@@ -66,7 +69,10 @@ public class FlightPostgresqlRepository : IFlightRepository
     {
         try
         {
-            var query = _context.Flights.AsQueryable();
+            var query = _context.Flights
+                .Include(f => f.FromAirport)
+                .Include(f => f.ToAirport)
+                .AsQueryable();
 
             // Apply filter if provided
             if (filter != null)

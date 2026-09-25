@@ -44,7 +44,7 @@ public class TicketPostgresqlRepositoryUnitTests
         _mockDbSet.As<IQueryable<TicketPostgresqlModel>>()
             .Setup(m => m.GetEnumerator()).Returns(data.GetEnumerator());
         
-        _mockContext.Setup(c => c.Tickets).Returns(_mockDbSet.Object);
+        _mockContext.Setup(c => c.Ticket).Returns(_mockDbSet.Object);
         _repository = new TicketPostgresqlRepository(_mockContext.Object);
     }
 
@@ -59,15 +59,10 @@ public class TicketPostgresqlRepositoryUnitTests
         {
             Id = ticket.Id,
             TicketUid = ticket.TicketUid,
-            FlightId = ticket.FlightId,
-            PassengerName = ticket.PassengerName,
-            PassengerEmail = ticket.PassengerEmail,
-            PassengerPhone = ticket.PassengerPhone,
-            SeatNumber = ticket.SeatNumber,
-            Class = (int)ticket.Class,
+            Username = ticket.Username,
+            FlightNumber = ticket.FlightNumber,
             Price = ticket.Price,
-            BookingDate = ticket.BookingDate,
-            Status = (int)ticket.Status
+            Status = ticket.Status
         };
 
         _mockDbSet.Setup(m => m.FindAsync(ticket.Id)).ReturnsAsync(model);
@@ -78,7 +73,7 @@ public class TicketPostgresqlRepositoryUnitTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(ticket.Id, result.Id);
-        Assert.Equal(ticket.PassengerName, result.PassengerName);
+        Assert.Equal(ticket.Username, result.Username);
         _mockDbSet.Verify(m => m.FindAsync(ticket.Id), Times.Once);
     }
 
@@ -148,15 +143,10 @@ public class TicketPostgresqlRepositoryUnitTests
         {
             Id = 1,
             TicketUid = Guid.NewGuid(),
-            FlightId = 1,
-            PassengerName = "OLD NAME",
-            PassengerEmail = "old@example.com",
-            PassengerPhone = "+70000000000",
-            SeatNumber = "10A",
-            Class = (int)TicketClass.Economy,
+            Username = "OLD_NAME",
+            FlightNumber = "OLD_FLIGHT",
             Price = 10000,
-            BookingDate = DateTime.Now,
-            Status = (int)TicketStatus.Confirmed
+            Status = TicketStatus.Paid
         };
 
         var updatedTicket = TicketMother.CreateValidTicket();
@@ -171,7 +161,7 @@ public class TicketPostgresqlRepositoryUnitTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(updatedTicket.PassengerName, result.PassengerName);
+        Assert.Equal(updatedTicket.Username, result.Username);
         Assert.Equal(updatedTicket.Price, result.Price);
         _mockContext.Verify(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -196,7 +186,7 @@ public class TicketPostgresqlRepositoryUnitTests
     public async Task UpdateAsync_DatabaseError_ShouldThrowTicketDatabaseException()
     {
         // Arrange
-        var existingModel = new TicketPostgresqlModel { Id = 1, PassengerName = "OLD NAME" };
+        var existingModel = new TicketPostgresqlModel { Id = 1, Username = "OLD NAME" };
         var updatedTicket = TicketMother.CreateValidTicket();
         updatedTicket.Id = 1;
 
@@ -221,7 +211,7 @@ public class TicketPostgresqlRepositoryUnitTests
     {
         // Arrange
         var ticketId = 1;
-        var existingModel = new TicketPostgresqlModel { Id = ticketId, PassengerName = "John Doe" };
+        var existingModel = new TicketPostgresqlModel { Id = ticketId, Username = "John Doe" };
 
         _mockDbSet.Setup(m => m.FindAsync(ticketId)).ReturnsAsync(existingModel);
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -256,7 +246,7 @@ public class TicketPostgresqlRepositoryUnitTests
     {
         // Arrange
         var ticketId = 1;
-        var existingModel = new TicketPostgresqlModel { Id = ticketId, PassengerName = "John Doe" };
+        var existingModel = new TicketPostgresqlModel { Id = ticketId, Username = "John Doe" };
 
         _mockDbSet.Setup(m => m.FindAsync(ticketId)).ReturnsAsync(existingModel);
         _mockContext.Setup(c => c.SaveChangesAsync(It.IsAny<CancellationToken>()))

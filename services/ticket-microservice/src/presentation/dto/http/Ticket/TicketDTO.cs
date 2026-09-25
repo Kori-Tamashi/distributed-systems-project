@@ -1,46 +1,33 @@
+using core.enums;
+
 using System;
 
 namespace presentation.dto.http.Ticket;
 
 /// <summary>
-/// DTO for reading Ticket data (full representation)
+/// DTO for reading Ticket data (per lab2-template v1 spec)
 /// </summary>
-public class TicketDTO : BaseHttpDTO
+public class TicketDTO
 {
     /// <summary>
-    /// Unique identifier for the ticket (GUID)
+    /// Unique ticket UID (UUID)
     /// </summary>
     public Guid TicketUid { get; set; }
 
     /// <summary>
-    /// Flight ID
+    /// Primary key (database-generated)
     /// </summary>
-    public int FlightId { get; set; }
+    public int Id { get; set; }
 
     /// <summary>
-    /// Passenger name
+    /// Username of the ticket owner
     /// </summary>
-    public string PassengerName { get; set; } = string.Empty;
+    public string Username { get; set; } = string.Empty;
 
     /// <summary>
-    /// Passenger email
+    /// Flight number (e.g., "AFL031")
     /// </summary>
-    public string PassengerEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger phone
-    /// </summary>
-    public string PassengerPhone { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Seat number
-    /// </summary>
-    public string SeatNumber { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Ticket class (Economy, Business, First)
-    /// </summary>
-    public int Class { get; set; }
+    public string FlightNumber { get; set; } = string.Empty;
 
     /// <summary>
     /// Ticket price in rubles
@@ -48,20 +35,14 @@ public class TicketDTO : BaseHttpDTO
     public int Price { get; set; }
 
     /// <summary>
-    /// Booking date and time (UTC)
+    /// Ticket status (PAID, CANCELED)
     /// </summary>
-    public DateTime BookingDate { get; set; }
-
-    /// <summary>
-    /// Ticket status
-    /// </summary>
-    public int Status { get; set; }
+    public TicketStatus Status { get; set; }
 
     /// <summary>
     /// Default constructor
     /// </summary>
     public TicketDTO()
-        : base(0)
     {
     }
 
@@ -71,31 +52,16 @@ public class TicketDTO : BaseHttpDTO
     public TicketDTO(
         int id,
         Guid ticketUid,
-        int flightId,
-        string passengerName,
-        string passengerEmail,
-        string passengerPhone,
-        string seatNumber,
-        int @class,
+        string username,
+        string flightNumber,
         int price,
-        DateTime bookingDate,
-        int status,
-        DateTime? createdAt = null,
-        DateTime? updatedAt = null)
-        : base(id)
+        TicketStatus status)
     {
         Id = id;
         TicketUid = ticketUid;
-        FlightId = flightId;
-        PassengerName = passengerName;
-        PassengerEmail = passengerEmail;
-        PassengerPhone = passengerPhone;
-        SeatNumber = seatNumber;
-        Class = @class;
+        Username = username;
+        FlightNumber = flightNumber;
         Price = price;
-        BookingDate = bookingDate;
         Status = status;
-        CreatedAt = createdAt;
-        UpdatedAt = updatedAt;
     }
 }

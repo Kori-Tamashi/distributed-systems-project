@@ -4,63 +4,32 @@ using dataaccess.dto.http;
 namespace dataaccess.dto.http.Ticket;
 
 /// <summary>
-/// DTO for updating an existing Ticket
-/// All properties are nullable for partial updates
+/// DTO for updating Ticket (per lab2-template v1 spec)
 /// </summary>
 public class UpdateTicketDTO : BaseHttpDTO
 {
     /// <summary>
-    /// Ticket number (e.g., "TK100", "TK200")
+    /// Unique ticket UID (UUID)
     /// </summary>
-    public string? TicketNumber { get; set; }
+    public Guid TicketUid { get; set; }
 
     /// <summary>
-    /// Unique identifier for the ticket (GUID)
+    /// Username of the ticket owner (optional)
     /// </summary>
-    public Guid? TicketUid { get; set; }
+    public string? Username { get; set; }
 
     /// <summary>
-    /// Flight ID
+    /// Flight number (e.g., "AFL031") (optional)
     /// </summary>
-    public int? FlightId { get; set; }
+    public string? FlightNumber { get; set; }
 
     /// <summary>
-    /// Passenger name
-    /// </summary>
-    public string? PassengerName { get; set; }
-
-    /// <summary>
-    /// Passenger email
-    /// </summary>
-    public string? PassengerEmail { get; set; }
-
-    /// <summary>
-    /// Passenger phone
-    /// </summary>
-    public string? PassengerPhone { get; set; }
-
-    /// <summary>
-    /// Seat number
-    /// </summary>
-    public string? SeatNumber { get; set; }
-
-    /// <summary>
-    /// Ticket class (Economy, Business, First)
-    /// </summary>
-    public int? Class { get; set; }
-
-    /// <summary>
-    /// Ticket price in rubles
+    /// Ticket price in rubles (optional)
     /// </summary>
     public int? Price { get; set; }
 
     /// <summary>
-    /// Booking date and time (UTC)
-    /// </summary>
-    public DateTime? BookingDate { get; set; }
-
-    /// <summary>
-    /// Ticket status
+    /// Ticket status: PAID (1) or CANCELED (2) (optional)
     /// </summary>
     public int? Status { get; set; }
 
@@ -73,11 +42,20 @@ public class UpdateTicketDTO : BaseHttpDTO
     }
 
     /// <summary>
-    /// Constructor with ID
+    /// Constructor with all fields
     /// </summary>
-    /// <param name="id">Ticket identifier</param>
-    public UpdateTicketDTO(int id)
-        : base(id)
+    public UpdateTicketDTO(
+        Guid ticketUid,
+        string? username = null,
+        string? flightNumber = null,
+        int? price = null,
+        int? status = null)
+        : base(0)
     {
+        TicketUid = ticketUid;
+        Username = username;
+        FlightNumber = flightNumber;
+        Price = price;
+        Status = status;
     }
 }

@@ -1,13 +1,20 @@
 using core.domain;
-using core.enums;
 using tests.fixtures.builders;
 
 namespace tests.fixtures.mothers;
 
 /// <summary>
-/// Object Mother for Ticket entity
+/// Object Mother for Ticket entity (per lab2-template v1 spec)
 /// Provides predefined, reusable test data for common scenarios
 /// Uses TicketBuilder for consistent object creation
+/// 
+/// NEW Ticket model fields:
+/// - int Id
+/// - Guid TicketUid
+/// - string Username
+/// - string FlightNumber
+/// - int Price
+/// - int Status (PAID=1, CANCELED=2)
 /// </summary>
 public static class TicketMother
 {
@@ -21,15 +28,10 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(1)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("John Doe")
-            .WithPassengerEmail("john.doe@example.com")
-            .WithPassengerPhone("+79001234567")
-            .WithSeatNumber("12A")
-            .WithEconomyClass()
+            .WithUsername("john_doe")
+            .WithFlightNumber("AFL031")
             .WithPrice(15000)
-            .WithPastBookingDate()
-            .WithConfirmedStatus()
+            .WithPaidStatus()
             .Build();
     }
 
@@ -41,74 +43,54 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(2)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("A")
-            .WithPassengerEmail("a@b.com")
-            .WithPassengerPhone("123")
-            .WithSeatNumber("1A")
-            .WithEconomyClass()
+            .WithUsername("a")
+            .WithFlightNumber("AFL001")
             .WithPrice(1000)
-            .WithBookingDate(DateTime.UtcNow)
-            .WithConfirmedStatus()
+            .WithPaidStatus()
             .Build();
     }
 
     /// <summary>
-    /// Creates a Business Class Ticket
+    /// Creates a high-price ticket
     /// </summary>
-    public static Ticket CreateBusinessClassTicket()
+    public static Ticket CreateHighPriceTicket()
     {
         return _defaultBuilder
             .WithId(3)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(2)
-            .WithPassengerName("Jane Smith")
-            .WithPassengerEmail("jane.smith@example.com")
-            .WithPassengerPhone("+79009876543")
-            .WithSeatNumber("2A")
-            .WithBusinessClass()
-            .WithPrice(45000)
-            .WithPastBookingDate()
-            .WithConfirmedStatus()
+            .WithUsername("jane_smith")
+            .WithFlightNumber("AFL100")
+            .WithPrice(80000)
+            .WithPaidStatus()
             .Build();
     }
 
     /// <summary>
-    /// Creates a First Class Ticket
+    /// Creates a low-price ticket
     /// </summary>
-    public static Ticket CreateFirstClassTicket()
+    public static Ticket CreateLowPriceTicket()
     {
         return _defaultBuilder
             .WithId(4)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(3)
-            .WithPassengerName("Ivan Petrov")
-            .WithPassengerEmail("ivan.petrov@example.com")
-            .WithPassengerPhone("+79112223344")
-            .WithSeatNumber("1A")
-            .WithFirstClass()
-            .WithPrice(80000)
-            .WithPastBookingDate()
-            .WithConfirmedStatus()
+            .WithUsername("budget_traveler")
+            .WithFlightNumber("AFL005")
+            .WithPrice(5000)
+            .WithPaidStatus()
             .Build();
     }
 
     /// <summary>
-    /// Creates a Cancelled Ticket
+    /// Creates a Cancelled ticket
     /// </summary>
     public static Ticket CreateCancelledTicket()
     {
         return _defaultBuilder
             .WithId(5)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("Cancelled User")
-            .WithPassengerEmail("cancelled@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("15B")
-            .WithEconomyClass()
+            .WithUsername("cancelled_user")
+            .WithFlightNumber("AFL032")
             .WithPrice(12000)
-            .WithPastBookingDate()
             .WithCancelledStatus()
             .Build();
     }
@@ -124,15 +106,30 @@ public static class TicketMother
             tickets.Add(_defaultBuilder
                 .WithId(i)
                 .WithTicketUid(Guid.NewGuid())
-                .WithFlightId(i % 3 + 1)
-                .WithPassengerName($"Passenger {i}")
-                .WithPassengerEmail($"passenger{i}@example.com")
-                .WithPassengerPhone($"+7900{i:D7}")
-                .WithSeatNumber($"{10 + i}A")
-                .WithEconomyClass()
+                .WithUsername($"user_{i}")
+                .WithFlightNumber($"AFL{100 + i}")
                 .WithPrice(10000 + i * 5000)
-                .WithPastBookingDate()
-                .WithConfirmedStatus()
+                .WithPaidStatus()
+                .Build());
+        }
+        return tickets;
+    }
+
+    /// <summary>
+    /// Creates a list of tickets for a specific user
+    /// </summary>
+    public static List<Ticket> CreateTicketListForUser(string username, int count = 3)
+    {
+        var tickets = new List<Ticket>();
+        for (int i = 1; i <= count; i++)
+        {
+            tickets.Add(_defaultBuilder
+                .WithId(i)
+                .WithTicketUid(Guid.NewGuid())
+                .WithUsername(username)
+                .WithFlightNumber($"AFL{100 + i}")
+                .WithPrice(10000 + i * 5000)
+                .WithPaidStatus()
                 .Build());
         }
         return tickets;

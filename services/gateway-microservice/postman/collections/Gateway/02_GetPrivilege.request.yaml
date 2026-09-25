@@ -1,0 +1,20 @@
+$kind: http-request
+order: 200
+method: GET
+url: '{{baseUrl}}/api/v1/privilege'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Получить информацию о состоянии бонусного счета', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        pm.expect(response.balance).to.be.not.undefined;
+        pm.expect(response.status).to.be.not.undefined;
+        pm.collectionVariables.set('balance', response.balance);
+      });

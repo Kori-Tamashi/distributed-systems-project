@@ -14,8 +14,7 @@ using presentation.exceptions.http;
 using tests.config.attributes;
 using tests.fixtures.mothers;
 using Xunit;
-using CreateTicketDTO = presentation.dto.http.CreateTicketDTO;
-using UpdateTicketDTO = presentation.dto.http.Ticket.UpdateTicketDTO;
+using CreateTicketDTO = presentation.dto.http.Ticket.CreateTicketDTO;
 
 // Type aliases to avoid ambiguity
 using ServiceTicketNotFoundException = core.exceptions.businesslogic.services.TicketNotFoundException;
@@ -29,40 +28,9 @@ using TicketInternalServerException = presentation.exceptions.http.TicketInterna
 namespace tests.presentation.controllers.unit;
 
 /// <summary>
-/// Unit tests for TicketHttpController
+/// Unit tests for TicketHttpController (per lab2-template v1 spec)
 /// Using London-style testing with Mocks (Moq)
 /// AAA Structure: Arrange - Act - Assert
-/// 
-/// CLASS EQUIVALENCE PARTITIONING:
-/// 
-/// For GetTicketById(int ticketId):
-/// - EP1: Valid ID, Ticket exists (200 OK)
-/// - EP2: Valid ID, Ticket not found (404 Not Found)
-/// - EP3: Service throws exception (500 Internal Server Error)
-/// 
-/// For GetAllTickets():
-/// - EP1: Returns all tickets (200 OK)
-/// - EP2: Returns empty list (200 OK)
-/// - EP3: Service throws exception (500 Internal Server Error)
-/// 
-/// For CreateTicket(CreateTicketDto):
-/// - EP1: Valid ticket, creation successful (201 Created)
-/// - EP2: Invalid ticket (400 Bad Request)
-/// - EP3: Service throws exception (500 Internal Server Error)
-/// 
-/// For UpdateTicket(int ticketId, UpdateTicketDto):
-/// - EP1: Valid ticket, Ticket exists (200 OK)
-/// - EP2: Ticket not found (404 Not Found)
-/// - EP3: Invalid ticket (400 Bad Request)
-/// - EP4: ID mismatch (400 Bad Request)
-/// - EP5: Service throws exception (500 Internal Server Error)
-/// 
-/// For DeleteTicket(int ticketId):
-/// - EP1: Valid ID, Ticket exists (200 OK)
-/// - EP2: Valid ID, Ticket not found (404 Not Found)
-/// - EP3: Service throws exception (500 Internal Server Error)
-/// 
-/// Total: 17 unit tests (all should pass)
 /// </summary>
 public class TicketHttpControllerUnitTests
 {
@@ -115,7 +83,7 @@ public class TicketHttpControllerUnitTests
         var dto = Assert.IsType<TicketDTO>(okResult.Value);
         
         Assert.Equal(ticket.Id, dto.Id);
-        Assert.Equal(ticket.PassengerName, dto.PassengerName);
+        Assert.Equal(ticket.Username, dto.Username);
         _mockService.Verify(s => s.GetByIdAsync(ticket.Id), Times.Once);
     }
 
@@ -174,10 +142,10 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange
         var tickets = TicketMother.CreateTicketList(5);
-        _mockService.Setup(s => s.GetAllAsync(null)).ReturnsAsync(tickets);
+        _mockService.Setup(s => s.GetAllAsync(It.IsAny<core.filters.TicketFilter>())).ReturnsAsync(tickets);
 
         // Act
-        var result = await _controller.GetAllTickets(null, null);
+        var result = await _controller.GetAllTickets(null, null, username: null);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<List<TicketDTO>>>(result);
@@ -185,7 +153,7 @@ public class TicketHttpControllerUnitTests
         var dtos = Assert.IsType<List<TicketDTO>>(okResult.Value);
         
         Assert.Equal(5, dtos.Count);
-        _mockService.Verify(s => s.GetAllAsync(null), Times.Once);
+        _mockService.Verify(s => s.GetAllAsync(It.IsAny<core.filters.TicketFilter>()), Times.Once);
     }
 
     /// <summary>
@@ -197,10 +165,10 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange
         var tickets = new List<core.domain.Ticket>();
-        _mockService.Setup(s => s.GetAllAsync(null)).ReturnsAsync(tickets);
+        _mockService.Setup(s => s.GetAllAsync(It.IsAny<core.filters.TicketFilter>())).ReturnsAsync(tickets);
 
         // Act
-        var result = await _controller.GetAllTickets(null, null);
+        var result = await _controller.GetAllTickets(null, null, username: null);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<List<TicketDTO>>>(result);
@@ -223,7 +191,7 @@ public class TicketHttpControllerUnitTests
 
         // Act & Assert
         await Assert.ThrowsAsync<TicketInternalServerException>(
-            () => _controller.GetAllTickets(null, null)
+            () => _controller.GetAllTickets(null, null, username: null)
         );
     }
 
@@ -236,10 +204,10 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange
         var tickets = TicketMother.CreateTicketList(100);
-        _mockService.Setup(s => s.GetAllAsync(null)).ReturnsAsync(tickets);
+        _mockService.Setup(s => s.GetAllAsync(It.IsAny<core.filters.TicketFilter>())).ReturnsAsync(tickets);
 
         // Act
-        var result = await _controller.GetAllTickets(page: 2, pageSize: 10);
+        var result = await _controller.GetAllTickets(page: 2, pageSize: 10, username: null);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<List<TicketDTO>>>(result);
@@ -274,7 +242,7 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange
         var createDto = new CreateTicketDTO();
-        _controller.ModelState.AddModelError("PassengerName", "Required");
+        _controller.ModelState.AddModelError("Username", "Required");
 
         // Act
         var result = await _controller.CreateTicket(createDto);
@@ -298,19 +266,14 @@ public class TicketHttpControllerUnitTests
         var createDto = new CreateTicketDTO
         {
             TicketUid = Guid.NewGuid(),
-            FlightId = 1,
-            PassengerName = "",
-            PassengerEmail = "john@example.com",
-            PassengerPhone = "+79000000000",
-            SeatNumber = "12A",
-            Class = (int)core.enums.TicketClass.Economy,
+            Username = "john_doe",
+            FlightNumber = "AFL031",
             Price = 15000,
-            BookingDate = DateTime.UtcNow.AddDays(-1),
-            Status = (int)core.enums.TicketStatus.Confirmed
+            Status = (int)core.enums.TicketStatus.Paid
         };
         
         _mockService.Setup(s => s.CreateAsync(It.IsAny<core.domain.Ticket>()))
-            .ThrowsAsync(new ServiceTicketValidationException("validation failed", new Dictionary<string, string[]> { { "PassengerEmail", new[] { "Required" } } }));
+            .ThrowsAsync(new ServiceTicketValidationException("validation failed", new Dictionary<string, string[]> { { "Username", new[] { "Required" } } }));
 
         // Act
         var result = await _controller.CreateTicket(createDto);
@@ -334,15 +297,10 @@ public class TicketHttpControllerUnitTests
         var createDto = new CreateTicketDTO
         {
             TicketUid = Guid.NewGuid(),
-            FlightId = 1,
-            PassengerName = "John Doe",
-            PassengerEmail = "john@example.com",
-            PassengerPhone = "+79000000000",
-            SeatNumber = "12A",
-            Class = (int)core.enums.TicketClass.Economy,
+            Username = "john_doe",
+            FlightNumber = "AFL031",
             Price = 15000,
-            BookingDate = DateTime.UtcNow.AddDays(-1),
-            Status = (int)core.enums.TicketStatus.Confirmed
+            Status = (int)core.enums.TicketStatus.Paid
         };
         
         _mockService.Setup(s => s.CreateAsync(It.IsAny<core.domain.Ticket>()))
@@ -357,125 +315,6 @@ public class TicketHttpControllerUnitTests
         var exception = Assert.IsType<HttpTicketBusinessRuleViolationException>(conflictResult.Value);
         
         Assert.Equal(409, exception.StatusCode);
-    }
-
-    #endregion
-
-    #region UpdateTicket Tests
-
-    /// <summary>
-    /// EP1: Valid ticket, Ticket exists - should return 200 OK
-    /// </summary>
-    [Fact]
-    [Unit]
-    public async Task UpdateTicket_ValidTicket_TicketExists_ShouldReturnOk()
-    {
-        // Arrange
-        var ticketId = 1;
-        var existingTicket = TicketMother.CreateValidTicket();
-        existingTicket.Id = ticketId;
-        
-        var updateDto = new UpdateTicketDTO(ticketId)
-        {
-            PassengerName = "Jane Doe"
-        };
-        
-        var updatedTicket = new core.domain.Ticket
-        {
-            Id = ticketId,
-            PassengerName = "Jane Doe"
-        };
-        
-        _mockService.Setup(s => s.GetByIdAsync(ticketId)).ReturnsAsync(existingTicket);
-        _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Ticket>())).ReturnsAsync(updatedTicket);
-
-        // Act
-        var result = await _controller.UpdateTicket(ticketId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<TicketDTO>>(result);
-        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<TicketDTO>(okResult.Value);
-        
-        Assert.Equal("Jane Doe", dto.PassengerName);
-        _mockService.Verify(s => s.GetByIdAsync(ticketId), Times.Once);
-        _mockService.Verify(s => s.UpdateAsync(It.IsAny<core.domain.Ticket>()), Times.Once);
-    }
-
-    /// <summary>
-    /// EP2: Ticket not found - should return 404 Not Found
-    /// </summary>
-    [Fact]
-    [Unit]
-    public async Task UpdateTicket_TicketNotFound_ShouldReturnNotFound()
-    {
-        // Arrange
-        var ticketId = 999;
-        var updateDto = new UpdateTicketDTO(ticketId)
-        {
-            PassengerName = "Jane Doe"
-        };
-        
-        _mockService.Setup(s => s.GetByIdAsync(ticketId))
-            .ThrowsAsync(new ServiceTicketNotFoundException(ticketId));
-
-        // Act
-        var result = await _controller.UpdateTicket(ticketId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<TicketDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var exception = Assert.IsType<HttpTicketNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(ticketId, exception.TicketId);
-    }
-
-    /// <summary>
-    /// EP3: ID mismatch - should return 400 Bad Request
-    /// </summary>
-    [Fact]
-    [Unit]
-    public async Task UpdateTicket_IdMismatch_ShouldReturnBadRequest()
-    {
-        // Arrange
-        var ticketId = 1;
-        var updateDto = new UpdateTicketDTO(999)
-        {
-            PassengerName = "Jane Doe"
-        };
-
-        // Act
-        var result = await _controller.UpdateTicket(ticketId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<TicketDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var exception = Assert.IsType<HttpTicketValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, exception.StatusCode);
-    }
-
-    /// <summary>
-    /// EP4: Service throws exception - should return 500 Internal Server Error
-    /// </summary>
-    [Fact]
-    [Unit]
-    public async Task UpdateTicket_ServiceError_ShouldThrowException()
-    {
-        // Arrange
-        var ticketId = 1;
-        var updateDto = new UpdateTicketDTO(ticketId)
-        {
-            PassengerName = "Jane Doe"
-        };
-        
-        _mockService.Setup(s => s.GetByIdAsync(ticketId))
-            .ThrowsAsync(new Exception("Database error"));
-
-        // Act & Assert
-        await Assert.ThrowsAsync<TicketInternalServerException>(
-            () => _controller.UpdateTicket(ticketId, updateDto)
-        );
     }
 
     #endregion

@@ -17,11 +17,6 @@ public class TestPostgresDatabaseContext : TicketsDatabaseContext
     public new DbSet<TicketPostgresqlModel> Tickets => Set<TicketPostgresqlModel>();
 
     /// <summary>
-    /// DbSet for Booking entities
-    /// </summary>
-    public new DbSet<BookingPostgresqlModel> Bookings => Set<BookingPostgresqlModel>();
-
-    /// <summary>
     /// Default constructor
     /// </summary>
     public TestPostgresDatabaseContext() { }
@@ -58,7 +53,7 @@ public class TestPostgresDatabaseContext : TicketsDatabaseContext
 
         // Build from individual test environment variables
         var host = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_HOST") ?? "localhost";
-        var port = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_PORT") ?? "5432";
+        var port = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_PORT") ?? "5472";
         var database = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_DATABASE") ?? "test_tickets";
         var username = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_USER") ?? "program";
         var password = Environment.GetEnvironmentVariable("TEST_POSTGRESQL_PASSWORD") ?? "test";
@@ -95,8 +90,5 @@ public class TestPostgresDatabaseContext : TicketsDatabaseContext
 
         // Clear Tickets table
         await Tickets.ExecuteDeleteAsync();
-        
-        // Clear Bookings table
-        await Bookings.ExecuteDeleteAsync();
     }
 }

@@ -14,14 +14,15 @@ using ServiceTicketBusinessRuleViolationException = core.exceptions.businesslogi
 using HttpTicketNotFoundException = presentation.exceptions.http.Ticket.TicketNotFoundException;
 using HttpTicketValidationException = presentation.exceptions.http.Ticket.TicketValidationException;
 using HttpTicketBusinessRuleViolationException = presentation.exceptions.http.Ticket.TicketBusinessRuleViolationException;
+using HttpTicketAccessForbiddenException = presentation.exceptions.http.Ticket.TicketAccessForbiddenException;
 
 using System.Linq;
 
 namespace presentation.controllers.http;
 
 /// <summary>
-/// HTTP Controller for Ticket CRUD operations
-/// Implements RESTful API endpoints for managing Ticket entities
+/// HTTP Controller for Ticket operations per lab2-template v1 spec
+/// Endpoints: GET /tickets, GET /tickets/{ticketUid}, POST /tickets (BuyTicket), DELETE /tickets/{ticketUid} (ReturnTicket)
 /// </summary>
 [ApiController]
 [Route("api/v1/tickets")]
@@ -31,261 +32,179 @@ public class TicketHttpController : ControllerBase
 {
     private readonly ITicketService _ticketService;
     private readonly ILogger<TicketHttpController> _logger;
-    private readonly BookingSagaCoordinator _bookingSagaCoordinator;
 
-    /// <summary>
-    /// Initializes a new instance of the TicketHttpController
-    /// </summary>
-    /// <param name="ticketService">The Ticket business logic service</param>
-    /// <param name="logger">The logger for the controller</param>
     public TicketHttpController(
         ITicketService ticketService,
-        BookingSagaCoordinator bookingSagaCoordinator,
         ILogger<TicketHttpController> logger)
     {
         _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));
-        _bookingSagaCoordinator = bookingSagaCoordinator ?? throw new ArgumentNullException(nameof(bookingSagaCoordinator));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
-    /// Gets a Ticket by their unique identifier
+    /// Gets all tickets for the current user (X-User-Name header required)
     /// </summary>
-    /// <param name="ticketId">The unique identifier of the Ticket</param>
-    /// <returns>Ticket data with HTTP 200 OK</returns>
-    /// <response code="200">Returns the Ticket</response>
-    /// <response code="400">Validation error</response>
-    /// <response code="404">Ticket not found</response>
-    /// <response code="500">Server error</response>
-    [HttpGet("{ticketId}")]
-    [ProducesResponseType(typeof(TicketDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(HttpTicketNotFoundException), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(HttpTicketValidationException), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<TicketDTO>> GetTicketById(int ticketId)
-    {
-        try
-        {
-            _logger.LogDebug("Getting ticket by ID: {TicketId}", ticketId);
-            
-            var ticket = await _ticketService.GetByIdAsync(ticketId);
-            var dto = TicketHttpConverter.ToDTO(ticket);
-            
-            _logger.LogInformation("Ticket retrieved successfully: {TicketId}", ticketId);
-            return Ok(dto);
-        }
-        catch (ServiceTicketNotFoundException ex)
-        {
-            _logger.LogWarning(ex, "Ticket not found: {TicketId}", ticketId);
-            return NotFound(new HttpTicketNotFoundException(ticketId));
-        }
-        catch (ServiceTicketValidationException ex)
-        {
-            _logger.LogWarning(ex, "Ticket validation failed for ID: {TicketId}", ticketId);
-            var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpTicketValidationException(errorData));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting ticket by ID: {TicketId}", ticketId);
-            throw new TicketInternalServerException(ex);
-        }
-    }
-
-    /// <summary>
-    /// Gets all Tickets
-    /// </summary>
-    /// <returns>List of all Tickets with HTTP 200 OK</returns>
-    /// <response code="200">Returns the list of Tickets</response>
-    /// <response code="500">Server error</response>
     [HttpGet]
     [ProducesResponseType(typeof(List<TicketDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<List<TicketDTO>>> GetAllTickets(
-        [FromQuery] int? page,
-        [FromQuery] int? pageSize)
+    public async Task<ActionResult<List<TicketDTO>>> GetMyTickets()
     {
+        var username = Request.Headers["X-User-Name"].ToString();
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return BadRequest(new ErrorResponse("X-User-Name header is required"));
+        }
+
         try
         {
-            _logger.LogDebug("Getting all tickets");
+            _logger.LogDebug("Getting tickets for user: {Username}", username);
             
-            var tickets = await _ticketService.GetAllAsync();
-            var totalCount = tickets.Count;
-            
-            // Apply pagination if requested
-            if (page.HasValue && pageSize.HasValue && pageSize.Value > 0)
-            {
-                tickets = tickets.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value).ToList();
-            }
-            
+            var tickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
             var dtos = TicketHttpConverter.ToDTO(tickets);
             
-            _logger.LogInformation("Retrieved {Count} tickets", dtos.Count);
+            _logger.LogInformation("Retrieved {Count} tickets for user {Username}", dtos.Count, username);
             return Ok(dtos);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error getting all tickets");
+            _logger.LogError(ex, "Error getting tickets for user {Username}", username);
             throw new TicketInternalServerException(ex);
         }
     }
 
     /// <summary>
-    /// Creates a new Ticket
+    /// Gets a ticket by UID (checks ownership via X-User-Name header)
     /// </summary>
-    /// <param name="createDto">The Ticket data to create</param>
-    /// <returns>Created Ticket with HTTP 201 Created and Location header</returns>
-    /// <response code="201">Ticket created successfully</response>
-    /// <response code="400">Validation error</response>
-    /// <response code="409">Ticket already exists</response>
-    /// <response code="500">Server error</response>
-    [HttpPost]
-    [ProducesResponseType(typeof(TicketDTO), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(HttpTicketValidationException), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(HttpTicketBusinessRuleViolationException), StatusCodes.Status409Conflict)]
-    [ProducesResponseType(typeof(SagaException), StatusCodes.Status500InternalServerError)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<TicketDTO>> CreateTicket(
-        [FromBody] CreateTicketDTO createDto)
-    {
-        try
-        {
-            if (!ModelState.IsValid)
-            {
-                var errorData = ModelState
-                    .Where(x => x.Value != null && x.Value!.Errors.Count > 0)
-                    .ToDictionary(
-                        kvp => kvp.Key,
-                        kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpTicketValidationException(errorData));
-            }
-            
-            _logger.LogDebug("Creating new ticket with SAGA pattern");
-            
-            var ticket = TicketHttpConverter.ToCreateDomain(createDto);
-            var createdTicket = await _ticketService.CreateAsync(ticket);
-            var dto = TicketHttpConverter.ToDTO(createdTicket);
-            
-            _logger.LogInformation("Ticket created successfully: {TicketId}", createdTicket.Id);
-            return CreatedAtAction(
-                nameof(GetTicketById),
-                new { ticketId = createdTicket.Id },
-                dto);
-        }
-        catch (ServiceTicketValidationException ex)
-        {
-            _logger.LogWarning(ex, "Ticket validation failed");
-            var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpTicketValidationException(errorData));
-        }
-        catch (ServiceTicketBusinessRuleViolationException ex)
-        {
-            _logger.LogWarning(ex, "Ticket business rule violation");
-            return Conflict(new HttpTicketBusinessRuleViolationException(ex.Message));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating ticket - initiating SAGA compensation");
-            
-            // SAGA compensation would be triggered here if partial state existed
-            throw new TicketInternalServerException(
-                $"Failed to create ticket. Any partial changes have been compensated. Error: {ex.Message}", 
-                ex);
-        }
-    }
-
-    /// <summary>
-    /// Updates an existing Ticket
-    /// </summary>
-    /// <param name="ticketId">The unique identifier of the Ticket to update</param>
-    /// <param name="updateDto">The updated Ticket data</param>
-    /// <returns>Updated Ticket with HTTP 200 OK</returns>
-    /// <response code="200">Ticket updated successfully</response>
-    /// <response code="400">Validation error</response>
-    /// <response code="404">Ticket not found</response>
-    /// <response code="500">Server error</response>
-    [HttpPut("{ticketId}")]
+    [HttpGet("{ticketUid:guid}")]
     [ProducesResponseType(typeof(TicketDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpTicketNotFoundException), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(HttpTicketValidationException), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(HttpTicketAccessForbiddenException), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<TicketDTO>> UpdateTicket(
-        int ticketId,
-        [FromBody] UpdateTicketDTO updateDto)
+    public async Task<ActionResult<TicketDTO>> GetTicketById(Guid ticketUid)
     {
+        var username = Request.Headers["X-User-Name"].ToString();
+        if (string.IsNullOrWhiteSpace(username))
+        {
+            return BadRequest(new ErrorResponse("X-User-Name header is required"));
+        }
+
         try
         {
-            _logger.LogDebug("Updating ticket: {TicketId}", ticketId);
+            _logger.LogDebug("Getting ticket: {TicketUid} for user {Username}", ticketUid, username);
             
-            var existingTicket = await _ticketService.GetByIdAsync(ticketId);
+            var ticket = await _ticketService.GetByIdByUserAsync(ticketUid, username);
             
-            // Ensure IDs match
-            if (existingTicket != null && existingTicket.Id != ticketId)
+            // Check ownership - return 403 if ticket belongs to another user
+            if (ticket.Username != username)
             {
-                _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", ticketId, existingTicket.Id);
-                var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
-                return BadRequest(new HttpTicketValidationException(errorData));
+                return StatusCode(403, new ErrorResponse($"Ticket {ticketUid} access forbidden"));
             }
             
-            var updatedTicket = TicketHttpConverter.ToUpdateDomain(updateDto, existingTicket);
-            var result = await _ticketService.UpdateAsync(updatedTicket);
-            var dto = TicketHttpConverter.ToDTO(result);
+            var dto = TicketHttpConverter.ToDTO(ticket);
             
-            _logger.LogInformation("Ticket updated successfully: {TicketId}", ticketId);
+            _logger.LogInformation("Ticket retrieved: {TicketUid} by {Username}", ticketUid, username);
             return Ok(dto);
         }
         catch (ServiceTicketNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Ticket not found for update: {TicketId}", ticketId);
-            return NotFound(new HttpTicketNotFoundException(ticketId));
-        }
-        catch (ServiceTicketValidationException ex)
-        {
-            _logger.LogWarning(ex, "Ticket validation failed for ID: {TicketId}", ticketId);
-            var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
-                .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpTicketValidationException(errorData));
+            _logger.LogWarning(ex, "Ticket not found: {TicketUid}", ticketUid);
+            return NotFound(new ErrorResponse($"Ticket {ticketUid} not found"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error updating ticket: {TicketId}", ticketId);
+            _logger.LogError(ex, "Error getting ticket: {TicketUid}", ticketUid);
             throw new TicketInternalServerException(ex);
         }
     }
 
     /// <summary>
-    /// Deletes a Ticket
+    /// Buys a ticket (per lab2-template v1 spec)
     /// </summary>
-    /// <param name="ticketId">The unique identifier of the Ticket to delete</param>
-    /// <returns>HTTP 204 No Content on success</returns>
-    /// <response code="204">Ticket deleted successfully</response>
-    /// <response code="404">Ticket not found</response>
-    /// <response code="500">Server error</response>
-    [HttpDelete("{ticketId}")]
-    [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(HttpTicketNotFoundException), StatusCodes.Status404NotFound)]
+    [HttpPost]
+    [ProducesResponseType(typeof(BuyTicketResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(HttpTicketValidationException), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult> DeleteTicket(int ticketId)
+    public async Task<ActionResult<BuyTicketResponse>> BuyTicket([FromBody] BuyTicketRequest request)
     {
         try
         {
-            _logger.LogDebug("Deleting ticket: {TicketId}", ticketId);
-            
-            await _ticketService.DeleteAsync(ticketId);
-            
-            _logger.LogInformation("Ticket deleted successfully: {TicketId}", ticketId);
-            return NoContent();
+            var username = Request.Headers["X-User-Name"].ToString();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return BadRequest(new ValidationErrorResponse("X-User-Name header is required"));
+            }
+
+            _logger.LogDebug("Buying ticket for user: {Username}", username);
+
+            var (ticketUid, paidByBonuses, paidByMoney) = await _ticketService.BuyTicketAsync(
+                username,
+                request.FlightNumber,
+                request.Price,
+                request.PaidFromBalance);
+
+            var response = new BuyTicketResponse
+            {
+                TicketUid = ticketUid,
+                PaidByBonuses = paidByBonuses,
+                PaidByMoney = paidByMoney,
+                Username = username,
+                FlightNumber = request.FlightNumber,
+                Price = request.Price
+            };
+
+            _logger.LogInformation("Ticket bought: {TicketUid} by {Username}", ticketUid, username);
+            return Created($"/api/v1/tickets/{ticketUid}", response);
         }
-        catch (ServiceTicketNotFoundException ex)
+        catch (ServiceTicketValidationException ex)
         {
-            _logger.LogWarning(ex, "Ticket not found for deletion: {TicketId}", ticketId);
-            return NotFound(new HttpTicketNotFoundException(ticketId));
+            _logger.LogWarning(ex, "Ticket validation failed");
+            return BadRequest(new ValidationErrorResponse(ex.Message, ex.Errors?.SelectMany(kvp => kvp.Value).ToList() ?? new List<string>()));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting ticket: {TicketId}", ticketId);
+            _logger.LogError(ex, "Error buying ticket");
+            throw new TicketInternalServerException(ex);
+        }
+    }
+
+    /// <summary>
+    /// Returns (cancels) a ticket (per lab2-template v1 spec)
+    /// </summary>
+    [HttpDelete("{ticketUid:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(typeof(HttpTicketValidationException), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(HttpTicketNotFoundException), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
+    public async Task<ActionResult> ReturnTicket(Guid ticketUid)
+    {
+        try
+        {
+            var username = Request.Headers["X-User-Name"].ToString();
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                return BadRequest(new ValidationErrorResponse("X-User-Name header is required"));
+            }
+
+            _logger.LogDebug("Returning ticket: {TicketUid} by {Username}", ticketUid, username);
+
+            var result = await _ticketService.ReturnTicketAsync(ticketUid, username);
+
+            _logger.LogInformation("Ticket returned: {TicketUid} by {Username}", ticketUid, username);
+            return NoContent();
+        }
+        catch (ServiceTicketValidationException ex)
+        {
+            _logger.LogWarning(ex, "Ticket validation failed for return: {TicketUid}", ticketUid);
+            return BadRequest(new ValidationErrorResponse(ex.Message));
+        }
+        catch (ServiceTicketNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "Ticket not found for return: {TicketUid}", ticketUid);
+            return NotFound(new ErrorResponse($"Ticket {ticketUid} not found"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error returning ticket: {TicketUid}", ticketUid);
             throw new TicketInternalServerException(ex);
         }
     }

@@ -1,4 +1,5 @@
 using core.exceptions.businesslogic.services;
+using core.filters;
 using core.interfaces.businesslogic.services;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
@@ -99,6 +100,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
     [ProducesResponseType(typeof(List<PrivilegeHistoryDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<List<PrivilegeHistoryDTO>>> GetAllPrivilegeHistories(
+        [FromQuery] PrivilegeHistoryFilter? filter,
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
@@ -106,7 +108,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
         {
             _logger.LogDebug("Getting all privilege histories");
             
-            var privilegeHistories = await _privilegeHistoryService.GetAllAsync();
+            var privilegeHistories = await _privilegeHistoryService.GetAllAsync(filter);
             var totalCount = privilegeHistories.Count;
             
             // Apply pagination if requested

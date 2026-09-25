@@ -19,6 +19,11 @@ public abstract class BaseHttpException : BaseException
     public Dictionary<string, string[]>? ErrorData { get; protected set; }
 
     /// <summary>
+    /// Validation errors (for compatibility with ValidationException)
+    /// </summary>
+    public Dictionary<string, string[]>? Errors => ErrorData;
+
+    /// <summary>
     /// Default constructor
     /// </summary>
     protected BaseHttpException()

@@ -14,6 +14,8 @@ public static class FlightHttpConverter
     /// </summary>
     public static FlightDTO ToDTO(core.domain.Flight flight)
     {
+        if (flight == null) return null!;
+        
         return new FlightDTO
         {
             Id = flight.Id,
@@ -23,8 +25,20 @@ public static class FlightHttpConverter
             FromAirportId = flight.FromAirportId,
             ToAirportId = flight.ToAirportId,
             Price = flight.Price,
-            FromAirport = null, // Will be populated by controller if needed
-            ToAirport = null,   // Will be populated by controller if needed
+            FromAirport = flight.FromAirport != null ? new AirportDTO
+            {
+                Id = flight.FromAirport.Id,
+                Name = flight.FromAirport.Name,
+                City = flight.FromAirport.City,
+                Country = flight.FromAirport.Country
+            } : null,
+            ToAirport = flight.ToAirport != null ? new AirportDTO
+            {
+                Id = flight.ToAirport.Id,
+                Name = flight.ToAirport.Name,
+                City = flight.ToAirport.City,
+                Country = flight.ToAirport.Country
+            } : null
         };
     }
 

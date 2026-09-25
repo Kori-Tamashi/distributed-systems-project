@@ -100,13 +100,14 @@ public class TicketHttpController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<List<TicketDTO>>> GetAllTickets(
         [FromQuery] int? page,
-        [FromQuery] int? pageSize)
+        [FromQuery] int? pageSize,
+        [FromQuery] string? username)
     {
         try
         {
             _logger.LogDebug("Getting all tickets");
             
-            var tickets = await _ticketService.GetAllAsync();
+            var tickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
             var totalCount = tickets.Count;
             
             // Apply pagination if requested
@@ -243,13 +244,6 @@ public class TicketHttpController : ControllerBase
                 }
                 
                 return BadRequest(new HttpTicketValidationException(validationErrors));
-            }
-            
-            // Ensure IDs match
-            if (ticketId != updateDto.Id)
-            {
-                _logger.LogWarning("ID mismatch: route ID {RouteId} != body ID {BodyId}", ticketId, updateDto.Id);
-                return BadRequest(new HttpTicketValidationException("Id", "ID in URL must match ID in request body"));
             }
             
             // Convert DTO to domain entity (partial update)

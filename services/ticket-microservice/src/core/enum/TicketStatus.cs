@@ -1,22 +1,17 @@
 namespace core.enums;
 
 /// <summary>
-/// Ticket status
+/// Ticket status (per lab2-template v1 spec: PAID, CANCELED)
 /// </summary>
 public enum TicketStatus
 {
     /// <summary>
-    /// Ticket is confirmed
+    /// Ticket is paid
     /// </summary>
-    Confirmed = 0,
+    Paid = 0,
 
     /// <summary>
-    /// Ticket is cancelled
+    /// Ticket is canceled
     /// </summary>
-    Cancelled = 1,
-
-    /// <summary>
-    /// Ticket is refunded
-    /// </summary>
-    Refunded = 2
+    Canceled = 1
 }

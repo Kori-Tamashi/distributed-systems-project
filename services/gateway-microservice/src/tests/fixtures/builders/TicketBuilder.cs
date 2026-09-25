@@ -1,25 +1,19 @@
 using core.domain;
-using core.enums;
 
 namespace tests.fixtures.builders;
 
 /// <summary>
-/// Test Data Builder for Ticket entity
+/// Test Data Builder for Ticket entity (per lab2-template v1 spec)
 /// Allows fluent construction of Ticket objects for testing
 /// </summary>
 public class TicketBuilder
 {
     private int _id = 1;
     private Guid _ticketUid = Guid.NewGuid();
-    private int _flightId = 1;
-    private string _passengerName = "John Doe";
-    private string _passengerEmail = "john.doe@example.com";
-    private string _passengerPhone = "+79001234567";
-    private string _seatNumber = "12A";
-    private TicketClass _class = TicketClass.Economy;
+    private string _username = "john_doe";
+    private string _flightNumber = "AFL031";
     private int _price = 15000;
-    private DateTime _bookingDate = DateTime.UtcNow;
-    private TicketStatus _status = TicketStatus.Confirmed;
+    private int _status = 1; // PAID
 
     /// <summary>
     /// Sets the Ticket Id
@@ -40,83 +34,20 @@ public class TicketBuilder
     }
 
     /// <summary>
-    /// Sets the Flight Id
+    /// Sets the Username
     /// </summary>
-    public TicketBuilder WithFlightId(int flightId)
+    public TicketBuilder WithUsername(string username)
     {
-        _flightId = flightId;
+        _username = username;
         return this;
     }
 
     /// <summary>
-    /// Sets the Passenger Name
+    /// Sets the Flight Number
     /// </summary>
-    public TicketBuilder WithPassengerName(string passengerName)
+    public TicketBuilder WithFlightNumber(string flightNumber)
     {
-        _passengerName = passengerName;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the Passenger Email
-    /// </summary>
-    public TicketBuilder WithPassengerEmail(string passengerEmail)
-    {
-        _passengerEmail = passengerEmail;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the Passenger Phone
-    /// </summary>
-    public TicketBuilder WithPassengerPhone(string passengerPhone)
-    {
-        _passengerPhone = passengerPhone;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the Seat Number
-    /// </summary>
-    public TicketBuilder WithSeatNumber(string seatNumber)
-    {
-        _seatNumber = seatNumber;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the Ticket Class
-    /// </summary>
-    public TicketBuilder WithClass(TicketClass @class)
-    {
-        _class = @class;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets Economy Class
-    /// </summary>
-    public TicketBuilder WithEconomyClass()
-    {
-        _class = TicketClass.Economy;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets Business Class
-    /// </summary>
-    public TicketBuilder WithBusinessClass()
-    {
-        _class = TicketClass.Business;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets First Class
-    /// </summary>
-    public TicketBuilder WithFirstClass()
-    {
-        _class = TicketClass.First;
+        _flightNumber = flightNumber;
         return this;
     }
 
@@ -130,47 +61,29 @@ public class TicketBuilder
     }
 
     /// <summary>
-    /// Sets the Booking Date
+    /// Sets the Ticket Status (PAID=1, CANCELED=2)
     /// </summary>
-    public TicketBuilder WithBookingDate(DateTime bookingDate)
-    {
-        _bookingDate = bookingDate;
-        return this;
-    }
-
-    /// <summary>
-    /// Sets a past booking date
-    /// </summary>
-    public TicketBuilder WithPastBookingDate()
-    {
-        _bookingDate = DateTime.UtcNow.AddDays(-7);
-        return this;
-    }
-
-    /// <summary>
-    /// Sets the Ticket Status
-    /// </summary>
-    public TicketBuilder WithStatus(TicketStatus status)
+    public TicketBuilder WithStatus(int status)
     {
         _status = status;
         return this;
     }
 
     /// <summary>
-    /// Sets Confirmed Status
+    /// Sets PAID status
     /// </summary>
-    public TicketBuilder WithConfirmedStatus()
+    public TicketBuilder WithPaidStatus()
     {
-        _status = TicketStatus.Confirmed;
+        _status = 1;
         return this;
     }
 
     /// <summary>
-    /// Sets Cancelled Status
+    /// Sets CANCELED status
     /// </summary>
     public TicketBuilder WithCancelledStatus()
     {
-        _status = TicketStatus.Cancelled;
+        _status = 2;
         return this;
     }
 
@@ -183,14 +96,9 @@ public class TicketBuilder
         {
             Id = _id,
             TicketUid = _ticketUid,
-            FlightId = _flightId,
-            PassengerName = _passengerName,
-            PassengerEmail = _passengerEmail,
-            PassengerPhone = _passengerPhone,
-            SeatNumber = _seatNumber,
-            Class = _class,
+            Username = _username,
+            FlightNumber = _flightNumber,
             Price = _price,
-            BookingDate = _bookingDate,
             Status = _status
         };
     }

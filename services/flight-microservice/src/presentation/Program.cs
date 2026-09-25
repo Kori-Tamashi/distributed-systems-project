@@ -4,6 +4,7 @@ using dataaccess.contexts.postgres;
 using dataaccess.repositories.postgres;
 using businesslogic.services;
 using presentation.controllers.http;
+using presentation.middleware;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -57,6 +58,7 @@ builder.WebHost.ConfigureKestrel(options =>
 var app = builder.Build();
 
 // Configure HTTP request pipeline
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 

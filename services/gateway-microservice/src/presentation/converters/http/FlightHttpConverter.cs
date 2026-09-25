@@ -24,6 +24,12 @@ public static class FlightHttpConverter
             FromAirportId = flight.FromAirportId,
             ToAirportId = flight.ToAirportId,
             Price = flight.Price,
+            FromAirport = flight.FromAirport != null 
+                ? $"{flight.FromAirport.City} {flight.FromAirport.Name}" 
+                : $"Airport {flight.FromAirportId}",
+            ToAirport = flight.ToAirport != null 
+                ? $"{flight.ToAirport.City} {flight.ToAirport.Name}" 
+                : $"Airport {flight.ToAirportId}",
         };
     }
 

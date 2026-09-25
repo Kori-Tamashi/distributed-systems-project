@@ -14,8 +14,9 @@ using TicketPostgresqlModel = dataaccess.models.postgres.TicketPostgresqlModel;
 namespace dataaccess.repositories.postgres;
 
 /// <summary>
-/// PostgreSQL implementation of ITicketRepository
-/// Provides data access operations for Ticket entities
+/// PostgreSQL implementation of ITicketRepository (per lab2-template v1 spec)
+/// Table: ticket
+/// Columns: ticket_uid, username, flight_number, price, status
 /// </summary>
 public class TicketPostgresqlRepository : ITicketRepository
 {
@@ -41,7 +42,7 @@ public class TicketPostgresqlRepository : ITicketRepository
     {
         try
         {
-            var model = await _context.Tickets.FindAsync(id)
+            var model = await _context.Ticket.FindAsync(id)
                 ?? throw new TicketNotFoundException(id);
 
             return TicketPostgresqlConverter.ToDomain(model);
@@ -66,7 +67,7 @@ public class TicketPostgresqlRepository : ITicketRepository
     {
         try
         {
-            var query = _context.Tickets.AsQueryable();
+            var query = _context.Ticket.AsQueryable();
 
             // Apply filter if provided
             if (filter != null)
@@ -101,7 +102,7 @@ public class TicketPostgresqlRepository : ITicketRepository
             }
 
             var model = TicketPostgresqlConverter.ToModel(ticket);
-            _context.Tickets.Add(model);
+            _context.Ticket.Add(model);
             await _context.SaveChangesAsync();
 
             // Return the created model directly (it's already tracked with the generated ID)
@@ -128,20 +129,15 @@ public class TicketPostgresqlRepository : ITicketRepository
     {
         try
         {
-            var existingModel = await _context.Tickets.FindAsync(ticket.Id)
+            var existingModel = await _context.Ticket.FindAsync(ticket.Id)
                 ?? throw new TicketNotFoundException(ticket.Id);
 
-            // Update properties
+            // Update properties (per spec: ticket_uid, username, flight_number, price, status)
             existingModel.TicketUid = ticket.TicketUid;
-            existingModel.FlightId = ticket.FlightId;
-            existingModel.PassengerName = ticket.PassengerName;
-            existingModel.PassengerEmail = ticket.PassengerEmail;
-            existingModel.PassengerPhone = ticket.PassengerPhone;
-            existingModel.SeatNumber = ticket.SeatNumber;
-            existingModel.Class = (int)ticket.Class;
+            existingModel.Username = ticket.Username;
+            existingModel.FlightNumber = ticket.FlightNumber;
             existingModel.Price = ticket.Price;
-            existingModel.BookingDate = ticket.BookingDate;
-            existingModel.Status = (int)ticket.Status;
+            existingModel.Status = ticket.Status;
 
             await _context.SaveChangesAsync();
 
@@ -167,14 +163,14 @@ public class TicketPostgresqlRepository : ITicketRepository
     {
         try
         {
-            var model = await _context.Tickets.FindAsync(id);
+            var model = await _context.Ticket.FindAsync(id);
 
             if (model == null)
             {
                 return false;
             }
 
-            _context.Tickets.Remove(model);
+            _context.Ticket.Remove(model);
             await _context.SaveChangesAsync();
 
             return true;
@@ -195,7 +191,7 @@ public class TicketPostgresqlRepository : ITicketRepository
     {
         try
         {
-            return await _context.Tickets.AnyAsync(t => t.Id == id);
+            return await _context.Ticket.AnyAsync(t => t.Id == id);
         }
         catch (Exception ex)
         {
@@ -213,7 +209,7 @@ public class TicketPostgresqlRepository : ITicketRepository
     {
         try
         {
-            var query = _context.Tickets.AsQueryable();
+            var query = _context.Ticket.AsQueryable();
 
             // Apply filter if provided
             if (filter != null)
@@ -242,37 +238,18 @@ public class TicketPostgresqlRepository : ITicketRepository
         if (filter == null)
             return query;
 
-        // Filter by FlightId
-        if (filter.FlightId.HasValue)
+        // Filter by Username (case-insensitive partial match)
+        if (!string.IsNullOrEmpty(filter.Username))
         {
-            query = query.Where(t => t.FlightId == filter.FlightId.Value);
+            var username = filter.Username.ToLower();
+            query = query.Where(t => t.Username.ToLower().Contains(username));
         }
 
-        // Filter by PassengerName (case-insensitive partial match)
-        if (!string.IsNullOrEmpty(filter.PassengerName))
+        // Filter by FlightNumber (case-insensitive partial match)
+        if (!string.IsNullOrEmpty(filter.FlightNumber))
         {
-            var passengerName = filter.PassengerName.ToLower();
-            query = query.Where(t => t.PassengerName.ToLower().Contains(passengerName));
-        }
-
-        // Filter by PassengerEmail (case-insensitive partial match)
-        if (!string.IsNullOrEmpty(filter.PassengerEmail))
-        {
-            var passengerEmail = filter.PassengerEmail.ToLower();
-            query = query.Where(t => t.PassengerEmail.ToLower().Contains(passengerEmail));
-        }
-
-        // Filter by SeatNumber (case-insensitive partial match)
-        if (!string.IsNullOrEmpty(filter.SeatNumber))
-        {
-            var seatNumber = filter.SeatNumber.ToLower();
-            query = query.Where(t => t.SeatNumber.ToLower().Contains(seatNumber));
-        }
-
-        // Filter by Class
-        if (filter.Class.HasValue)
-        {
-            query = query.Where(t => t.Class == (int)filter.Class.Value);
+            var flightNumber = filter.FlightNumber.ToLower();
+            query = query.Where(t => t.FlightNumber.ToLower().Contains(flightNumber));
         }
 
         // Filter by MinPrice
@@ -287,22 +264,10 @@ public class TicketPostgresqlRepository : ITicketRepository
             query = query.Where(t => t.Price <= filter.MaxPrice.Value);
         }
 
-        // Filter by MinBookingDate
-        if (filter.MinBookingDate.HasValue)
-        {
-            query = query.Where(t => t.BookingDate >= filter.MinBookingDate.Value);
-        }
-
-        // Filter by MaxBookingDate
-        if (filter.MaxBookingDate.HasValue)
-        {
-            query = query.Where(t => t.BookingDate <= filter.MaxBookingDate.Value);
-        }
-
         // Filter by Status
         if (filter.Status.HasValue)
         {
-            query = query.Where(t => t.Status == (int)filter.Status.Value);
+            query = query.Where(t => t.Status == filter.Status.Value);
         }
 
         return query;

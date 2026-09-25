@@ -1,17 +1,18 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using core.enums;
 
 namespace dataaccess.models.postgres;
 
 /// <summary>
-/// PostgreSQL entity model for Ticket
-/// Maps to 'tickets' table in database
+/// PostgreSQL entity model for Ticket (per lab2-template v1 spec)
+/// Maps to 'ticket' table with columns: id, ticket_uid, username, flight_number, price, status
 /// </summary>
-[Table("tickets")]
+[Table("ticket")]
 public class TicketPostgresqlModel
 {
     /// <summary>
-    /// Primary key - unique identifier
+    /// Primary key - auto increment
     /// </summary>
     [Key]
     [Column("id")]
@@ -25,50 +26,20 @@ public class TicketPostgresqlModel
     public Guid TicketUid { get; set; }
 
     /// <summary>
-    /// Flight identifier (foreign key to Flights table)
+    /// Username of the ticket owner
     /// </summary>
-    [Column("flight_id")]
+    [Column("username")]
     [Required]
-    public int FlightId { get; set; }
+    [MaxLength(80)]
+    public string Username { get; set; } = string.Empty;
 
     /// <summary>
-    /// Passenger full name
+    /// Flight number (e.g., "AFL031")
     /// </summary>
-    [Column("passenger_name")]
+    [Column("flight_number")]
     [Required]
-    [MaxLength(255)]
-    public string PassengerName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger email address
-    /// </summary>
-    [Column("passenger_email")]
-    [Required]
-    [MaxLength(255)]
-    public string PassengerEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger phone number
-    /// </summary>
-    [Column("passenger_phone")]
-    [Required]
-    [MaxLength(50)]
-    public string PassengerPhone { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Seat number (e.g., "12A", "23B")
-    /// </summary>
-    [Column("seat_number")]
-    [Required]
-    [MaxLength(10)]
-    public string SeatNumber { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Ticket class (Economy, Business, First)
-    /// </summary>
-    [Column("class")]
-    [Required]
-    public int Class { get; set; }
+    [MaxLength(20)]
+    public string FlightNumber { get; set; } = string.Empty;
 
     /// <summary>
     /// Ticket price in rubles
@@ -78,18 +49,9 @@ public class TicketPostgresqlModel
     public int Price { get; set; }
 
     /// <summary>
-    /// Booking date and time
-    /// </summary>
-    [Column("booking_date")]
-    [Required]
-    public DateTime BookingDate { get; set; }
-
-    /// <summary>
-    /// Ticket status (Confirmed, Cancelled, Refunded)
+    /// Ticket status (PAID, CANCELED)
     /// </summary>
     [Column("status")]
     [Required]
-    public int Status { get; set; }
-
-    /// <summary>
+    public TicketStatus Status { get; set; }
 }

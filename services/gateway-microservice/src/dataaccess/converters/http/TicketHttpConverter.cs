@@ -1,10 +1,9 @@
-using dataaccess.dto.http;
 using dataaccess.dto.http.Ticket;
 
 namespace dataaccess.converters.http;
 
 /// <summary>
-/// Converter for Ticket between domain and HTTP DTO representations
+/// Converter for Ticket between domain and HTTP DTO representations (per lab2-template v1 spec)
 /// </summary>
 public static class TicketHttpConverter
 {
@@ -13,20 +12,14 @@ public static class TicketHttpConverter
     /// </summary>
     public static TicketDTO ToDTO(core.domain.Ticket ticket)
     {
-        return new TicketDTO
-        {
-            Id = ticket.Id,
-            TicketUid = ticket.TicketUid,
-            FlightId = ticket.FlightId,
-            PassengerName = ticket.PassengerName,
-            PassengerEmail = ticket.PassengerEmail,
-            PassengerPhone = ticket.PassengerPhone,
-            SeatNumber = ticket.SeatNumber,
-            Class = (int)ticket.Class,
-            Price = ticket.Price,
-            BookingDate = ticket.BookingDate,
-            Status = (int)ticket.Status
-        };
+        return new TicketDTO(
+            id: ticket.Id,
+            ticketUid: ticket.TicketUid,
+            username: ticket.Username,
+            flightNumber: ticket.FlightNumber,
+            price: ticket.Price,
+            status: ticket.Status
+        );
     }
 
     /// <summary>
@@ -34,18 +27,13 @@ public static class TicketHttpConverter
     /// </summary>
     public static CreateTicketDTO ToCreateDTO(core.domain.Ticket ticket)
     {
-        return new CreateTicketDTO
-        {
-            FlightId = ticket.FlightId,
-            PassengerName = ticket.PassengerName,
-            PassengerEmail = ticket.PassengerEmail,
-            PassengerPhone = ticket.PassengerPhone,
-            SeatNumber = ticket.SeatNumber,
-            Class = (int)ticket.Class,
-            Price = ticket.Price,
-            BookingDate = ticket.BookingDate,
-            Status = (int)ticket.Status
-        };
+        return new CreateTicketDTO(
+            ticketUid: ticket.TicketUid,
+            username: ticket.Username,
+            flightNumber: ticket.FlightNumber,
+            price: ticket.Price,
+            status: ticket.Status
+        );
     }
 
     /// <summary>
@@ -57,15 +45,10 @@ public static class TicketHttpConverter
         {
             Id = dto.Id,
             TicketUid = dto.TicketUid,
-            FlightId = dto.FlightId,
-            PassengerName = dto.PassengerName,
-            PassengerEmail = dto.PassengerEmail,
-            PassengerPhone = dto.PassengerPhone,
-            SeatNumber = dto.SeatNumber,
-            Class = (core.enums.TicketClass)dto.Class,
+            Username = dto.Username,
+            FlightNumber = dto.FlightNumber,
             Price = dto.Price,
-            BookingDate = dto.BookingDate,
-            Status = (core.enums.TicketStatus)dto.Status
+            Status = dto.Status
         };
     }
 
@@ -76,37 +59,32 @@ public static class TicketHttpConverter
     {
         return new core.domain.Ticket
         {
-            Id = dto.Id,
             TicketUid = dto.TicketUid,
-            FlightId = dto.FlightId,
-            PassengerName = dto.PassengerName,
-            PassengerEmail = dto.PassengerEmail,
-            PassengerPhone = dto.PassengerPhone,
-            SeatNumber = dto.SeatNumber,
-            Class = (core.enums.TicketClass)dto.Class,
+            Username = dto.Username,
+            FlightNumber = dto.FlightNumber,
             Price = dto.Price,
-            BookingDate = dto.BookingDate,
-            Status = (core.enums.TicketStatus)dto.Status
+            Status = dto.Status
         };
     }
 
     /// <summary>
-    /// Converts UpdateTicketDTO to domain Ticket
+    /// Converts UpdateTicketDTO to domain Ticket (partial update)
     /// </summary>
     public static core.domain.Ticket ToDomain(UpdateTicketDTO dto)
     {
-        return new core.domain.Ticket
+        var ticket = new core.domain.Ticket
         {
-            Id = dto.Id,
-            TicketUid = dto.TicketUid ?? Guid.Empty,
-            FlightId = dto.FlightId ?? 0,
-            PassengerName = dto.PassengerName ?? string.Empty,
-            PassengerEmail = dto.PassengerEmail ?? string.Empty,
-            SeatNumber = dto.SeatNumber ?? string.Empty,
-            Class = dto.Class.HasValue ? (core.enums.TicketClass)dto.Class.Value : core.enums.TicketClass.Economy,
+            TicketUid = dto.TicketUid != Guid.Empty ? dto.TicketUid : Guid.Empty,
+            Username = dto.Username ?? string.Empty,
+            FlightNumber = dto.FlightNumber ?? string.Empty,
             Price = dto.Price ?? 0,
-            Status = dto.Status.HasValue ? (core.enums.TicketStatus)dto.Status.Value : core.enums.TicketStatus.Confirmed
+            Status = dto.Status ?? 1 // Default to PAID
         };
+
+        if (dto.Id != 0)
+            ticket.Id = dto.Id;
+
+        return ticket;
     }
 
     /// <summary>
@@ -114,20 +92,13 @@ public static class TicketHttpConverter
     /// </summary>
     public static UpdateTicketDTO ToUpdateDTO(core.domain.Ticket ticket)
     {
-        return new UpdateTicketDTO
-        {
-            Id = ticket.Id,
-            TicketUid = ticket.TicketUid,
-            FlightId = ticket.FlightId,
-            PassengerName = ticket.PassengerName,
-            PassengerEmail = ticket.PassengerEmail,
-            PassengerPhone = ticket.PassengerPhone,
-            SeatNumber = ticket.SeatNumber,
-            Class = (int?)ticket.Class,
-            Price = ticket.Price,
-            BookingDate = ticket.BookingDate,
-            Status = (int?)ticket.Status
-        };
+        return new UpdateTicketDTO(
+            ticketUid: ticket.TicketUid,
+            username: ticket.Username,
+            flightNumber: ticket.FlightNumber,
+            price: ticket.Price,
+            status: ticket.Status
+        );
     }
 
     /// <summary>

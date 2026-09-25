@@ -7,18 +7,8 @@ using Xunit;
 namespace tests.presentation.converters.unit.http;
 
 /// <summary>
-/// Unit tests for UserHttpConverter
+/// Unit tests for UserHttpConverter (per lab2-template v1 spec)
 /// AAA Structure: Arrange - Act - Assert
-/// 
-/// CLASS EQUIVALENCE PARTITIONING:
-/// 
-/// For ToDTO:
-/// - EP1: Valid user with privilege and tickets (normal case)
-/// - EP2: User with privilege but no tickets
-/// - EP3: User with tickets but no privilege (null privilege)
-/// - EP4: User with empty ticket list
-/// 
-/// Total: 4 unit tests (all should pass)
 /// </summary>
 public class UserHttpConverterUnitTests
 {
@@ -35,8 +25,8 @@ public class UserHttpConverterUnitTests
         var privilege = PrivilegeMother.CreateValidPrivilege();
         privilege.Username = username;
         var tickets = TicketMother.CreateTicketList(3);
-        tickets[0].PassengerName = username;
-        tickets[1].PassengerName = username;
+        tickets[0].Username = username;
+        tickets[1].Username = username;
 
         // Act
         var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets);
@@ -51,7 +41,7 @@ public class UserHttpConverterUnitTests
         Assert.NotNull(userInfo.Tickets);
         Assert.Equal(3, userInfo.Tickets.Count);
         Assert.Equal(tickets[0].Id, userInfo.Tickets[0].Id);
-        Assert.Equal(tickets[0].PassengerName, userInfo.Tickets[0].PassengerName);
+        Assert.Equal(tickets[0].Username, userInfo.Tickets[0].Username);
     }
 
     /// <summary>
@@ -88,7 +78,7 @@ public class UserHttpConverterUnitTests
         var username = "guest_user";
         core.domain.Privilege? privilege = null;
         var tickets = TicketMother.CreateTicketList(2);
-        tickets[0].PassengerName = username;
+        tickets[0].Username = username;
 
         // Act
         var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets);

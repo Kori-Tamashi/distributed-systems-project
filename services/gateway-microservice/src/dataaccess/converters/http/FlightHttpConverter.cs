@@ -1,5 +1,6 @@
 using dataaccess.dto.http;
 using dataaccess.dto.http.Flight;
+using dataaccess.dto.http.Airport;
 
 namespace dataaccess.converters.http;
 
@@ -21,7 +22,21 @@ public static class FlightHttpConverter
             DateTime = flight.DateTime,
             FromAirportId = flight.FromAirportId,
             ToAirportId = flight.ToAirportId,
-            Price = flight.Price
+            Price = flight.Price,
+            FromAirport = flight.FromAirport != null ? new AirportDTO
+            {
+                Id = flight.FromAirport.Id,
+                Name = flight.FromAirport.Name,
+                City = flight.FromAirport.City,
+                Country = flight.FromAirport.Country
+            } : null,
+            ToAirport = flight.ToAirport != null ? new AirportDTO
+            {
+                Id = flight.ToAirport.Id,
+                Name = flight.ToAirport.Name,
+                City = flight.ToAirport.City,
+                Country = flight.ToAirport.Country
+            } : null
         };
     }
 
@@ -38,7 +53,21 @@ public static class FlightHttpConverter
             DateTime = dto.DateTime,
             FromAirportId = dto.FromAirportId,
             ToAirportId = dto.ToAirportId,
-            Price = dto.Price
+            Price = dto.Price,
+            FromAirport = dto.FromAirport != null ? new core.domain.Airport
+            {
+                Id = dto.FromAirport.Id,
+                Name = dto.FromAirport.Name,
+                City = dto.FromAirport.City,
+                Country = dto.FromAirport.Country
+            } : null,
+            ToAirport = dto.ToAirport != null ? new core.domain.Airport
+            {
+                Id = dto.ToAirport.Id,
+                Name = dto.ToAirport.Name,
+                City = dto.ToAirport.City,
+                Country = dto.ToAirport.Country
+            } : null
         };
     }
 

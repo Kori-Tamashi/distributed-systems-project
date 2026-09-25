@@ -26,6 +26,16 @@ public class TicketValidationException : BaseHttpException
     }
 
     /// <summary>
+    /// Constructor with message and error data
+    /// </summary>
+    /// <param name="message">Validation error message</param>
+    /// <param name="errorData">Dictionary of validation errors</param>
+    public TicketValidationException(string message, Dictionary<string, string[]> errorData)
+        : base(400, "TICKET_VALIDATION_FAILED", message, errorData)
+    {
+    }
+
+    /// <summary>
     /// Constructor with message and inner exception
     /// </summary>
     /// <param name="message">Validation error message</param>

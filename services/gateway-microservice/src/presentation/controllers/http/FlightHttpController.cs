@@ -95,9 +95,9 @@ public class FlightHttpController : ControllerBase
     /// <response code="200">Returns the list of Flights</response>
     /// <response code="500">Server error</response>
     [HttpGet]
-    [ProducesResponseType(typeof(List<FlightDTO>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginationResponse<FlightDTO>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<List<FlightDTO>>> GetAllFlights(
+    public async Task<ActionResult<PaginationResponse<FlightDTO>>> GetAllFlights(
         [FromQuery] int? page,
         [FromQuery] int? pageSize)
     {
@@ -109,15 +109,25 @@ public class FlightHttpController : ControllerBase
             var totalCount = flights.Count;
             
             // Apply pagination if requested
+            var pagedFlights = flights;
             if (page.HasValue && pageSize.HasValue && pageSize.Value > 0)
             {
-                flights = flights.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value).ToList();
+                pagedFlights = flights.Skip((page.Value - 1) * pageSize.Value).Take(pageSize.Value).ToList();
             }
             
-            var dtos = FlightHttpConverter.ToDTO(flights);
+            var dtos = FlightHttpConverter.ToDTO(pagedFlights);
             
-            _logger.LogInformation("Retrieved {Count} flights", dtos.Count);
-            return Ok(dtos);
+            _logger.LogInformation("Retrieved {Count} flights (page {Page}, size {PageSize})", dtos.Count, page ?? 1, pageSize ?? 10);
+            
+            var response = new PaginationResponse<FlightDTO>
+            {
+                Items = dtos,
+                Page = page ?? 1,
+                PageSize = pageSize ?? 10,
+                TotalElements = totalCount
+            };
+            
+            return Ok(response);
         }
         catch (Exception ex)
         {

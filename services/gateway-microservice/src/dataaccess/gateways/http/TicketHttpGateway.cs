@@ -3,13 +3,12 @@ using core.exceptions.dataaccess.gateways;
 using core.filters;
 using core.interfaces.dataaccess.gateways;
 using dataaccess.converters.http;
-using dataaccess.dto.http;
 using dataaccess.dto.http.Ticket;
 
 namespace dataaccess.gateways.http;
 
 /// <summary>
-/// HTTP Gateway implementation for Ticket microservice
+/// HTTP Gateway implementation for Ticket microservice (per lab2-template v1 spec)
 /// </summary>
 public class TicketHttpGateway : BaseHttpGateway, ITicketGateway
 {
@@ -76,26 +75,16 @@ public class TicketHttpGateway : BaseHttpGateway, ITicketGateway
     {
         var parameters = new List<string>();
 
-        if (filter.FlightId.HasValue)
-            parameters.Add($"flightId={filter.FlightId.Value}");
-        if (!string.IsNullOrEmpty(filter.PassengerName))
-            parameters.Add($"passengerName={Uri.EscapeDataString(filter.PassengerName)}");
-        if (!string.IsNullOrEmpty(filter.PassengerEmail))
-            parameters.Add($"passengerEmail={Uri.EscapeDataString(filter.PassengerEmail)}");
-        if (!string.IsNullOrEmpty(filter.SeatNumber))
-            parameters.Add($"seatNumber={Uri.EscapeDataString(filter.SeatNumber)}");
-        if (filter.Class.HasValue)
-            parameters.Add($"class={(int)filter.Class.Value}");
+        if (!string.IsNullOrEmpty(filter.FlightNumber))
+            parameters.Add($"flightNumber={Uri.EscapeDataString(filter.FlightNumber)}");
+        if (!string.IsNullOrEmpty(filter.Username))
+            parameters.Add($"username={Uri.EscapeDataString(filter.Username)}");
         if (filter.MinPrice.HasValue)
             parameters.Add($"minPrice={filter.MinPrice.Value}");
         if (filter.MaxPrice.HasValue)
             parameters.Add($"maxPrice={filter.MaxPrice.Value}");
-        if (filter.MinBookingDate.HasValue)
-            parameters.Add($"minBookingDate={filter.MinBookingDate.Value:yyyy-MM-dd}");
-        if (filter.MaxBookingDate.HasValue)
-            parameters.Add($"maxBookingDate={filter.MaxBookingDate.Value:yyyy-MM-dd}");
         if (filter.Status.HasValue)
-            parameters.Add($"status={(int)filter.Status.Value}");
+            parameters.Add($"status={filter.Status.Value}");
 
         return parameters.Any() ? "?" + string.Join("&", parameters) : string.Empty;
     }

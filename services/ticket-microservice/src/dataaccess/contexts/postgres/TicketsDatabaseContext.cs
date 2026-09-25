@@ -6,21 +6,16 @@ using core.interfaces.dataaccess.contexts;
 namespace dataaccess.contexts.postgres;
 
 /// <summary>
-/// EF Core DbContext for PostgreSQL database
-/// Manages database connection and entity configurations
-/// Implements IDatabaseContext for dependency inversion
+/// EF Core DbContext for PostgreSQL database (per lab2-template v1 spec)
+/// Table: ticket (singular)
+/// Columns: id, ticket_uid, username, flight_number, price, status
 /// </summary>
 public class TicketsDatabaseContext : DbContext, IDatabaseContext
 {
     /// <summary>
-    /// DbSet for Ticket entities
+    /// DbSet for Ticket entities (table name: ticket - singular per spec)
     /// </summary>
-    public virtual DbSet<TicketPostgresqlModel> Tickets => Set<TicketPostgresqlModel>();
-
-    /// <summary>
-    /// DbSet for Booking entities
-    /// </summary>
-    public virtual DbSet<BookingPostgresqlModel> Bookings => Set<BookingPostgresqlModel>();
+    public virtual DbSet<TicketPostgresqlModel> Ticket => Set<TicketPostgresqlModel>();
 
     private IDbContextTransaction? _transaction;
 
@@ -44,17 +39,17 @@ public class TicketsDatabaseContext : DbContext, IDatabaseContext
     }
 
     /// <summary>
-    /// Configures model relationships and constraints
+    /// Configures model relationships and constraints (per lab2-template v1 spec)
     /// </summary>
     /// <param name="modelBuilder">Model builder for configuration</param>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        // Configure Ticket entity
+        // Configure Ticket entity (table: ticket - singular)
         modelBuilder.Entity<TicketPostgresqlModel>(entity =>
         {
-            entity.ToTable("tickets");
+            entity.ToTable("ticket");
 
             entity.HasKey(e => e.Id);
 
@@ -66,114 +61,28 @@ public class TicketsDatabaseContext : DbContext, IDatabaseContext
                 .HasColumnName("ticket_uid")
                 .IsRequired();
 
-            entity.Property(e => e.FlightId)
-                .HasColumnName("flight_id")
-                .IsRequired();
-
-            entity.Property(e => e.PassengerName)
-                .HasColumnName("passenger_name")
+            entity.Property(e => e.Username)
+                .HasColumnName("username")
                 .IsRequired()
-                .HasMaxLength(255);
+                .HasMaxLength(80);
 
-            entity.Property(e => e.PassengerEmail)
-                .HasColumnName("passenger_email")
+            entity.Property(e => e.FlightNumber)
+                .HasColumnName("flight_number")
                 .IsRequired()
-                .HasMaxLength(255);
-
-            entity.Property(e => e.PassengerPhone)
-                .HasColumnName("passenger_phone")
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(e => e.SeatNumber)
-                .HasColumnName("seat_number")
-                .IsRequired()
-                .HasMaxLength(10);
-
-            entity.Property(e => e.Class)
-                .HasColumnName("class")
-                .IsRequired();
+                .HasMaxLength(20);
 
             entity.Property(e => e.Price)
                 .HasColumnName("price")
                 .IsRequired();
 
-            entity.Property(e => e.BookingDate)
-                .HasColumnName("booking_date")
-                .IsRequired();
-
             entity.Property(e => e.Status)
                 .HasColumnName("status")
                 .IsRequired();
 
             // Create indexes for faster searches
-            entity.HasIndex(e => e.TicketUid);
-            entity.HasIndex(e => e.FlightId);
-            entity.HasIndex(e => e.PassengerEmail);
-            entity.HasIndex(e => e.BookingDate);
-            entity.HasIndex(e => e.Status);
-        });
-
-        // Configure Booking entity
-        modelBuilder.Entity<BookingPostgresqlModel>(entity =>
-        {
-            entity.ToTable("bookings");
-
-            entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.Id)
-                .HasColumnName("id")
-                .ValueGeneratedOnAdd();
-
-            entity.Property(e => e.BookingUid)
-                .HasColumnName("booking_uid")
-                .IsRequired();
-
-            entity.Property(e => e.BookingReference)
-                .HasColumnName("booking_reference")
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(e => e.CustomerName)
-                .HasColumnName("customer_name")
-                .IsRequired()
-                .HasMaxLength(255);
-
-            entity.Property(e => e.CustomerEmail)
-                .HasColumnName("customer_email")
-                .IsRequired()
-                .HasMaxLength(255);
-
-            entity.Property(e => e.CustomerPhone)
-                .HasColumnName("customer_phone")
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(e => e.TotalPrice)
-                .HasColumnName("total_price")
-                .IsRequired();
-
-            entity.Property(e => e.BookingDate)
-                .HasColumnName("booking_date")
-                .IsRequired();
-
-            entity.Property(e => e.Status)
-                .HasColumnName("status")
-                .IsRequired();
-
-            entity.Property(e => e.PaymentMethod)
-                .HasColumnName("payment_method")
-                .IsRequired();
-
-            entity.Property(e => e.PaymentTransactionId)
-                .HasColumnName("payment_transaction_id")
-                .HasMaxLength(255);
-
-            // Create indexes for faster searches
-            entity.HasIndex(e => e.BookingUid);
-            entity.HasIndex(e => e.BookingReference);
-            entity.HasIndex(e => e.CustomerEmail);
-            entity.HasIndex(e => e.BookingDate);
+            entity.HasIndex(e => e.TicketUid).IsUnique();
+            entity.HasIndex(e => e.Username);
+            entity.HasIndex(e => e.FlightNumber);
             entity.HasIndex(e => e.Status);
         });
     }
@@ -225,30 +134,6 @@ public class TicketsDatabaseContext : DbContext, IDatabaseContext
     /// <inheritdoc/>
     public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        var addedTickets = ChangeTracker.Entries<TicketPostgresqlModel>()
-            .Where(e => e.State == EntityState.Added);
-        foreach (var entry in addedTickets)
-        {
-        }
-
-        var modifiedTickets = ChangeTracker.Entries<TicketPostgresqlModel>()
-            .Where(e => e.State == EntityState.Modified);
-        foreach (var entry in modifiedTickets)
-        {
-        }
-
-        var addedBookings = ChangeTracker.Entries<BookingPostgresqlModel>()
-            .Where(e => e.State == EntityState.Added);
-        foreach (var entry in addedBookings)
-        {
-        }
-
-        var modifiedBookings = ChangeTracker.Entries<BookingPostgresqlModel>()
-            .Where(e => e.State == EntityState.Modified);
-        foreach (var entry in modifiedBookings)
-        {
-        }
-
         return base.SaveChangesAsync(cancellationToken);
     }
 
