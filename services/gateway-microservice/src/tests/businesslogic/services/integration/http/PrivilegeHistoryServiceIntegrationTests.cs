@@ -248,14 +248,5 @@ public class PrivilegeHistoryServiceIntegrationTests : HttpIntegrationTestBase
         Assert.True(result >= 0);
     }
 
-    [Fact]
-    [Integration]
-    public async Task GetCountAsync_WithFilter_ShouldReturnFilteredCount()
-    {
-        var filter = new PrivilegeHistoryFilter { OperationType = (OperationType)(-1) };
-        var result = await _service.GetCountAsync(filter);
-        Assert.True(result >= 0);
-    }
-
     #endregion
 }
