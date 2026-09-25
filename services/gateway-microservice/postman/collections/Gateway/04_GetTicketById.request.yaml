@@ -1,0 +1,19 @@
+$kind: http-request
+order: 400
+method: GET
+url: '{{baseUrl}}/api/v1/tickets/{{ticketUid}}'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Информация по конкретному билету', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        pm.expect(response.ticketUid).to.be.eq(pm.collectionVariables.get('ticketUid'));
+        pm.expect(response.status).to.eq('PAID');
+      });

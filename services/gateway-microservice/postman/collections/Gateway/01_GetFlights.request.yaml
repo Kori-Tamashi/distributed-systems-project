@@ -1,0 +1,18 @@
+$kind: http-request
+order: 100
+method: GET
+url: '{{baseUrl}}/api/v1/flights?page=0&size=10'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Получить список рейсов', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        pm.expect(response.items).to.be.an('array');
+        pm.expect(response.page).to.be.not.undefined;
+        pm.expect(response.pageSize).to.be.not.undefined;
+        pm.expect(response.totalElements).to.be.not.undefined;
+      });

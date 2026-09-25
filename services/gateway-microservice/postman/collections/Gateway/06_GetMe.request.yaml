@@ -1,0 +1,19 @@
+$kind: http-request
+order: 600
+method: GET
+url: '{{baseUrl}}/api/v1/me'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Информация о пользователе', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        pm.expect(response.privilege).to.be.not.undefined;
+        pm.expect(response.tickets).to.be.an('array');
+      });

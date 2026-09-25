@@ -1,0 +1,14 @@
+$kind: http-request
+order: 800
+method: DELETE
+url: '{{baseUrl}}/api/v1/tickets/{{ticketUid}}'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Возврат билета', () => {
+        pm.response.to.have.status(204);
+      });
