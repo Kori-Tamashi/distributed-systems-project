@@ -29,3 +29,4 @@ logs/
 .env.local
 # Allow .env in services directory for development
 !services/**/.env
+lab2-template/
