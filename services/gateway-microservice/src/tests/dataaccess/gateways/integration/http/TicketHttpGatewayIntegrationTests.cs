@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using core.domain;
-using core.enums;
 using core.filters;
 using core.interfaces.dataaccess.gateways;
 using dataaccess.gateways.http;
@@ -15,12 +14,11 @@ using Xunit;
 
 namespace tests.dataaccess.gateways.integration.http;
 
-[Collection("HttpGatewayIntegrationTests")]
+[Collection("HttpGateway IntegrationTests")]
 /// <summary>
-/// Integration tests for TicketHttpGateway
+/// Integration tests for TicketHttpGateway (per lab2-template v1 spec)
 /// Sends real HTTP requests to ticket-microservice-api-test
 /// CEP: GetAllAsync(EP1-3), GetByIdAsync(EP1-2), CreateAsync(EP1)
-/// Note: Only tests GET and POST methods (PUT/DELETE not supported by ticket API)
 /// </summary>
 public class TicketHttpGatewayIntegrationTests : IDisposable
 {
@@ -50,7 +48,7 @@ public class TicketHttpGatewayIntegrationTests : IDisposable
     [Integration]
     public async Task GetAllAsync_WithFilter_ShouldReturnMatchingTickets()
     {
-        var tickets = await _gateway.GetAllAsync(new TicketFilter { FlightId = 1 });
+        var tickets = await _gateway.GetAllAsync(new TicketFilter { FlightNumber = "AFL031" });
         Assert.NotNull(tickets);
     }
 
@@ -71,19 +69,16 @@ public class TicketHttpGatewayIntegrationTests : IDisposable
     [Integration]
     public async Task CreateAsync_ValidTicket_ShouldCreateTicket()
     {
-        // Use a fixed flight ID that likely exists in test database
         var t = new TicketBuilder()
             .WithId(0)
-            .WithFlightId(1)
-            .WithPassengerName("Test Passenger")
-            .WithPassengerEmail("test" + Guid.NewGuid().ToString().Substring(0, 8) + "@example.com")
-            .WithClass(TicketClass.Economy)
+            .WithUsername("test_passenger")
+            .WithFlightNumber("AFL031")
             .WithPrice(15000)
-            .WithConfirmedStatus()
+            .WithPaidStatus()
             .Build();
         
         var created = await _gateway.CreateAsync(t);
         Assert.NotNull(created);
-        Assert.Equal(t.PassengerName, created.PassengerName);
+        Assert.Equal(t.Username, created.Username);
     }
 }

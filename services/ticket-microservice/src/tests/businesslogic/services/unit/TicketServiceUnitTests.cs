@@ -94,7 +94,7 @@ public class TicketServiceUnitTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(ticket.Id, result.Id);
-        Assert.Equal(ticket.PassengerName, result.PassengerName);
+        Assert.Equal(ticket.Username, result.Username);
         _mockTicketRepository.Verify(r => r.GetByIdAsync(ticket.Id), Times.Once);
     }
 
@@ -184,7 +184,7 @@ public class TicketServiceUnitTests
     public async Task GetAllAsync_WithFilter_ShouldPassFilterToRepository()
     {
         // Arrange
-        var filter = new core.filters.TicketFilter { PassengerEmail = "test@example.com" };
+        var filter = new core.filters.TicketFilter { Username = "test@example.com" };
         var filteredTickets = new List<Ticket> { TicketMother.CreateValidTicket() };
         _mockTicketRepository.Setup(r => r.GetAllAsync(filter)).ReturnsAsync(filteredTickets);
 
@@ -235,7 +235,7 @@ public class TicketServiceUnitTests
 
         // Assert
         Assert.NotNull(result);
-        Assert.Equal(ticket.PassengerName, result.PassengerName);
+        Assert.Equal(ticket.Username, result.Username);
         _mockTicketRepository.Verify(r => r.CreateAsync(ticket), Times.Once);
     }
 
@@ -262,7 +262,7 @@ public class TicketServiceUnitTests
     {
         // Arrange
         var ticket = TicketMother.CreateValidTicket();
-        ticket.PassengerEmail = "";
+        ticket.Username = "";
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<TicketValidationException>(

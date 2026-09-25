@@ -500,11 +500,12 @@ public class PrivilegeHttpControllerUnitTests
         var amount = 500;
         var ticketUid = Guid.NewGuid();
         privilege.Balance += amount;
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.CreditBalanceAsync(privilege.Id, amount, ticketUid))
             .ReturnsAsync(privilege);
 
         // Act
-        var result = await _controller.CreditBalance(privilege.Id, amount, ticketUid);
+        var result = await _controller.CreditBalance(privilege.Id, request);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
@@ -526,11 +527,12 @@ public class PrivilegeHttpControllerUnitTests
         var privilegeId = 999;
         var amount = 500;
         var ticketUid = Guid.NewGuid();
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.CreditBalanceAsync(privilegeId, amount, ticketUid))
             .ThrowsAsync(new ServicePrivilegeNotFoundException(privilegeId));
 
         // Act
-        var result = await _controller.CreditBalance(privilegeId, amount, ticketUid);
+        var result = await _controller.CreditBalance(privilegeId, request);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
@@ -551,11 +553,12 @@ public class PrivilegeHttpControllerUnitTests
         var privilegeId = 1;
         var amount = 500;
         var ticketUid = Guid.NewGuid();
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.CreditBalanceAsync(privilegeId, amount, ticketUid))
             .ThrowsAsync(new System.Exception("Database error"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<PrivilegeInternalServerException>(() => _controller.CreditBalance(privilegeId, amount, ticketUid));
+        await Assert.ThrowsAsync<PrivilegeInternalServerException>(() => _controller.CreditBalance(privilegeId, request));
     }
 
     #endregion
@@ -574,11 +577,12 @@ public class PrivilegeHttpControllerUnitTests
         var amount = 200;
         var ticketUid = Guid.NewGuid();
         privilege.Balance -= amount;
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.DebitBalanceAsync(privilege.Id, amount, ticketUid))
             .ReturnsAsync(privilege);
 
         // Act
-        var result = await _controller.DebitBalance(privilege.Id, amount, ticketUid);
+        var result = await _controller.DebitBalance(privilege.Id, request);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
@@ -600,11 +604,12 @@ public class PrivilegeHttpControllerUnitTests
         var privilegeId = 999;
         var amount = 200;
         var ticketUid = Guid.NewGuid();
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.DebitBalanceAsync(privilegeId, amount, ticketUid))
             .ThrowsAsync(new ServicePrivilegeNotFoundException(privilegeId));
 
         // Act
-        var result = await _controller.DebitBalance(privilegeId, amount, ticketUid);
+        var result = await _controller.DebitBalance(privilegeId, request);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
@@ -625,11 +630,12 @@ public class PrivilegeHttpControllerUnitTests
         var privilege = PrivilegeMother.CreatePrivilegeWithZeroBalance();
         var amount = 100;
         var ticketUid = Guid.NewGuid();
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.DebitBalanceAsync(privilege.Id, amount, ticketUid))
             .ThrowsAsync(new ServicePrivilegeBusinessRuleViolationException("INSUFFICIENT_BALANCE", "Insufficient balance"));
 
         // Act
-        var result = await _controller.DebitBalance(privilege.Id, amount, ticketUid);
+        var result = await _controller.DebitBalance(privilege.Id, request);
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
@@ -650,11 +656,12 @@ public class PrivilegeHttpControllerUnitTests
         var privilegeId = 1;
         var amount = 200;
         var ticketUid = Guid.NewGuid();
+        var request = new CreditDebitBonusRequest { Amount = amount, TicketUid = ticketUid };
         _mockService.Setup(s => s.DebitBalanceAsync(privilegeId, amount, ticketUid))
             .ThrowsAsync(new System.Exception("Database error"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<PrivilegeInternalServerException>(() => _controller.DebitBalance(privilegeId, amount, ticketUid));
+        await Assert.ThrowsAsync<PrivilegeInternalServerException>(() => _controller.DebitBalance(privilegeId, request));
     }
 
     #endregion

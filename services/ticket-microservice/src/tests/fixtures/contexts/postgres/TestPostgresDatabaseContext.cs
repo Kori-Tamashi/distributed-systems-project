@@ -17,11 +17,6 @@ public class TestPostgresDatabaseContext : TicketsDatabaseContext
     public new DbSet<TicketPostgresqlModel> Tickets => Set<TicketPostgresqlModel>();
 
     /// <summary>
-    /// DbSet for Booking entities
-    /// </summary>
-    public new DbSet<BookingPostgresqlModel> Bookings => Set<BookingPostgresqlModel>();
-
-    /// <summary>
     /// Default constructor
     /// </summary>
     public TestPostgresDatabaseContext() { }
@@ -95,8 +90,5 @@ public class TestPostgresDatabaseContext : TicketsDatabaseContext
 
         // Clear Tickets table
         await Tickets.ExecuteDeleteAsync();
-        
-        // Clear Bookings table
-        await Bookings.ExecuteDeleteAsync();
     }
 }

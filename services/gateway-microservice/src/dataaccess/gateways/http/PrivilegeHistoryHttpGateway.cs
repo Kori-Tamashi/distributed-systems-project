@@ -48,14 +48,14 @@ public class PrivilegeHistoryHttpGateway : BaseHttpGateway, IPrivilegeHistoryGat
 
     public async Task<PrivilegeHistory> CreateAsync(PrivilegeHistory privilegeHistory)
     {
-        var dto = PrivilegeHistoryHttpConverter.ToDTO(privilegeHistory);
+        var dto = PrivilegeHistoryHttpConverter.ToCreateDTO(privilegeHistory);
         var createdDto = await PostAsync<CreatePrivilegeHistoryDTO>($"{ApiEndpoint}", dto);
         return PrivilegeHistoryHttpConverter.ToDomain(createdDto);
     }
 
     public async Task<PrivilegeHistory> UpdateAsync(PrivilegeHistory privilegeHistory)
     {
-        var dto = PrivilegeHistoryHttpConverter.ToDTO(privilegeHistory);
+        var dto = PrivilegeHistoryHttpConverter.ToUpdateDTO(privilegeHistory);
         var updatedDto = await PutAsync<UpdatePrivilegeHistoryDTO>($"{ApiEndpoint}/{privilegeHistory.Id}", dto);
         return PrivilegeHistoryHttpConverter.ToDomain(updatedDto);
     }
@@ -87,8 +87,14 @@ public class PrivilegeHistoryHttpGateway : BaseHttpGateway, IPrivilegeHistoryGat
 
         if (filter.PrivilegeId.HasValue)
             parameters.Add($"privilegeId={filter.PrivilegeId.Value}");
+        if (filter.TicketUid.HasValue)
+            parameters.Add($"ticketUid={filter.TicketUid.Value}");
         if (filter.OperationType.HasValue)
             parameters.Add($"operationType={(int)filter.OperationType.Value}");
+        if (filter.MinBalanceDiff.HasValue)
+            parameters.Add($"minBalanceDiff={filter.MinBalanceDiff.Value}");
+        if (filter.MaxBalanceDiff.HasValue)
+            parameters.Add($"maxBalanceDiff={filter.MaxBalanceDiff.Value}");
         if (filter.DateTimeFrom.HasValue)
             parameters.Add($"dateFrom={filter.DateTimeFrom.Value:yyyy-MM-dd}");
         if (filter.DateTimeUntil.HasValue)

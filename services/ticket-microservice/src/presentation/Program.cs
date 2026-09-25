@@ -4,6 +4,7 @@ using dataaccess.contexts.postgres;
 using dataaccess.repositories.postgres;
 using businesslogic.services;
 using presentation.controllers.http;
+using presentation.middleware;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -28,17 +29,8 @@ builder.Services.AddScoped<ITicketRepository>(provider =>
     
     return CreateTicketRepository(context, settings);
 });
-builder.Services.AddScoped<IBookingRepository>(provider =>
-{
-    var context = provider.GetRequiredService<TicketsDatabaseContext>();
-    var settings = provider.GetRequiredService<AppSettings>();
-    
-    return CreateBookingRepository(context, settings);
-});
 builder.Services.AddScoped<ITicketService, TicketService>();
-builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<TicketHttpController>();
-builder.Services.AddScoped<BookingHttpController>();
 
 // Add services to the container
 builder.Services.AddSingleton(appSettings);
@@ -57,6 +49,7 @@ builder.WebHost.ConfigureKestrel(options =>
 var app = builder.Build();
 
 // Configure HTTP request pipeline
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 
@@ -66,8 +59,8 @@ app.MapHealthChecks("/manage/health");
 app.UseAuthorization();
 app.MapControllers();
 
-// Ensure database is created on startup
-await EnsureDatabaseCreatedAsync(databaseContext);
+// Apply database migrations
+await ApplyMigrationsAsync(databaseContext);
 
 app.Run();
 
@@ -160,41 +153,18 @@ static ITicketRepository CreatePostgreSQLTicketRepository(TicketsDatabaseContext
 }
 
 /// <summary>
-/// Creates BookingRepository based on database provider
+/// Applies database migrations on application startup
 /// </summary>
-static IBookingRepository CreateBookingRepository(TicketsDatabaseContext context, AppSettings settings)
-{
-    return settings.DatabaseProvider switch
-    {
-        DatabaseProvider.PostgreSQL => CreatePostgreSQLBookingRepository(context),
-        DatabaseProvider.MySQL => throw new NotImplementedException("MySQL repository not yet implemented"),
-        DatabaseProvider.SQLite => throw new NotImplementedException("SQLite repository not yet implemented"),
-        DatabaseProvider.SQLServer => throw new NotImplementedException("SQL Server repository not yet implemented"),
-        _ => throw new InvalidOperationException($"Unsupported database provider: {settings.DatabaseProvider}")
-    };
-}
-
-/// <summary>
-/// Creates PostgreSQL Booking repository
-/// </summary>
-static IBookingRepository CreatePostgreSQLBookingRepository(TicketsDatabaseContext context)
-{
-    return new BookingPostgresqlRepository(context);
-}
-
-/// <summary>
-/// Ensures database is created on application startup
-/// </summary>
-static async Task EnsureDatabaseCreatedAsync(TicketsDatabaseContext context)
+static async Task ApplyMigrationsAsync(TicketsDatabaseContext context)
 {
     try
     {
-        await context.EnsureDatabaseCreatedAsync();
-        Console.WriteLine("Database created successfully.");
+        await context.Database.MigrateAsync();
+        Console.WriteLine("Database migrations applied successfully.");
     }
     catch (Exception ex)
     {
-        Console.WriteLine($"Warning: Could not create database: {ex.Message}");
+        Console.WriteLine($"Warning: Could not apply migrations: {ex.Message}");
     }
 }
 

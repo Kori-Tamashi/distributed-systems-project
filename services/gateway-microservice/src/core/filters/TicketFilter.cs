@@ -1,39 +1,19 @@
-using core.domain;
-
-using core.enums;
-
 namespace core.filters;
 
 /// <summary>
-/// Filter criteria for querying Tickets from repository
-/// Used for filtering and searching tickets in data access layer
+/// Filter criteria for querying Tickets (per lab2-template v1 spec)
 /// </summary>
 public class TicketFilter
 {
     /// <summary>
-    /// Filter by flight ID
+    /// Filter by flight number (e.g., "AFL031")
     /// </summary>
-    public int? FlightId { get; set; }
+    public string? FlightNumber { get; set; }
 
     /// <summary>
-    /// Filter by passenger name (partial match, case-insensitive)
+    /// Filter by username (partial match, case-insensitive)
     /// </summary>
-    public string? PassengerName { get; set; }
-
-    /// <summary>
-    /// Filter by passenger email (partial match, case-insensitive)
-    /// </summary>
-    public string? PassengerEmail { get; set; }
-
-    /// <summary>
-    /// Filter by seat number (partial match, case-insensitive)
-    /// </summary>
-    public string? SeatNumber { get; set; }
-
-    /// <summary>
-    /// Filter by ticket class
-    /// </summary>
-    public TicketClass? Class { get; set; }
+    public string? Username { get; set; }
 
     /// <summary>
     /// Filter by minimum price
@@ -46,17 +26,7 @@ public class TicketFilter
     public int? MaxPrice { get; set; }
 
     /// <summary>
-    /// Filter by minimum booking date
+    /// Filter by ticket status (PAID=1, CANCELED=2)
     /// </summary>
-    public DateTime? MinBookingDate { get; set; }
-
-    /// <summary>
-    /// Filter by maximum booking date
-    /// </summary>
-    public DateTime? MaxBookingDate { get; set; }
-
-    /// <summary>
-    /// Filter by ticket status
-    /// </summary>
-    public TicketStatus? Status { get; set; }
+    public int? Status { get; set; }
 }

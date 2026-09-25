@@ -22,9 +22,8 @@ public class FlightHttpGateway : BaseHttpGateway, IFlightGateway
     /// </summary>
     /// <param name="httpClient">HttpClient configured for Flight microservice</param>
     /// <param name="baseUrl">Base URL of Flight microservice API (e.g., http://localhost:8060/api/v1)</param>
-    /// <param name="logger">Optional logger for diagnostic information</param>
-    public FlightHttpGateway(HttpClient httpClient, string baseUrl, ILogger<FlightHttpGateway>? logger = null)
-        : base(httpClient, baseUrl, logger)
+    public FlightHttpGateway(HttpClient httpClient, string baseUrl)
+        : base(httpClient, baseUrl)
     {
     }
 

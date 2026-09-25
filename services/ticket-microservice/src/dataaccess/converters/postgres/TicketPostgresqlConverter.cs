@@ -1,5 +1,4 @@
 using core.domain;
-using core.enums;
 using dataaccess.models.postgres;
 
 using TicketDomain = core.domain.Ticket;
@@ -8,8 +7,9 @@ using TicketPostgresqlModel = dataaccess.models.postgres.TicketPostgresqlModel;
 namespace dataaccess.converters.postgres;
 
 /// <summary>
-/// Converter between Ticket domain entity and PostgreSQL model
-/// Handles mapping between domain layer and data access layer
+/// Converter between Ticket domain entity and PostgreSQL model (per lab2-template v1 spec)
+/// Table: ticket
+/// Columns: ticket_uid, username, flight_number, price, status
 /// </summary>
 public static class TicketPostgresqlConverter
 {
@@ -27,15 +27,10 @@ public static class TicketPostgresqlConverter
         {
             Id = model.Id,
             TicketUid = model.TicketUid,
-            FlightId = model.FlightId,
-            PassengerName = model.PassengerName,
-            PassengerEmail = model.PassengerEmail,
-            PassengerPhone = model.PassengerPhone,
-            SeatNumber = model.SeatNumber,
-            Class = (TicketClass)model.Class,
+            Username = model.Username,
+            FlightNumber = model.FlightNumber,
             Price = model.Price,
-            BookingDate = model.BookingDate,
-            Status = (TicketStatus)model.Status,
+            Status = model.Status,
         };
     }
 
@@ -53,15 +48,10 @@ public static class TicketPostgresqlConverter
         {
             Id = domain.Id,
             TicketUid = domain.TicketUid,
-            FlightId = domain.FlightId,
-            PassengerName = domain.PassengerName,
-            PassengerEmail = domain.PassengerEmail,
-            PassengerPhone = domain.PassengerPhone,
-            SeatNumber = domain.SeatNumber,
-            Class = (int)domain.Class,
+            Username = domain.Username,
+            FlightNumber = domain.FlightNumber,
             Price = domain.Price,
-            BookingDate = domain.BookingDate,
-            Status = (int)domain.Status,
+            Status = domain.Status,
         };
     }
 

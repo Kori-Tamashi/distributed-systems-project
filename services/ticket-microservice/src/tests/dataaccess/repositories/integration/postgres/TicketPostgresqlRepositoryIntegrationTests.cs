@@ -84,7 +84,6 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
 {
     private readonly TestPostgresDatabaseContext _context;
     private readonly ITicketRepository _repository;
-    private readonly IBookingRepository _bookingRepository;
     private readonly List<TicketDomain> _createdTickets;
 
     static TicketPostgresqlRepositoryIntegrationTests()
@@ -99,24 +98,11 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         _context.EnsureDatabaseDeleted();
         _context.EnsureDatabaseCreated();
         
-        // Create repositories using the test database connection
-        _bookingRepository = new BookingPostgresqlRepository(_context);
+        // Create repository using the test database connection
         _repository = new TicketPostgresqlRepository(_context);
-        
-        // Create default booking for ticket tests
-        CreateDefaultBookings();
         
         // Track created tickets for cleanup
         _createdTickets = new List<TicketDomain>();
-    }
-
-    /// <summary>
-    /// Creates default bookings required for ticket tests
-    /// </summary>
-    private void CreateDefaultBookings()
-    {
-        var booking = new BookingBuilder().WithId(1).WithBookingReference("BK001").Build();
-        _bookingRepository.CreateAsync(booking).Wait();
     }
 
     #region IDisposable Implementation
@@ -126,10 +112,10 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         try
         {
             // Clean up all data
-            var tickets = _context.Tickets.ToList();
+            var tickets = _context.Ticket.ToList();
             if (tickets.Any())
             {
-                _context.Tickets.RemoveRange(tickets);
+                _context.Ticket.RemoveRange(tickets);
                 _context.SaveChanges();
             }
         }
@@ -165,9 +151,9 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         // Assert
         Assert.NotNull(actualTicket);
         Assert.Equal(expectedTicket.Id, actualTicket.Id);
-        Assert.Equal(expectedTicket.FlightId, actualTicket.FlightId);
-        Assert.Equal(expectedTicket.PassengerName, actualTicket.PassengerName);
-        Assert.Equal((int)expectedTicket.Class, (int)actualTicket.Class);
+        Assert.Equal(expectedTicket.FlightNumber, actualTicket.FlightNumber);
+        Assert.Equal(expectedTicket.Username, actualTicket.Username);
+        Assert.Equal((int)expectedTicket.Status, (int)actualTicket.Status);
         Assert.Equal((int)expectedTicket.Status, (int)actualTicket.Status);
         Assert.Equal(expectedTicket.Price, actualTicket.Price);
     }
@@ -279,12 +265,12 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     /// </summary>
     [Fact]
     [Integration]
-    public async Task GetAllAsync_WithFlightIdFilter_ShouldReturnMatchingTickets()
+    public async Task GetAllAsync_WithFlightNumberFilter_ShouldReturnMatchingTickets()
     {
         // Arrange
-        var ticket1 = new TicketBuilder().WithId(1).WithFlightId(100).Build();
-        var ticket2 = new TicketBuilder().WithId(2).WithFlightId(200).Build();
-        var ticket3 = new TicketBuilder().WithId(3).WithFlightId(100).Build();
+        var ticket1 = new TicketBuilder().WithId(1).WithFlightNumber("100").Build();
+        var ticket2 = new TicketBuilder().WithId(2).WithFlightNumber("200").Build();
+        var ticket3 = new TicketBuilder().WithId(3).WithFlightNumber("100").Build();
         
         await _repository.CreateAsync(ticket1);
         await _repository.CreateAsync(ticket2);
@@ -292,12 +278,12 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         _createdTickets.AddRange(new[] { ticket1, ticket2, ticket3 });
 
         // Act
-        var tickets = await _repository.GetAllAsync(new TicketFilter { FlightId = 100 });
+        var tickets = await _repository.GetAllAsync(new TicketFilter { FlightNumber = "100" });
 
         // Assert
         Assert.NotNull(tickets);
         Assert.Equal(2, tickets.Count);
-        Assert.All(tickets, t => Assert.Equal(100, t.FlightId));
+        Assert.All(tickets, t => Assert.Equal("100", t.FlightNumber));
     }
 
     /// <summary>
@@ -308,9 +294,9 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     public async Task GetAllAsync_WithTicketClassFilter_ShouldReturnMatchingTickets()
     {
         // Arrange
-        var economyTicket = new TicketBuilder().WithId(1).WithEconomyClass().Build();
-        var businessTicket = new TicketBuilder().WithId(2).WithBusinessClass().Build();
-        var firstClassTicket = new TicketBuilder().WithId(3).WithFirstClass().Build();
+        var economyTicket = new TicketBuilder().WithId(1).WithConfirmedStatus().Build();
+        var businessTicket = new TicketBuilder().WithId(2).WithCancelledStatus().Build();
+        var firstClassTicket = new TicketBuilder().WithId(3).WithRefundedStatus().Build();
         
         await _repository.CreateAsync(economyTicket);
         await _repository.CreateAsync(businessTicket);
@@ -320,13 +306,13 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         // Act
         var tickets = await _repository.GetAllAsync(new TicketFilter 
         { 
-            Class = (int)TicketClass.Economy 
+            Status = TicketStatus.Paid 
         });
 
         // Assert
         Assert.NotNull(tickets);
         Assert.Single(tickets);
-        Assert.All(tickets, t => Assert.Equal((int)TicketClass.Economy, (int)t.Class));
+        Assert.All(tickets, t => Assert.Equal((int)TicketClass.Economy, (int)t.Status));
     }
 
     /// <summary>
@@ -337,9 +323,9 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     public async Task GetAllAsync_WithStatusFilter_ShouldReturnMatchingTickets()
     {
         // Arrange
-        var confirmedTicket = new TicketBuilder().WithId(1).WithStatus(TicketStatus.Confirmed).Build();
-        var cancelledTicket = new TicketBuilder().WithId(2).WithStatus(TicketStatus.Cancelled).Build();
-        var refundedTicket = new TicketBuilder().WithId(3).WithStatus(TicketStatus.Refunded).Build();
+        var confirmedTicket = new TicketBuilder().WithId(1).WithStatus(TicketStatus.Paid).Build();
+        var cancelledTicket = new TicketBuilder().WithId(2).WithStatus(TicketStatus.Canceled).Build();
+        var refundedTicket = new TicketBuilder().WithId(3).WithStatus(TicketStatus.Canceled).Build();
         
         await _repository.CreateAsync(confirmedTicket);
         await _repository.CreateAsync(cancelledTicket);
@@ -349,13 +335,13 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         // Act
         var tickets = await _repository.GetAllAsync(new TicketFilter 
         { 
-            Status = (int)TicketStatus.Confirmed 
+            Status = TicketStatus.Paid 
         });
 
         // Assert
         Assert.NotNull(tickets);
         Assert.Single(tickets);
-        Assert.All(tickets, t => Assert.Equal((int)TicketStatus.Confirmed, (int)t.Status));
+        Assert.All(tickets, t => Assert.Equal((int)TicketStatus.Paid, (int)t.Status));
     }
 
     /// <summary>
@@ -371,7 +357,7 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         _createdTickets.Add(ticket);
 
         // Act
-        var tickets = await _repository.GetAllAsync(new TicketFilter { FlightId = 9999 });
+        var tickets = await _repository.GetAllAsync(new TicketFilter { FlightNumber = "9999" });
 
         // Assert
         Assert.NotNull(tickets);
@@ -422,9 +408,9 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         // Assert
         Assert.NotNull(createdTicket);
         Assert.NotEqual(0, createdTicket.Id);
-        Assert.Equal(ticketToCreate.FlightId, createdTicket.FlightId);
-        Assert.Equal(ticketToCreate.PassengerName, createdTicket.PassengerName);
-        Assert.Equal((int)ticketToCreate.Class, (int)createdTicket.Class);
+        Assert.Equal(ticketToCreate.FlightNumber, createdTicket.FlightNumber);
+        Assert.Equal(ticketToCreate.Username, createdTicket.Username);
+        Assert.Equal((int)ticketToCreate.Status, (int)createdTicket.Status);
         Assert.Equal((int)ticketToCreate.Status, (int)createdTicket.Status);
         Assert.Equal(ticketToCreate.Price, createdTicket.Price);
     }
@@ -475,8 +461,8 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     public async Task CreateAsync_DuplicateId_ShouldThrowTicketAlreadyExistsException()
     {
         // Arrange
-        var ticket1 = new TicketBuilder().WithId(1).WithFlightId(100).Build();
-        var ticket2 = new TicketBuilder().WithId(1).WithFlightId(200).Build();
+        var ticket1 = new TicketBuilder().WithId(1).WithFlightNumber("100").Build();
+        var ticket2 = new TicketBuilder().WithId(1).WithFlightNumber("200").Build();
         
         await _repository.CreateAsync(ticket1);
         _createdTickets.Add(ticket1);
@@ -523,18 +509,18 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
         await _repository.CreateAsync(ticket);
         _createdTickets.Add(ticket);
 
-        ticket.PassengerName = "Updated Name";
+        ticket.Username = "Updated Name";
         ticket.Price = 50000;
-        ticket.Status = TicketStatus.Cancelled;
+        ticket.Status = TicketStatus.Canceled;
 
         // Act
         var updatedTicket = await _repository.UpdateAsync(ticket);
 
         // Assert
         Assert.NotNull(updatedTicket);
-        Assert.Equal("Updated Name", updatedTicket.PassengerName);
+        Assert.Equal("Updated Name", updatedTicket.Username);
         Assert.Equal(50000, updatedTicket.Price);
-        Assert.Equal(TicketStatus.Cancelled, updatedTicket.Status);
+        Assert.Equal(TicketStatus.Canceled, updatedTicket.Status);
     }
 
     /// <summary>
@@ -567,7 +553,7 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     public async Task UpdateAsync_TicketNotFound_ShouldThrowTicketNotFoundException()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithId(999).WithFlightId(100).Build();
+        var ticket = new TicketBuilder().WithId(999).WithFlightNumber("100").Build();
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<TicketNotFoundException>(
@@ -584,18 +570,18 @@ public class TicketPostgresqlRepositoryIntegrationTests : IDisposable
     public async Task UpdateAsync_UpdateStatus_ShouldUpdateTicket()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithId(0).WithFlightId(100).WithStatus(TicketStatus.Confirmed).Build();
+        var ticket = new TicketBuilder().WithId(0).WithFlightNumber("100").WithStatus(TicketStatus.Paid).Build();
         ticket = await _repository.CreateAsync(ticket);
         _createdTickets.Add(ticket);
 
-        ticket.Status = TicketStatus.Refunded;
+        ticket.Status = TicketStatus.Canceled;
 
         // Act
         var updatedTicket = await _repository.UpdateAsync(ticket);
 
         // Assert
         Assert.NotNull(updatedTicket);
-        Assert.Equal(TicketStatus.Refunded, updatedTicket.Status);
+        Assert.Equal(TicketStatus.Canceled, updatedTicket.Status);
     }
 
     #endregion

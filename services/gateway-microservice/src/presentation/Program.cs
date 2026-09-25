@@ -3,6 +3,7 @@ using core.interfaces.dataaccess.gateways;
 using businesslogic.services;
 using dataaccess.gateways.http;
 using presentation.controllers.http;
+using presentation.middleware;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -17,40 +18,34 @@ var builder = WebApplication.CreateBuilder(args);
 // Load settings from environment variables
 var apiTestSettings = LoadApiTestSettings();
 
-// Register HTTP Gateways with dependency injection
+// Register HTTP Gateways with dependency injection using IHttpClientFactory
 builder.Services.AddTransient<IAirportGateway>(provider =>
 {
-    var httpClient = new HttpClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new AirportHttpGateway(httpClient, apiTestSettings.FlightMicroserviceUrl);
 });
 
 builder.Services.AddTransient<IFlightGateway>(provider =>
 {
-    var httpClient = new HttpClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new FlightHttpGateway(httpClient, apiTestSettings.FlightMicroserviceUrl);
 });
 
 builder.Services.AddTransient<ITicketGateway>(provider =>
 {
-    var httpClient = new HttpClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new TicketHttpGateway(httpClient, apiTestSettings.TicketMicroserviceUrl);
-});
-
-builder.Services.AddTransient<IBookingGateway>(provider =>
-{
-    var httpClient = new HttpClient();
-    return new BookingHttpGateway(httpClient, apiTestSettings.TicketMicroserviceUrl);
 });
 
 builder.Services.AddTransient<IPrivilegeGateway>(provider =>
 {
-    var httpClient = new HttpClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new PrivilegeHttpGateway(httpClient, apiTestSettings.BonusMicroserviceUrl);
 });
 
 builder.Services.AddTransient<IPrivilegeHistoryGateway>(provider =>
 {
-    var httpClient = new HttpClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new PrivilegeHistoryHttpGateway(httpClient, apiTestSettings.BonusMicroserviceUrl);
 });
 
@@ -58,23 +53,19 @@ builder.Services.AddTransient<IPrivilegeHistoryGateway>(provider =>
 builder.Services.AddScoped<IAirportService, AirportService>();
 builder.Services.AddScoped<IFlightService, FlightService>();
 builder.Services.AddScoped<ITicketService, TicketService>();
-builder.Services.AddScoped<IBookingService, BookingService>();
 builder.Services.AddScoped<IPrivilegeService, PrivilegeService>();
 builder.Services.AddScoped<IPrivilegeHistoryService, PrivilegeHistoryService>();
-
-// Register SAGA Coordinators
-builder.Services.AddScoped<BookingSagaCoordinator>();
 
 // Register HTTP Controllers with dependency injection
 builder.Services.AddScoped<AirportHttpController>();
 builder.Services.AddScoped<FlightHttpController>();
 builder.Services.AddScoped<TicketHttpController>();
-builder.Services.AddScoped<BookingHttpController>();
 builder.Services.AddScoped<PrivilegeHttpController>();
 builder.Services.AddScoped<PrivilegeHistoryHttpController>();
 
 // Add services to the container
 builder.Services.AddSingleton(apiTestSettings);
+builder.Services.AddHttpClient(); // Register IHttpClientFactory first
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -97,6 +88,7 @@ builder.WebHost.ConfigureKestrel(options =>
 var app = builder.Build();
 
 // Configure HTTP request pipeline - Swagger enabled for all environments
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 

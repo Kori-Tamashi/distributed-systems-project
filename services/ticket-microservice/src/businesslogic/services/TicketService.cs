@@ -10,8 +10,9 @@ using RepositoryTicketAlreadyExistsException = core.exceptions.dataaccess.reposi
 namespace businesslogic.services;
 
 /// <summary>
-/// Service implementation for Ticket business logic operations
-/// Provides high-level operations with validation and business rules
+/// Service implementation for Ticket business logic operations (per lab2-template v1 spec)
+/// Table: ticket
+/// Columns: ticket_uid, username, flight_number, price, status
 /// </summary>
 public class TicketService : ITicketService
 {
@@ -185,7 +186,7 @@ public class TicketService : ITicketService
     }
 
     /// <summary>
-    /// Validates Ticket entity for business rules
+    /// Validates Ticket entity for business rules (per lab2-template v1 spec)
     /// </summary>
     /// <param name="ticket">The Ticket to validate</param>
     /// <exception cref="TicketValidationException">Thrown when validation fails</exception>
@@ -198,52 +199,30 @@ public class TicketService : ITicketService
 
         var errors = new Dictionary<string, string[]>();
 
-        // Validate PassengerName
-        if (string.IsNullOrWhiteSpace(ticket.PassengerName))
+        // Validate Username
+        if (string.IsNullOrWhiteSpace(ticket.Username))
         {
-            errors["PassengerName"] = new[] { "PassengerName is required and cannot be empty" };
+            errors["Username"] = new[] { "Username is required and cannot be empty" };
         }
-        else if (ticket.PassengerName.Length > 255)
+        else if (ticket.Username.Length > 80)
         {
-            errors["PassengerName"] = new[] { "PassengerName cannot exceed 255 characters" };
-        }
-
-        // Validate PassengerEmail
-        if (string.IsNullOrWhiteSpace(ticket.PassengerEmail))
-        {
-            errors["PassengerEmail"] = new[] { "PassengerEmail is required and cannot be empty" };
-        }
-        else if (ticket.PassengerEmail.Length > 255)
-        {
-            errors["PassengerEmail"] = new[] { "PassengerEmail cannot exceed 255 characters" };
+            errors["Username"] = new[] { "Username cannot exceed 80 characters" };
         }
 
-        // Validate PassengerPhone (optional but must be valid format if provided)
-        if (!string.IsNullOrWhiteSpace(ticket.PassengerPhone) && ticket.PassengerPhone.Length > 50)
+        // Validate FlightNumber
+        if (string.IsNullOrWhiteSpace(ticket.FlightNumber))
         {
-            errors["PassengerPhone"] = new[] { "PassengerPhone cannot exceed 50 characters" };
+            errors["FlightNumber"] = new[] { "FlightNumber is required and cannot be empty" };
         }
-
-        // Validate SeatNumber (optional but must be valid if provided)
-        if (!string.IsNullOrWhiteSpace(ticket.SeatNumber) && ticket.SeatNumber.Length > 10)
+        else if (ticket.FlightNumber.Length > 20)
         {
-            errors["SeatNumber"] = new[] { "SeatNumber cannot exceed 10 characters" };
+            errors["FlightNumber"] = new[] { "FlightNumber cannot exceed 20 characters" };
         }
 
         // Validate Price
         if (ticket.Price <= 0)
         {
             errors["Price"] = new[] { "Price must be positive" };
-        }
-        else if (ticket.Price > int.MaxValue)
-        {
-            errors["Price"] = new[] { "Price exceeds maximum allowed value" };
-        }
-
-        // Validate BookingDate (must be in the past or present)
-        if (ticket.BookingDate > DateTime.UtcNow)
-        {
-            errors["BookingDate"] = new[] { "Booking date and time cannot be in the future" };
         }
 
         if (errors.Count > 0)

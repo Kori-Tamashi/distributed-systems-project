@@ -67,13 +67,22 @@ namespace tests.businesslogic.services.unit;
 public class TicketServiceUnitTests
 {
     private readonly Mock<ITicketGateway> _mockTicketGateway;
+    private readonly Mock<IFlightGateway> _mockFlightGateway;
+    private readonly Mock<IPrivilegeService> _mockPrivilegeService;
+    private readonly Mock<IPrivilegeHistoryService> _mockPrivilegeHistoryService;
     private readonly ITicketService _service;
 
     public TicketServiceUnitTests()
     {
         // Arrange - Setup mock gateway
         _mockTicketGateway = new Mock<ITicketGateway>();
-        _service = new TicketService(_mockTicketGateway.Object, Mock.Of<ILogger<TicketService>>());
+        _mockFlightGateway = new Mock<IFlightGateway>();
+        _mockPrivilegeService = new Mock<IPrivilegeService>();
+        _mockPrivilegeHistoryService = new Mock<IPrivilegeHistoryService>();
+        
+        _mockFlightGateway.Setup(g => g.GetAllAsync(It.IsAny<FlightFilter>())).ReturnsAsync(Enumerable.Empty<Flight>());
+        
+        _service = new TicketService(_mockTicketGateway.Object, _mockFlightGateway.Object, _mockPrivilegeService.Object, _mockPrivilegeHistoryService.Object, Mock.Of<ILogger<TicketService>>());
     }
 
     #region GetByIdAsync Tests
@@ -94,7 +103,7 @@ public class TicketServiceUnitTests
         // Assert
         Assert.NotNull(result);
         Assert.Equal(ticket.Id, result.Id);
-        Assert.Equal(ticket.PassengerName, result.PassengerName);
+        Assert.Equal(ticket.Username, result.Username);
         _mockTicketGateway.Verify(g => g.GetByIdAsync(ticket.Id), Times.Once);
     }
 
@@ -180,7 +189,7 @@ public class TicketServiceUnitTests
     {
         // Arrange
         var tickets = TicketMother.CreateTicketList(3);
-        var filter = new TicketFilter { PassengerName = "John" };
+        var filter = new TicketFilter { Username = "john_doe" };
         _mockTicketGateway.Setup(g => g.GetAllAsync(filter)).ReturnsAsync(tickets);
 
         // Act
@@ -238,7 +247,7 @@ public class TicketServiceUnitTests
     public async Task CreateAsync_InvalidTicket_ShouldThrowTicketValidationException()
     {
         // Arrange
-        var ticket = new Ticket { PassengerName = "", PassengerEmail = "test@test.com", Price = 1000, BookingDate = DateTime.UtcNow.AddHours(-1) };
+        var ticket = new Ticket { Username = "", FlightNumber = "AFL031", Price = 1000, Status = 0 };
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<TicketValidationException>(
@@ -255,7 +264,7 @@ public class TicketServiceUnitTests
     {
         // Arrange
         var ticket = TicketMother.CreateValidTicket();
-        ticket.BookingDate = DateTime.UtcNow.AddDays(30);
+        ticket.Status = 99; // Invalid status
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<TicketValidationException>(
@@ -328,7 +337,7 @@ public class TicketServiceUnitTests
     public async Task UpdateAsync_InvalidTicket_ShouldThrowTicketValidationException()
     {
         // Arrange
-        var ticket = new Ticket { Id = 1, PassengerName = "", PassengerEmail = "test@test.com", Price = 1000, BookingDate = DateTime.UtcNow.AddHours(-1) };
+        var ticket = new Ticket { Id = 1, Username = "", FlightNumber = "AFL031", Price = 1000, Status = 0 };
         _mockTicketGateway.Setup(g => g.GetByIdAsync(ticket.Id)).ReturnsAsync(ticket);
 
         // Act & Assert
@@ -528,7 +537,7 @@ public class TicketServiceUnitTests
     {
         // Arrange
         var tickets = TicketMother.CreateTicketList(5);
-        var filter = new TicketFilter { PassengerName = "John" };
+        var filter = new TicketFilter { Username = "john_doe" };
         _mockTicketGateway.Setup(g => g.GetAllAsync(filter)).ReturnsAsync(tickets);
 
         // Act

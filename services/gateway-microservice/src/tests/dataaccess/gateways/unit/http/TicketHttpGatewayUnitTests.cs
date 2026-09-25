@@ -10,7 +10,7 @@ using Xunit;
 namespace tests.dataaccess.gateways.unit.http;
 
 /// <summary>
-/// Unit tests for TicketHttpGateway
+/// Unit tests for TicketHttpGateway (per lab2-template v1 spec)
 /// London-style TDD with proper mocking
 /// 
 /// CLASS EQUIVALENCE PARTITIONING:
@@ -30,8 +30,8 @@ namespace tests.dataaccess.gateways.unit.http;
 /// - EP1: Valid ticket - returns updated ticket
 /// 
 /// DeleteAsync:
-/// - EP1: Existing ticket - returns true
-/// - EP2: Non-existent ticket - returns false
+/// - EP1: Existing ticket - returns void (throws on error)
+/// - EP2: Non-existent ticket - throws NotFoundException
 /// 
 /// Total: 8 unit tests
 /// </summary>
@@ -43,7 +43,15 @@ public class TicketHttpGatewayUnitTests
     public async Task GetAllAsync_Success_ShouldReturnListOfTickets()
     {
         var tickets = TicketMother.CreateTicketList(3);
-        var ticketDtos = tickets.Select(t => new TicketDTO { Id = t.Id, TicketUid = t.TicketUid, FlightId = t.FlightId, SeatNumber = t.SeatNumber, Price = t.Price }).ToList();
+        var ticketDtos = tickets.Select(t => new TicketDTO 
+        { 
+            Id = t.Id, 
+            TicketUid = t.TicketUid, 
+            Username = t.Username,
+            FlightNumber = t.FlightNumber,
+            Price = t.Price,
+            Status = t.Status
+        }).ToList();
 
         var handler = new MockHttpMessageHandler(MockHttpResponses.Success(ticketDtos));
         var client = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
@@ -72,7 +80,15 @@ public class TicketHttpGatewayUnitTests
     public async Task GetByIdAsync_ExistingTicket_ShouldReturnTicket()
     {
         var ticket = TicketMother.CreateValidTicket();
-        var ticketDto = new TicketDTO { Id = ticket.Id, TicketUid = ticket.TicketUid, FlightId = ticket.FlightId, SeatNumber = ticket.SeatNumber, Price = ticket.Price };
+        var ticketDto = new TicketDTO 
+        { 
+            Id = ticket.Id, 
+            TicketUid = ticket.TicketUid, 
+            Username = ticket.Username,
+            FlightNumber = ticket.FlightNumber,
+            Price = ticket.Price,
+            Status = ticket.Status
+        };
 
         var handler = new MockHttpMessageHandler(MockHttpResponses.Success(ticketDto));
         var client = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
@@ -100,7 +116,15 @@ public class TicketHttpGatewayUnitTests
     public async Task CreateAsync_ValidTicket_ShouldReturnCreatedTicket()
     {
         var ticket = TicketMother.CreateValidTicket();
-        var responseDto = new TicketDTO { Id = 0, TicketUid = ticket.TicketUid, FlightId = ticket.FlightId, SeatNumber = ticket.SeatNumber, Price = ticket.Price };
+        var responseDto = new TicketDTO 
+        { 
+            Id = 0, 
+            TicketUid = ticket.TicketUid, 
+            Username = ticket.Username,
+            FlightNumber = ticket.FlightNumber,
+            Price = ticket.Price,
+            Status = ticket.Status
+        };
 
         var handler = new MockHttpMessageHandler(MockHttpResponses.Success(responseDto, HttpStatusCode.Created));
         var client = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
@@ -116,7 +140,15 @@ public class TicketHttpGatewayUnitTests
     public async Task UpdateAsync_ValidTicket_ShouldReturnUpdatedTicket()
     {
         var ticket = TicketMother.CreateValidTicket();
-        var responseDto = new TicketDTO { Id = ticket.Id, TicketUid = ticket.TicketUid, FlightId = ticket.FlightId, SeatNumber = "A1", Price = ticket.Price };
+        var responseDto = new TicketDTO 
+        { 
+            Id = ticket.Id, 
+            TicketUid = ticket.TicketUid, 
+            Username = "updated_user",
+            FlightNumber = "AFL999",
+            Price = ticket.Price,
+            Status = 2 // CANCELED
+        };
 
         var handler = new MockHttpMessageHandler(MockHttpResponses.Success(responseDto));
         var client = new HttpClient(handler) { BaseAddress = new Uri(BaseUrl) };
@@ -125,7 +157,7 @@ public class TicketHttpGatewayUnitTests
         var result = await gateway.UpdateAsync(ticket);
 
         Assert.NotNull(result);
-        Assert.Equal("A1", result.SeatNumber);
+        Assert.Equal("updated_user", result.Username);
     }
 
     [Fact]

@@ -1,11 +1,9 @@
-using core.enums;
-
-using System;
-
 namespace core.domain;
 
 /// <summary>
-/// Domain entity representing a Ticket
+/// Domain entity representing a Ticket (per lab2-template v1 spec)
+/// Table: ticket
+/// Columns: id, ticket_uid, username, flight_number, price, status
 /// </summary>
 public class Ticket
 {
@@ -20,34 +18,14 @@ public class Ticket
     public Guid TicketUid { get; set; }
 
     /// <summary>
-    /// Flight identifier (foreign key to Flights table)
+    /// Username of the ticket owner
     /// </summary>
-    public int FlightId { get; set; }
+    public string Username { get; set; } = string.Empty;
 
     /// <summary>
-    /// Passenger full name
+    /// Flight number (e.g., "AFL031")
     /// </summary>
-    public string PassengerName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger email address
-    /// </summary>
-    public string PassengerEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger phone number
-    /// </summary>
-    public string PassengerPhone { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Seat number (e.g., "12A", "23B")
-    /// </summary>
-    public string SeatNumber { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Ticket class (Economy, Business, First)
-    /// </summary>
-    public TicketClass Class { get; set; }
+    public string FlightNumber { get; set; } = string.Empty;
 
     /// <summary>
     /// Ticket price in rubles
@@ -55,20 +33,7 @@ public class Ticket
     public int Price { get; set; }
 
     /// <summary>
-    /// Timestamp when the ticket was created (UTC)
+    /// Ticket status: PAID (1) or CANCELED (2)
     /// </summary>
-
-    /// <summary>
-    /// Timestamp when the ticket was last updated (UTC)
-    /// </summary>
-
-    /// <summary>
-    /// Booking date and time
-    /// </summary>
-    public DateTime BookingDate { get; set; }
-
-    /// <summary>
-    /// Ticket status (Confirmed, Cancelled, Refunded)
-    /// </summary>
-    public TicketStatus Status { get; set; }
+    public int Status { get; set; }
 }

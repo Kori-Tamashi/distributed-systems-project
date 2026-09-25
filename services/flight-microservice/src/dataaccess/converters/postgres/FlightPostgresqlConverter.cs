@@ -31,6 +31,20 @@ public static class FlightPostgresqlConverter
             FromAirportId = model.FromAirportId,
             ToAirportId = model.ToAirportId,
             Price = model.Price,
+            FromAirport = model.FromAirport != null ? new Airport
+            {
+                Id = model.FromAirport.Id,
+                Name = model.FromAirport.Name,
+                City = model.FromAirport.City,
+                Country = model.FromAirport.Country
+            } : null,
+            ToAirport = model.ToAirport != null ? new Airport
+            {
+                Id = model.ToAirport.Id,
+                Name = model.ToAirport.Name,
+                City = model.ToAirport.City,
+                Country = model.ToAirport.Country
+            } : null
         };
     }
 

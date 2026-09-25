@@ -68,9 +68,9 @@ public class PrivilegeHttpGateway : BaseHttpGateway, IPrivilegeGateway
     /// <summary>
     /// Credits bonus points to a privilege account
     /// </summary>
-    public async Task<bool> CreditBalanceAsync(int privilegeId, int amount, string reason)
+    public async Task<bool> CreditBalanceAsync(int privilegeId, int amount, Guid ticketUid)
     {
-        var dto = new CreditDebitBonusDTO { Amount = amount, Reason = reason };
+        var dto = new CreditDebitBonusDTO { Amount = amount, Reason = "Cashback", TicketUid = ticketUid };
         var result = await PostAsync<bool>($"{ApiEndpoint}/{privilegeId}/credit", dto);
         return result;
     }
@@ -78,9 +78,9 @@ public class PrivilegeHttpGateway : BaseHttpGateway, IPrivilegeGateway
     /// <summary>
     /// Debits bonus points from a privilege account
     /// </summary>
-    public async Task<bool> DebitBalanceAsync(int privilegeId, int amount, string reason)
+    public async Task<bool> DebitBalanceAsync(int privilegeId, int amount, Guid ticketUid)
     {
-        var dto = new CreditDebitBonusDTO { Amount = amount, Reason = reason };
+        var dto = new CreditDebitBonusDTO { Amount = amount, Reason = "Ticket purchase", TicketUid = ticketUid };
         var result = await PostAsync<bool>($"{ApiEndpoint}/{privilegeId}/debit", dto);
         return result;
     }

@@ -3,7 +3,9 @@ using presentation.dto.http;
 namespace presentation.dto.http.Ticket;
 
 /// <summary>
-/// DTO for reading Ticket data (full representation)
+/// DTO for reading Ticket data (per lab2-template v1 spec)
+/// Table: ticket
+/// Columns: id, ticket_uid, username, flight_number, price, status
 /// </summary>
 public class TicketDTO : BaseHttpDTO
 {
@@ -13,34 +15,14 @@ public class TicketDTO : BaseHttpDTO
     public Guid TicketUid { get; set; }
 
     /// <summary>
-    /// Flight identifier (foreign key to Flights table)
+    /// Username of the ticket owner
     /// </summary>
-    public int FlightId { get; set; }
+    public string Username { get; set; } = string.Empty;
 
     /// <summary>
-    /// Passenger full name
+    /// Flight number (e.g., "AFL031")
     /// </summary>
-    public string PassengerName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger email address
-    /// </summary>
-    public string PassengerEmail { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Passenger phone number
-    /// </summary>
-    public string PassengerPhone { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Seat number (e.g., "12A", "23B")
-    /// </summary>
-    public string SeatNumber { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Ticket class (Economy, Business, First)
-    /// </summary>
-    public int Class { get; set; }
+    public string FlightNumber { get; set; } = string.Empty;
 
     /// <summary>
     /// Ticket price in rubles
@@ -48,12 +30,7 @@ public class TicketDTO : BaseHttpDTO
     public int Price { get; set; }
 
     /// <summary>
-    /// Booking date and time
-    /// </summary>
-    public DateTime BookingDate { get; set; }
-
-    /// <summary>
-    /// Ticket status (Confirmed, Cancelled, Refunded)
+    /// Ticket status: PAID (1) or CANCELED (2)
     /// </summary>
     public int Status { get; set; }
 
@@ -71,27 +48,17 @@ public class TicketDTO : BaseHttpDTO
     public TicketDTO(
         int id,
         Guid ticketUid,
-        int flightId,
-        string passengerName,
-        string passengerEmail,
-        string passengerPhone,
-        string seatNumber,
-        int @class,
+        string username,
+        string flightNumber,
         int price,
-        DateTime bookingDate,
         int status)
         : base(id)
     {
         Id = id;
         TicketUid = ticketUid;
-        FlightId = flightId;
-        PassengerName = passengerName;
-        PassengerEmail = passengerEmail;
-        PassengerPhone = passengerPhone;
-        SeatNumber = seatNumber;
-        Class = @class;
+        Username = username;
+        FlightNumber = flightNumber;
         Price = price;
-        BookingDate = bookingDate;
         Status = status;
     }
 }

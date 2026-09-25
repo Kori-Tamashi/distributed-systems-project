@@ -5,8 +5,9 @@ using tests.fixtures.builders;
 namespace tests.fixtures.mothers;
 
 /// <summary>
-/// Object Mother for Ticket entity
-/// Provides predefined, reusable test data for common scenarios
+/// Object Mother for Ticket entity (per lab2-template v1 spec)
+/// Table: ticket
+/// Columns: ticket_uid, username, flight_number, price, status
 /// Uses TicketBuilder for consistent object creation
 /// </summary>
 public static class TicketMother
@@ -21,14 +22,9 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(1)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("John Doe")
-            .WithPassengerEmail("john.doe@example.com")
-            .WithPassengerPhone("+79001234567")
-            .WithSeatNumber("12A")
-            .WithEconomyClass()
+            .WithUsername("john_doe")
+            .WithFlightNumber("AFL031")
             .WithPrice(15000)
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
@@ -41,54 +37,39 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(2)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("A")
-            .WithPassengerEmail("a@b.com")
-            .WithPassengerPhone("123")
-            .WithSeatNumber("1A")
-            .WithEconomyClass()
+            .WithUsername("a")
+            .WithFlightNumber("AFL001")
             .WithPrice(1000)
-            .WithBookingDate(DateTime.UtcNow)
             .WithConfirmedStatus()
             .Build();
     }
 
     /// <summary>
-    /// Creates a Ticket with Business class
+    /// Creates a Ticket with high price
     /// </summary>
     public static Ticket CreateBusinessClassTicket()
     {
         return _defaultBuilder
             .WithId(3)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(2)
-            .WithPassengerName("Jane Smith")
-            .WithPassengerEmail("jane.smith@example.com")
-            .WithPassengerPhone("+79009876543")
-            .WithSeatNumber("2A")
-            .WithBusinessClass()
+            .WithUsername("jane_smith")
+            .WithFlightNumber("AFL032")
             .WithPrice(45000)
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
 
     /// <summary>
-    /// Creates a Ticket with First class
+    /// Creates a Ticket with maximum price
     /// </summary>
     public static Ticket CreateFirstClassTicket()
     {
         return _defaultBuilder
             .WithId(4)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(3)
-            .WithPassengerName("Ivan Petrov")
-            .WithPassengerEmail("ivan.petrov@example.com")
-            .WithPassengerPhone("+79112223344")
-            .WithSeatNumber("1A")
-            .WithFirstClass()
+            .WithUsername("ivan_petrov")
+            .WithFlightNumber("AFL033")
             .WithPrice(80000)
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
@@ -101,14 +82,9 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(5)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("Free Ticket")
-            .WithPassengerEmail("free@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("99Z")
-            .WithEconomyClass()
+            .WithUsername("free_ticket")
+            .WithFlightNumber("AFL031")
             .WithZeroPrice()
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
@@ -121,34 +97,9 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(6)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("Invalid Ticket")
-            .WithPassengerEmail("invalid@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("99Z")
-            .WithEconomyClass()
+            .WithUsername("invalid_ticket")
+            .WithFlightNumber("AFL031")
             .WithNegativePrice()
-            .WithPastBookingDate()
-            .WithConfirmedStatus()
-            .Build();
-    }
-
-    /// <summary>
-    /// Creates a Ticket in the past (invalid for booking)
-    /// </summary>
-    public static Ticket CreatePastTicket()
-    {
-        return _defaultBuilder
-            .WithId(7)
-            .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("Past Passenger")
-            .WithPassengerEmail("past@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("10A")
-            .WithEconomyClass()
-            .WithPrice(10000)
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
@@ -161,14 +112,9 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(8)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("Cancelled Passenger")
-            .WithPassengerEmail("cancelled@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("15B")
-            .WithEconomyClass()
+            .WithUsername("cancelled_passenger")
+            .WithFlightNumber("AFL031")
             .WithPrice(12000)
-            .WithPastBookingDate()
             .WithCancelledStatus()
             .Build();
     }
@@ -181,14 +127,9 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(9)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("Refunded Passenger")
-            .WithPassengerEmail("refunded@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("20C")
-            .WithEconomyClass()
+            .WithUsername("refunded_passenger")
+            .WithFlightNumber("AFL031")
             .WithPrice(13000)
-            .WithPastBookingDate()
             .WithRefundedStatus()
             .Build();
     }
@@ -201,34 +142,24 @@ public static class TicketMother
         return _defaultBuilder
             .WithId(10)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName("VIP Passenger")
-            .WithPassengerEmail("vip@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("1A")
-            .WithFirstClass()
+            .WithUsername("vip_passenger")
+            .WithFlightNumber("AFL031")
             .WithPrice(int.MaxValue)
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
 
     /// <summary>
-    /// Creates a Ticket with maximum passenger name length
+    /// Creates a Ticket with maximum username length
     /// </summary>
-    public static Ticket CreateTicketWithMaxPassengerName()
+    public static Ticket CreateTicketWithMaxUsername()
     {
         return _defaultBuilder
             .WithId(11)
             .WithTicketUid(Guid.NewGuid())
-            .WithFlightId(1)
-            .WithPassengerName(new string('A', 255))
-            .WithPassengerEmail("max@example.com")
-            .WithPassengerPhone("+79000000000")
-            .WithSeatNumber("5A")
-            .WithEconomyClass()
+            .WithUsername(new string('A', 80))
+            .WithFlightNumber("AFL031")
             .WithPrice(15000)
-            .WithPastBookingDate()
             .WithConfirmedStatus()
             .Build();
     }
@@ -239,13 +170,7 @@ public static class TicketMother
     public static List<Ticket> CreateTicketList(int count = 5)
     {
         var builder = new TicketBuilder();
-        var tickets = builder.BuildList(count, incrementIds: true);
-        // Ensure all tickets have past booking dates
-        foreach (var ticket in tickets)
-        {
-            ticket.BookingDate = DateTime.UtcNow.AddDays(-1);
-        }
-        return tickets;
+        return builder.BuildList(count, incrementIds: true);
     }
 
     /// <summary>
@@ -254,10 +179,7 @@ public static class TicketMother
     public static Ticket CreateTicketWithRandomId()
     {
         return new TicketBuilder()
-            .WithPassengerName("Random Passenger")
-            .WithPassengerEmail("random@example.com")
-            .WithEconomyClass()
-            .WithPrice(12000)
+            .WithUsername("random_passenger")
             .BuildWithRandomId();
     }
 }

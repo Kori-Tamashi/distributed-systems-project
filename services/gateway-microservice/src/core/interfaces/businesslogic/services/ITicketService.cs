@@ -72,4 +72,40 @@ public interface ITicketService
     /// <returns>Total number of Ticket entities matching the filter</returns>
     /// <exception cref="BaseServiceException">Thrown when service operation fails</exception>
     Task<int> GetCountAsync(TicketFilter? filter = null);
+
+    /// <summary>
+    /// Buys a ticket with payment from balance or cash
+    /// </summary>
+    /// <param name="username">Username buying the ticket</param>
+    /// <param name="flightNumber">Flight number to book</param>
+    /// <param name="price">Ticket price</param>
+    /// <param name="paidFromBalance">Whether to pay from bonus balance</param>
+    /// <returns>BuyTicketResult with ticketUid, paidByBonuses, paidByMoney</returns>
+    /// <exception cref="TicketValidationException">Thrown when ticket data is invalid</exception>
+    /// <exception cref="BaseServiceException">Thrown when service operation fails</exception>
+    Task<(Guid ticketUid, int paidByBonuses, int paidByMoney)> BuyTicketAsync(
+        string username, 
+        string flightNumber, 
+        int price, 
+        bool paidFromBalance);
+
+    /// <summary>
+    /// Returns (cancels) a ticket and processes refund in Bonus Service
+    /// </summary>
+    /// <param name="ticketUid">Ticket UID to return</param>
+    /// <param name="username">Username who owns the ticket</param>
+    /// <returns>True if ticket was returned successfully</returns>
+    /// <exception cref="TicketNotFoundException">Thrown when ticket is not found</exception>
+    /// <exception cref="TicketValidationException">Thrown when ticket cannot be returned</exception>
+    /// <exception cref="BaseServiceException">Thrown when service operation fails</exception>
+    Task<bool> ReturnTicketAsync(Guid ticketUid, string username);
+
+    /// <summary>
+    /// Gets a ticket by UID (ownership check is done in controller)
+    /// </summary>
+    /// <param name="ticketUid">Ticket UID to get</param>
+    /// <param name="username">Username who should own the ticket</param>
+    /// <returns>The Ticket entity if found</returns>
+    /// <exception cref="TicketNotFoundException">Thrown when ticket is not found</exception>
+    Task<Ticket> GetByIdByUserAsync(Guid ticketUid, string username);
 }

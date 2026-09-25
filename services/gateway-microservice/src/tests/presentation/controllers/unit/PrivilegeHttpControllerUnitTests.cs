@@ -61,6 +61,7 @@ namespace tests.presentation.controllers.unit;
 public class PrivilegeHttpControllerUnitTests
 {
     private readonly Mock<IPrivilegeService> _mockService;
+    private readonly Mock<IPrivilegeHistoryService> _mockPrivilegeHistoryService;
     private readonly Mock<ILogger<PrivilegeHttpController>> _mockLogger;
     private readonly PrivilegeHttpController _controller;
 
@@ -68,9 +69,10 @@ public class PrivilegeHttpControllerUnitTests
     {
         // Arrange - Setup mocks
         _mockService = new Mock<IPrivilegeService>();
+        _mockPrivilegeHistoryService = new Mock<IPrivilegeHistoryService>();
         _mockLogger = new Mock<ILogger<PrivilegeHttpController>>();
         
-        _controller = new PrivilegeHttpController(_mockService.Object, _mockLogger.Object);
+        _controller = new PrivilegeHttpController(_mockService.Object, _mockPrivilegeHistoryService.Object, _mockLogger.Object);
         
         // Setup URL helper for Location header
         var httpContext = new DefaultHttpContext();

@@ -16,11 +16,6 @@ public class TestSqliteDatabaseContext : DbContext
     public DbSet<TicketPostgresqlModel> Tickets => Set<TicketPostgresqlModel>();
 
     /// <summary>
-    /// DbSet for Booking entities
-    /// </summary>
-    public DbSet<BookingPostgresqlModel> Bookings => Set<BookingPostgresqlModel>();
-
-    /// <summary>
     /// Default constructor - creates in-memory database
     /// </summary>
     public TestSqliteDatabaseContext()
@@ -61,29 +56,29 @@ public class TestSqliteDatabaseContext : DbContext
                 .HasColumnName("ticket_uid")
                 .IsRequired();
 
-            entity.Property(e => e.FlightId)
+            entity.Property(e => e.FlightNumber)
                 .HasColumnName("flight_id")
                 .IsRequired();
 
-            entity.Property(e => e.PassengerName)
+            entity.Property(e => e.Username)
                 .HasColumnName("passenger_name")
                 .IsRequired()
                 .HasMaxLength(255);
 
-            entity.Property(e => e.PassengerEmail)
+            entity.Property(e => e.Username)
                 .HasColumnName("passenger_email")
                 .IsRequired()
                 .HasMaxLength(255);
 
-            entity.Property(e => e.PassengerPhone)
+            entity.Property(e => e.Username)
                 .HasColumnName("passenger_phone")
                 .HasMaxLength(50);
 
-            entity.Property(e => e.SeatNumber)
+            entity.Property(e => e.FlightNumber)
                 .HasColumnName("seat_number")
                 .HasMaxLength(10);
 
-            entity.Property(e => e.Class)
+            entity.Property(e => e.Status)
                 .HasColumnName("class")
                 .IsRequired();
 
@@ -91,7 +86,7 @@ public class TestSqliteDatabaseContext : DbContext
                 .HasColumnName("price")
                 .IsRequired();
 
-            entity.Property(e => e.BookingDate)
+            entity.Property(e => e.FlightNumber)
                 .HasColumnName("booking_date")
                 .IsRequired();
 
@@ -101,72 +96,10 @@ public class TestSqliteDatabaseContext : DbContext
 
             // Create indexes for faster searches
             entity.HasIndex(e => e.TicketUid);
-            entity.HasIndex(e => e.FlightId);
-            entity.HasIndex(e => e.PassengerEmail);
+            entity.HasIndex(e => e.FlightNumber);
+            entity.HasIndex(e => e.Username);
             entity.HasIndex(e => e.Status);
-            entity.HasIndex(e => e.BookingDate);
-        });
-
-        // Configure Booking entity (same as production context)
-        modelBuilder.Entity<BookingPostgresqlModel>(entity =>
-        {
-            entity.ToTable("bookings");
-
-            entity.HasKey(e => e.Id);
-
-            entity.Property(e => e.Id)
-                .HasColumnName("id")
-                .ValueGeneratedOnAdd();
-
-            entity.Property(e => e.BookingUid)
-                .HasColumnName("booking_uid")
-                .IsRequired();
-
-            entity.Property(e => e.BookingReference)
-                .HasColumnName("booking_reference")
-                .IsRequired()
-                .HasMaxLength(50);
-
-            entity.Property(e => e.CustomerName)
-                .HasColumnName("customer_name")
-                .IsRequired()
-                .HasMaxLength(255);
-
-            entity.Property(e => e.CustomerEmail)
-                .HasColumnName("customer_email")
-                .IsRequired()
-                .HasMaxLength(255);
-
-            entity.Property(e => e.CustomerPhone)
-                .HasColumnName("customer_phone")
-                .HasMaxLength(50);
-
-            entity.Property(e => e.TotalPrice)
-                .HasColumnName("total_price")
-                .IsRequired();
-
-            entity.Property(e => e.BookingDate)
-                .HasColumnName("booking_date")
-                .IsRequired();
-
-            entity.Property(e => e.Status)
-                .HasColumnName("status")
-                .IsRequired();
-
-            entity.Property(e => e.PaymentMethod)
-                .HasColumnName("payment_method")
-                .IsRequired();
-
-            entity.Property(e => e.PaymentTransactionId)
-                .HasColumnName("payment_transaction_id")
-                .HasMaxLength(255);
-
-            // Create indexes for faster searches
-            entity.HasIndex(e => e.BookingUid);
-            entity.HasIndex(e => e.BookingReference);
-            entity.HasIndex(e => e.CustomerEmail);
-            entity.HasIndex(e => e.Status);
-            entity.HasIndex(e => e.BookingDate);
+            entity.HasIndex(e => e.FlightNumber);
         });
     }
 
@@ -205,9 +138,6 @@ public class TestSqliteDatabaseContext : DbContext
 
         // Clear Tickets table
         await Tickets.ExecuteDeleteAsync();
-        
-        // Clear Bookings table
-        await Bookings.ExecuteDeleteAsync();
     }
 
     /// <summary>

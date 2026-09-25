@@ -76,7 +76,7 @@ public class UserHttpControllerUnitTests
         var tickets = TicketMother.CreateTicketList(2);
         foreach (var ticket in tickets)
         {
-            ticket.PassengerName = username;
+            ticket.Username = username;
         }
         
         _mockPrivilegeService.Setup(s => s.GetAllAsync(null))
