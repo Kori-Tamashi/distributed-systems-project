@@ -84,18 +84,23 @@
           "listen": "test",
           "script": {
             "exec": [
-              "pm.test('Status is 500 Internal Server Error (known bug: ExistsAsync with Id=0)', function () {",
-              "    pm.response.to.have.status(500);",
+              "pm.test('Status is 201 Created', function () {",
+              "    pm.response.to.have.status(201);",
               "});",
               "",
-              "pm.test('Response contains error message', function () {",
+              "pm.test('Response has correct structure', function () {",
               "    var jsonData = pm.response.json();",
-              "    pm.expect(jsonData).to.have.property('message');",
+              "    pm.expect(jsonData).to.have.property('ticketUid');",
+              "    pm.expect(jsonData).to.have.property('id');",
+              "    pm.expect(jsonData).to.have.property('username');",
+              "    pm.expect(jsonData).to.have.property('flightNumber');",
+              "    pm.expect(jsonData).to.have.property('price');",
+              "    pm.expect(jsonData).to.have.property('status');",
               "});",
               "",
-              "// Skip setting createdTicketId due to POST bug",
-              "pm.collectionVariables.set('createdTicketId', 1); // Use existing ticket for subsequent tests",
-              "console.log('POST known to fail, using ticket ID 1 for subsequent tests');"
+              "var jsonData = pm.response.json();",
+              "pm.collectionVariables.set('createdTicketId', jsonData.id);",
+              "console.log('Created ticket ID: ' + jsonData.id);"
             ],
             "type": "text/javascript"
           }
