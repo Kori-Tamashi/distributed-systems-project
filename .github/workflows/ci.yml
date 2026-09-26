@@ -1024,6 +1024,25 @@ jobs:
           docker exec ticket-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
           echo "✅ Migrations applied"
 
+      - name: Seed flight data for autograding
+        run: |
+          echo "Seeding airports and flight for autograding tests..."
+          docker run --rm --network autograding-network -e PGPASSWORD=test postgres:14-alpine \
+            psql -h postgres-flight-tests -U program -d test_api <<'SQL'
+          INSERT INTO airports (name, city, country) VALUES
+            ('Пулково', 'Санкт-Петербург', 'Россия'),
+            ('Шереметьево', 'Москва', 'Россия')
+          ON CONFLICT DO NOTHING;
+
+          INSERT INTO flights (flight_uid, flight_number, datetime, from_airport_id, to_airport_id, price)
+          SELECT '550e8400-e29b-41d4-a716-446655440000', 'AFL031', '2021-10-08 20:00:00+00',
+                 (SELECT id FROM airports WHERE name='Пулково'),
+                 (SELECT id FROM airports WHERE name='Шереметьево'),
+                 1500
+          WHERE NOT EXISTS (SELECT 1 FROM flights WHERE flight_number='AFL031');
+          SQL
+          echo "✅ Seed applied"
+
       - name: Start Gateway service
         run: |
           echo "Starting Gateway service..."
