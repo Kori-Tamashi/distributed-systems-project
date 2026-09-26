@@ -1024,11 +1024,11 @@ jobs:
           docker exec ticket-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
           echo "✅ Migrations applied"
 
-      - name: Seed flight data for autograding
+      - name: Seed flight and bonus data for autograding
         run: |
+          set -e
           echo "Seeding airports and flight for autograding tests..."
-          docker run --rm --network autograding-network -e PGPASSWORD=test postgres:14-alpine \
-            psql -h postgres-flight-tests -U program -d test_api <<'SQL'
+          docker exec postgres-flight-tests psql -U program -d test_api <<'SQL'
           INSERT INTO airports (name, city, country) VALUES
             ('Пулково', 'Санкт-Петербург', 'Россия'),
             ('Шереметьево', 'Москва', 'Россия')
@@ -1041,7 +1041,20 @@ jobs:
                  1500
           WHERE NOT EXISTS (SELECT 1 FROM flights WHERE flight_number='AFL031');
           SQL
-          echo "✅ Seed applied"
+
+          echo "Verifying flight seed..."
+          docker exec postgres-flight-tests psql -U program -d test_api -c "SELECT COUNT(*) as flight_count FROM flights WHERE flight_number='AFL031';"
+
+          echo "Seeding privilege for Test Max in bonus DB..."
+          docker exec postgres-bonus-tests psql -U program -d test_api <<'SQL'
+          INSERT INTO privilege (username, balance, status) VALUES ('Test Max', 0, 0)
+          ON CONFLICT DO NOTHING;
+          SQL
+
+          echo "Verifying privilege seed..."
+          docker exec postgres-bonus-tests psql -U program -d test_api -c "SELECT username, balance, status FROM privilege WHERE username='Test Max';"
+
+          echo "✅ Seed applied successfully"
 
       - name: Start Gateway service
         run: |
