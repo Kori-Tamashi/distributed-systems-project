@@ -943,3 +943,135 @@ jobs:
             postgres-bonus-tests postgres-flight-tests postgres-ticket-tests 2>/dev/null || true
           docker network rm gateway-test-network 2>/dev/null || true
           echo "✅ Cleanup complete"
+
+  # ===========================================
+  # Instructor Postman Tests (Final Gate)
+  # ===========================================
+  # Runs after all service API tests pass
+  instructor-api-tests:
+    name: API Tests (Instructor)
+    runs-on: ubuntu-latest
+    needs:
+      - gateway-api-tests
+      - api-tests
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Build Postman Newman image for Instructor Tests
+        run: |
+          echo "Building Postman Newman image for Instructor Tests..."
+          docker build \
+            --tag postman-newman-instructor:e2e \
+            -f postman/Dockerfile \
+            postman/
+          echo "✅ Postman Newman image built: postman-newman-instructor:e2e"
+
+      - name: Install PostgreSQL client
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Start PostgreSQL containers
+        run: |
+          echo "Starting PostgreSQL containers for all services..."
+          docker network create instructor-test-network
+          
+          docker run -d --name postgres-bonus-tests --network instructor-test-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
+          docker run -d --name postgres-flight-tests --network instructor-test-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
+          docker run -d --name postgres-ticket-tests --network instructor-test-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
+          
+          echo "⏳ Waiting for PostgreSQL instances..."
+          sleep 5
+
+      - name: Build all microservices
+        run: |
+          echo "Building bonus, flight, ticket, gateway microservices..."
+          docker build -t bonus-microservice:api services/bonus-microservice/
+          docker build -t flight-microservice:api services/flight-microservice/
+          docker build -t ticket-microservice:api services/ticket-microservice/
+          docker build -t gateway-microservice:api services/gateway-microservice/
+          echo "✅ All microservices built"
+
+      - name: Start backend services
+        run: |
+          echo "Starting bonus, flight, ticket services..."
+          
+          docker run -d --name bonus-api-e2e --network instructor-test-network --link postgres-bonus-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8050 -p 8050:8050 bonus-microservice:api
+          docker run -d --name flight-api-e2e --network instructor-test-network --link postgres-flight-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8060 -p 8060:8060 flight-microservice:api
+          docker run -d --name ticket-api-e2e --network instructor-test-network --link postgres-ticket-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8070 -p 8070:8070 ticket-microservice:api
+          
+          echo "⏳ Waiting for backend services to start..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:8050/manage/health > /dev/null 2>&1 && curl -sf http://localhost:8060/manage/health > /dev/null 2>&1 && curl -sf http://localhost:8070/manage/health > /dev/null 2>&1; then
+              echo "✅ All backend services ready!"
+              break
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Apply database migrations
+        run: |
+          echo "Applying EF Core migrations to all services..."
+          docker exec bonus-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
+          docker exec flight-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
+          docker exec ticket-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
+          echo "✅ Migrations applied"
+
+      - name: Start Gateway service
+        run: |
+          echo "Starting Gateway service..."
+          docker run -d --name gateway-api-e2e --network instructor-test-network -e ASPNETCORE_ENVIRONMENT=Development -e APP_PORT=8080 -e BONUS_API_URL=http://bonus-api-e2e:8050 -e FLIGHT_API_URL=http://flight-api-e2e:8060 -e TICKET_API_URL=http://ticket-api-e2e:8070 -p 8080:8080 gateway-microservice:api
+          
+          echo "⏳ Waiting for Gateway to start..."
+          for i in {1..30}; do
+            if curl -sf http://localhost:8080/manage/health > /dev/null 2>&1; then
+              echo "✅ Gateway ready!"
+              break
+            fi
+            echo "  Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run Instructor Postman API tests
+        run: |
+          echo "Running Instructor API tests..."
+          mkdir -p postman/test-results
+          docker run --rm \
+            --network instructor-test-network \
+            -e BASE_URL=http://gateway-api-e2e:8080 \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            postman-newman-instructor:e2e
+
+      - name: Upload Instructor API test results (JUnit)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: instructor-api-tests-junit-results
+          path: |
+            postman/test-results/results.xml
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Publish Instructor API test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Instructor Tests - API Test Results (Postman)
+          path: postman/test-results/results.xml
+          reporter: java-junit
+
+      - name: Cleanup Docker containers
+        if: always()
+        run: |
+          echo "🧹 Cleaning up Docker containers..."
+          docker rm -f gateway-api-e2e bonus-api-e2e flight-api-e2e ticket-api-e2e \
+            postgres-bonus-tests postgres-flight-tests postgres-ticket-tests 2>/dev/null || true
+          docker network rm instructor-test-network 2>/dev/null || true
+          echo "✅ Cleanup complete"
