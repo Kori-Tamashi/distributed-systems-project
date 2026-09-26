@@ -945,11 +945,11 @@ jobs:
           echo "✅ Cleanup complete"
 
   # ===========================================
-  # Instructor Postman Tests (Final Gate)
+  # Autograding (Instructor Postman Tests)
   # ===========================================
   # Runs after all service API tests pass
-  instructor-api-tests:
-    name: API Tests (Instructor)
+  autograding:
+    name: Autograding
     runs-on: ubuntu-latest
     needs:
       - gateway-api-tests
@@ -980,11 +980,11 @@ jobs:
       - name: Start PostgreSQL containers
         run: |
           echo "Starting PostgreSQL containers for all services..."
-          docker network create instructor-test-network
+          docker network create autograding-network
           
-          docker run -d --name postgres-bonus-tests --network instructor-test-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
-          docker run -d --name postgres-flight-tests --network instructor-test-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
-          docker run -d --name postgres-ticket-tests --network instructor-test-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
+          docker run -d --name postgres-bonus-tests --network autograding-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
+          docker run -d --name postgres-flight-tests --network autograding-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
+          docker run -d --name postgres-ticket-tests --network autograding-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
           
           echo "⏳ Waiting for PostgreSQL instances..."
           sleep 5
@@ -1002,9 +1002,9 @@ jobs:
         run: |
           echo "Starting bonus, flight, ticket services..."
           
-          docker run -d --name bonus-api-e2e --network instructor-test-network --link postgres-bonus-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8050 -p 8050:8050 bonus-microservice:api
-          docker run -d --name flight-api-e2e --network instructor-test-network --link postgres-flight-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8060 -p 8060:8060 flight-microservice:api
-          docker run -d --name ticket-api-e2e --network instructor-test-network --link postgres-ticket-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8070 -p 8070:8070 ticket-microservice:api
+          docker run -d --name bonus-api-e2e --network autograding-network --link postgres-bonus-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8050 -p 8050:8050 bonus-microservice:api
+          docker run -d --name flight-api-e2e --network autograding-network --link postgres-flight-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8060 -p 8060:8060 flight-microservice:api
+          docker run -d --name ticket-api-e2e --network autograding-network --link postgres-ticket-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8070 -p 8070:8070 ticket-microservice:api
           
           echo "⏳ Waiting for backend services to start..."
           for i in {1..30}; do
@@ -1027,7 +1027,7 @@ jobs:
       - name: Start Gateway service
         run: |
           echo "Starting Gateway service..."
-          docker run -d --name gateway-api-e2e --network instructor-test-network -e ASPNETCORE_ENVIRONMENT=Development -e APP_PORT=8080 -e BONUS_API_URL=http://bonus-api-e2e:8050 -e FLIGHT_API_URL=http://flight-api-e2e:8060 -e TICKET_API_URL=http://ticket-api-e2e:8070 -p 8080:8080 gateway-microservice:api
+          docker run -d --name gateway-api-e2e --network autograding-network -e ASPNETCORE_ENVIRONMENT=Development -e APP_PORT=8080 -e BONUS_API_URL=http://bonus-api-e2e:8050 -e FLIGHT_API_URL=http://flight-api-e2e:8060 -e TICKET_API_URL=http://ticket-api-e2e:8070 -p 8080:8080 gateway-microservice:api
           
           echo "⏳ Waiting for Gateway to start..."
           for i in {1..30}; do
@@ -1039,17 +1039,21 @@ jobs:
             sleep 2
           done
 
-      - name: Run Instructor Postman API tests
+      - name: Run autograding (instructor) Postman tests
         run: |
-          echo "Running Instructor API tests..."
+          echo "Running instructor API tests via Gateway..."
           mkdir -p postman/test-results
           docker run --rm \
-            --network instructor-test-network \
-            -e BASE_URL=http://gateway-api-e2e:8080 \
+            --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
-            postman-newman-instructor:e2e
+            postman-newman-instructor:e2e \
+            run /etc/newman/collection.json \
+              -e /etc/newman/environment.json \
+              --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/results.xml
 
-      - name: Upload Instructor API test results (JUnit)
+      - name: Upload Autograding test results (JUnit)
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -1059,11 +1063,11 @@ jobs:
           retention-days: 7
           if-no-files-found: error
 
-      - name: Publish Instructor API test results to GitHub
+      - name: Publish Autograding test results to GitHub
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
-          name: Instructor Tests - API Test Results (Postman)
+          name: Autograding - Instructor Tests (Postman)
           path: postman/test-results/results.xml
           reporter: java-junit
 
@@ -1073,5 +1077,5 @@ jobs:
           echo "🧹 Cleaning up Docker containers..."
           docker rm -f gateway-api-e2e bonus-api-e2e flight-api-e2e ticket-api-e2e \
             postgres-bonus-tests postgres-flight-tests postgres-ticket-tests 2>/dev/null || true
-          docker network rm instructor-test-network 2>/dev/null || true
+          docker network rm autograding-network 2>/dev/null || true
           echo "✅ Cleanup complete"
