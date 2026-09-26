@@ -1,12 +1,12 @@
-# Лабораторная работа #2 — Microservices
+# Лабораторная работа #2 — Распределённые системы: Микросервисы
 
 ## Описание
 
-Реализация системы микросервисов для [ВЫБРАТЬ ВАРИАНТ].
+Реализация системы бронирования авиабилетов на микросервисной архитектуре.
 
-## Вариант
-
-(Flight Booking / Hotels Booking / Car Rental / Library System)
+**Курс**: Распределённые системы обработки информации (РСОИ)  
+**Магистратура**: МАИ-22-2  
+**Студент**: Кори Тамаси
 
 ## Architecture
 
@@ -34,7 +34,7 @@
                            ▼
               ┌─────────────────────────┐
               │   PostgreSQL            │
-              │   (Multi-Database)      │
+              │   (4 isolated databases)│
               │   - gateway             │
               │   - ticket              │
               │   - flight              │
@@ -46,49 +46,50 @@
 
 ### Gateway Microservice (:8080)
 
-**API Gateways:**
+**API Gateways**:
 - `AirportHttpGateway` — управление аэропортами
-- `BookingHttpGateway` — SAGA координатор для бронирования
 - `FlightHttpGateway` — управление рейсами
 - `PrivilegeHttpGateway` — управление привилегиями
-- `TicketHttpGateway` — управление билетами
+- `TicketHttpGateway` — управление билетами (SAGA координатор)
+- `UserHttpGateway` — управление пользователями
 
-**Features:**
+**Features**:
 - SAGA pattern для распределённых транзакций
 - Компенсирующие операции при откате
 - Health check: `/manage/health`
+- Swagger UI: `http://localhost:8080/swagger`
 
 ### Ticket Microservice (:8070)
 
-**Domain:** Управление билетами
+**Domain**: Управление билетами
 
-**Endpoints:**
+**Endpoints**:
 - `GET /api/v1/tickets` — получить все билеты
 - `GET /api/v1/tickets/{ticketUid}` — получить билет по ID
 - `POST /api/v1/tickets` — создать билет
 - `DELETE /api/v1/tickets/{ticketUid}` — отменить билет
 
-**Database:** `ticket` schema
+**Database**: `ticket` schema
 
 ### Flight Microservice (:8060)
 
-**Domain:** Управление рейсами и аэропортами
+**Domain**: Управление рейсами и аэропортами
 
-**Endpoints:**
+**Endpoints**:
 - `GET /api/v1/flights` — получить все рейсы (пагинация)
 - `GET /api/v1/airports` — получить все аэропорты
 
-**Database:** `flight` schema
+**Database**: `flight` schema
 
 ### Bonus Microservice (:8050)
 
-**Domain:** Бонусная система и привилегии
+**Domain**: Бонусная система и привилегии
 
-**Endpoints:**
+**Endpoints**:
 - `GET /api/v1/privilege` — получить статус привилегий пользователя
 - `GET /api/v1/privilege-history` — получить историю бонусов
 
-**Database:** `bonus` schema
+**Database**: `bonus` schema
 
 ## Features
 
@@ -104,72 +105,43 @@
 
 ### Prerequisites
 
-- .NET 10 SDK
 - Docker & Docker Compose
-- Git
-- PostgreSQL 14 (для локальной разработки)
+- .NET 10 SDK (для локальной разработки)
+- PostgreSQL 14+ (для локальной разработки)
 
-### Setup
+### Запуск через Docker Compose (рекомендуется)
 
 ```bash
-# 1. Navigate to lab_02
+# Перейти в папку лабораторной работы
 cd labs/lab_02
 
-# 2. Configure environment for each service
-# Edit .env files in each service directory:
-# - services/gateway-microservice/.env
-# - services/ticket-microservice/.env
-# - services/flight-microservice/.env
-# - services/bonus-microservice/.env
+# Запустить все сервисы (PostgreSQL + 4 микросервиса)
+docker-compose up -d
 
-# 3. Start PostgreSQL containers (one for each service)
-cd services/gateway-microservice
-docker-compose up -d postgres-prod
+# Проверить статус сервисов
+docker-compose ps
 
-cd ../ticket-microservice
-docker-compose up -d postgres-prod
+# Просмотр логов
+docker-compose logs -f
 
-cd ../flight-microservice
-docker-compose up -d postgres-prod
-
-cd ../bonus-microservice
-docker-compose up -d postgres-prod
-
-# 4. Build and run all services
-cd ../../
-# Run each service from its directory
-cd services/gateway-microservice/src/presentation
-dotnet restore && dotnet build && dotnet run
-
-# Repeat for other services...
+# Остановить сервисы
+docker-compose down
 ```
 
-### Quick Links
+### Проверка работы
 
-- 🧪 [Postman Collections](./postman/collections/) - API tests
-- 📚 [API Documentation](http://localhost:8080/swagger) - Swagger UI (Gateway)
+```bash
+# Health check
+curl http://localhost:8080/manage/health
 
-### Configuration
+# Swagger UI
+open http://localhost:8080/swagger
 
-Each microservice has its own `.env` file with:
+# Получить все аэропорты
+curl http://localhost:8080/api/v1/airports
 
-```env
-# Application Settings
-DOTNET_ENVIRONMENT=Development
-APP_NAME=Gateway Microservice
-API_PORT=8080
-
-# Microservice URLs (for Gateway)
-BONUS_URL=http://localhost:8050/api/v1
-FLIGHT_URL=http://localhost:8060/api/v1
-TICKET_URL=http://localhost:8070/api/v1
-
-# Database Configuration
-POSTGRES_HOST=localhost
-POSTGRES_PORT=5441
-POSTGRES_DB=gateway
-POSTGRES_USER=program
-POSTGRES_PASSWORD=prod_secret_password_2024
+# Получить все рейсы
+curl http://localhost:8080/api/v1/flights
 ```
 
 ## API Endpoints
@@ -200,7 +172,7 @@ POSTGRES_PASSWORD=prod_secret_password_2024
 }
 ```
 
-**Response:**
+**Response**:
 
 ```json
 {
@@ -240,40 +212,30 @@ If any step fails:
 
 ## Testing
 
-### Unit Tests
+### CI/CD Pipeline
 
+Автоматическое тестирование при каждом push в `main`:
+- ✅ Unit Tests (367 тестов)
+- ✅ Integration Tests
+- ✅ Autograding (Postman тесты преподавателя)
+
+Статус CI: [![CI](https://github.com/Kori-Tamashi/distributed-systems-project/actions/workflows/ci.yml/badge.svg)](https://github.com/Kori-Tamashi/distributed-systems-project/actions)
+
+### Локальное тестирование
+
+**Unit Tests**:
 ```bash
-# Run tests for each service
 cd services/gateway-microservice/src/tests
 dotnet test
-
-cd ../..
-
-cd services/ticket-microservice/src/tests
-dotnet test
-
-# Repeat for flight-microservice and bonus-microservice
 ```
 
-**Test Coverage:**
-- Unit tests for business logic
-- Integration tests for database operations
-- Controller tests for API endpoints
-
-### Postman API Tests
-
-**Collections:**
-- `gateway-airport/` — Airport API tests
-- `gateway-booking/` — Booking SAGA tests
-- `gateway-privilege/` — Privilege API tests
-- `gateway-ticket/` — Ticket API tests
-- `flight-flight/` — Flight API tests
-- `ticket-ticket/` — Ticket service tests
-- `bonus-privilege/` — Bonus API tests
-
-**Environments:**
-- `globals/` — Global variables
-- `environments/` — Environment-specific configs
+**Postman API Tests**:
+```bash
+# Запустить Postman тесты в Docker
+cd postman
+docker build -t newman-runner .
+docker run --network lab_02_autograding-network newman-runner
+```
 
 ## Database Schema
 
@@ -339,13 +301,6 @@ CREATE TABLE privilege_history (
 labs/lab_02/
 ├── postman/
 │   ├── collections/           # Postman collections
-│   │   ├── gateway-airport/
-│   │   ├── gateway-booking/
-│   │   ├── gateway-privilege/
-│   │   ├── gateway-ticket/
-│   │   ├── flight-flight/
-│   │   ├── ticket-ticket/
-│   │   └── bonus-privilege/
 │   ├── environments/          # Environment configs
 │   ├── Dockerfile
 │   └── globals/
@@ -387,9 +342,9 @@ labs/lab_02/
 - **Dependency Injection** — loose coupling
 
 ### 🧪 Testing
-- **Unit Tests** — бизнес-логика, контроллеры, конвертеры
+- **367 Unit Tests** — бизнес-логика, контроллеры, конвертеры
 - **Integration Tests** — БД операции, API endpoints
-- **Postman Collections** — 7 коллекций API тестов
+- **Autograding** — Postman тесты преподавателя
 - **Health Checks** — `/manage/health` на каждом сервисе
 
 ### 🔒 Security
@@ -397,8 +352,21 @@ labs/lab_02/
 - **Error Handling** — правильные HTTP статус-коды
 - **Exception Translation** — domain exceptions → HTTP exceptions
 
-### 📊 Bonus System
-- **BRONZE** — базовый уровень
+### 🎫 Ticket Booking (SAGA)
+1. Валидация рейса (Flight Service)
+2. Проверка и резервирование бонусов (Bonus Service)
+3. Создание билета (Ticket Service)
+4. Списание бонусов (Bonus Service)
+5. **Rollback** при ошибке на любом этапе
+
+### 👤 User Management
+- Регистрация пользователей с автоматическим созданием привилегии
+- Система уровней: BRONZE → SILVER (7%) → GOLD (10%)
+- Кэшбэк 10% на бонусный счёт при покупке билета
+- История операций с бонусами
+
+### 🏆 Bonus System
+- **BRONZE** — базовый уровень (0%)
 - **SILVER** — после 10 бронирований (7% скидка)
 - **GOLD** — после 20 бронирований (10% скидка)
 - **10% cashback** — на бонусный счёт при покупке
