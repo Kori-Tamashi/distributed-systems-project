@@ -1069,6 +1069,7 @@ jobs:
             run /etc/newman/collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "flightNumber=AFL031" \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/results.xml
 
