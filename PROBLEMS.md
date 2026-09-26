@@ -34,3 +34,30 @@
 - [ ] Add seed data step to CI autograding job
 - [ ] Verify newman tests pass locally before committing
 - [ ] Update gateway Postman collection if status code mismatch with instructor's collection
+
+---
+
+## 2025-01-XX: Instructor Postman Tests Fixed
+
+### Issue
+Instructor Postman collection failed with 1 assertion failure:
+- `expected undefined not to be undefined` in "Информация о пользователе"
+- Root cause: `response.privilege` = undefined
+
+### Root Cause
+`UserInfoDTO.PrivilegeInfo` property serialized as `privilegeInfo` (camelCase),
+but instructor collection expected `privilege`.
+
+### Solution
+Added `[JsonPropertyName("privilege")]` attribute to `PrivilegeInfo` property
+in `UserInfoDTO.cs` to override JSON serialization key.
+
+### Additional Finding
+Instructor collection requires `flightNumber` environment variable to be set
+before running tests (used in POST /tickets request body).
+
+### CI Update
+Added `--env-var "flightNumber=AFL031"` to autograding job in `.github/workflows/ci.yml`.
+
+### Result
+Newman instructor tests: **8/8 assertions passed**.
