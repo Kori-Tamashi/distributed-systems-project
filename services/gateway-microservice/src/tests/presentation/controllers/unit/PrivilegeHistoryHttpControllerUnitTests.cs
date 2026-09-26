@@ -112,25 +112,18 @@ public class PrivilegeHistoryHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, PrivilegeHistory not found - should return 404 Not Found
+    /// EP2: Valid ID, PrivilegeHistory not found - should throw PrivilegeHistoryNotFoundException
     /// </summary>
     [Unit]
-    public async Task GetPrivilegeHistoryById_HistoryNotFound_ShouldReturnNotFound()
+    public async Task GetPrivilegeHistoryById_HistoryNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var historyId = 999;
         _mockService.Setup(s => s.GetByIdAsync(historyId))
             .ThrowsAsync(new ServicePrivilegeHistoryNotFoundException(historyId));
 
-        // Act
-        var result = await _controller.GetPrivilegeHistoryById(historyId);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeHistoryDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeHistoryNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(historyId, dto.PrivilegeHistoryId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeHistoryNotFoundException>(() => _controller.GetPrivilegeHistoryById(historyId));
     }
 
     /// <summary>
@@ -244,25 +237,18 @@ public class PrivilegeHistoryHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Invalid history - should return 400 Bad Request
+    /// EP2: Invalid history - should throw PrivilegeHistoryValidationException
     /// </summary>
     [Unit]
-    public async Task CreatePrivilegeHistory_InvalidHistory_ShouldReturnBadRequest()
+    public async Task CreatePrivilegeHistory_InvalidHistory_ShouldThrowValidationException()
     {
         // Arrange
         var createDto = new CreatePrivilegeHistoryDTO();
         _mockService.Setup(s => s.CreateAsync(It.IsAny<core.domain.PrivilegeHistory>()))
             .ThrowsAsync(new ServicePrivilegeHistoryValidationException("Invalid history"));
 
-        // Act
-        var result = await _controller.CreatePrivilegeHistory(createDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeHistoryDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeHistoryValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeHistoryValidationException>(() => _controller.CreatePrivilegeHistory(createDto));
     }
 
     /// <summary>
@@ -316,10 +302,10 @@ public class PrivilegeHistoryHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: PrivilegeHistory not found - should return 404 Not Found
+    /// EP2: PrivilegeHistory not found - should throw PrivilegeHistoryNotFoundException
     /// </summary>
     [Unit]
-    public async Task UpdatePrivilegeHistory_HistoryNotFound_ShouldReturnNotFound()
+    public async Task UpdatePrivilegeHistory_HistoryNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var historyId = 999;
@@ -327,22 +313,15 @@ public class PrivilegeHistoryHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.PrivilegeHistory>()))
             .ThrowsAsync(new ServicePrivilegeHistoryNotFoundException(historyId));
 
-        // Act
-        var result = await _controller.UpdatePrivilegeHistory(historyId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeHistoryDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeHistoryNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(historyId, dto.PrivilegeHistoryId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeHistoryNotFoundException>(() => _controller.UpdatePrivilegeHistory(historyId, updateDto));
     }
 
     /// <summary>
-    /// EP3: Invalid history - should return 400 Bad Request
+    /// EP3: Invalid history - should throw PrivilegeHistoryValidationException
     /// </summary>
     [Unit]
-    public async Task UpdatePrivilegeHistory_InvalidHistory_ShouldReturnBadRequest()
+    public async Task UpdatePrivilegeHistory_InvalidHistory_ShouldThrowValidationException()
     {
         // Arrange
         var historyId = 1;
@@ -350,22 +329,15 @@ public class PrivilegeHistoryHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.PrivilegeHistory>()))
             .ThrowsAsync(new ServicePrivilegeHistoryValidationException("Invalid history"));
 
-        // Act
-        var result = await _controller.UpdatePrivilegeHistory(historyId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeHistoryDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeHistoryValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeHistoryValidationException>(() => _controller.UpdatePrivilegeHistory(historyId, updateDto));
     }
 
     /// <summary>
-    /// EP4: ID mismatch - should return 400 Bad Request
+    /// EP4: ID mismatch - should throw PrivilegeHistoryInternalServerException (wraps validation)
     /// </summary>
     [Unit]
-    public async Task UpdatePrivilegeHistory_IdMismatch_ShouldReturnBadRequest()
+    public async Task UpdatePrivilegeHistory_IdMismatch_ShouldThrowInternalServerException()
     {
         // Arrange
         var routeHistoryId = 1;
@@ -381,15 +353,8 @@ public class PrivilegeHistoryHttpControllerUnitTests
         _mockService.Setup(s => s.GetByIdAsync(routeHistoryId))
             .ReturnsAsync(existingHistory);
 
-        // Act
-        var result = await _controller.UpdatePrivilegeHistory(routeHistoryId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeHistoryDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeHistoryValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<PrivilegeHistoryInternalServerException>(() => _controller.UpdatePrivilegeHistory(routeHistoryId, updateDto));
     }
 
     /// <summary>
@@ -433,24 +398,18 @@ public class PrivilegeHistoryHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, PrivilegeHistory not found - should return 404 Not Found
+    /// EP2: Valid ID, PrivilegeHistory not found - should throw PrivilegeHistoryNotFoundException
     /// </summary>
     [Unit]
-    public async Task DeletePrivilegeHistory_HistoryNotFound_ShouldReturnNotFound()
+    public async Task DeletePrivilegeHistory_HistoryNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var historyId = 999;
         _mockService.Setup(s => s.DeleteAsync(historyId))
             .ThrowsAsync(new ServicePrivilegeHistoryNotFoundException(historyId));
 
-        // Act
-        var result = await _controller.DeletePrivilegeHistory(historyId);
-
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        var dto = Assert.IsType<HttpPrivilegeHistoryNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(historyId, dto.PrivilegeHistoryId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeHistoryNotFoundException>(() => _controller.DeletePrivilegeHistory(historyId));
     }
 
     /// <summary>

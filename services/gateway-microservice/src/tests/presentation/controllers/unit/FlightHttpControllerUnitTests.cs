@@ -113,25 +113,18 @@ public class FlightHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, Flight not found - should return 404 Not Found
+    /// EP2: Valid ID, Flight not found - should throw FlightNotFoundException
     /// </summary>
     [Unit]
-    public async Task GetFlightById_FlightNotFound_ShouldReturnNotFound()
+    public async Task GetFlightById_FlightNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var flightId = 999;
         _mockService.Setup(s => s.GetByIdAsync(flightId))
             .ThrowsAsync(new ServiceFlightNotFoundException(flightId));
 
-        // Act
-        var result = await _controller.GetFlightById(flightId);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<FlightDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpFlightNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(flightId, dto.FlightId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpFlightNotFoundException>(() => _controller.GetFlightById(flightId));
     }
 
     /// <summary>
@@ -245,25 +238,18 @@ public class FlightHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Invalid flight - should return 400 Bad Request
+    /// EP2: Invalid flight - should throw FlightValidationException
     /// </summary>
     [Unit]
-    public async Task CreateFlight_InvalidFlight_ShouldReturnBadRequest()
+    public async Task CreateFlight_InvalidFlight_ShouldThrowValidationException()
     {
         // Arrange
         var createDto = new CreateFlightDTO();
         _mockService.Setup(s => s.CreateAsync(It.IsAny<core.domain.Flight>()))
             .ThrowsAsync(new ServiceFlightValidationException("Invalid flight"));
 
-        // Act
-        var result = await _controller.CreateFlight(createDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<FlightDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpFlightValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpFlightValidationException>(() => _controller.CreateFlight(createDto));
     }
 
     /// <summary>
@@ -317,10 +303,10 @@ public class FlightHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Flight not found - should return 404 Not Found
+    /// EP2: Flight not found - should throw FlightNotFoundException
     /// </summary>
     [Unit]
-    public async Task UpdateFlight_FlightNotFound_ShouldReturnNotFound()
+    public async Task UpdateFlight_FlightNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var flightId = 999;
@@ -328,22 +314,15 @@ public class FlightHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Flight>()))
             .ThrowsAsync(new ServiceFlightNotFoundException(flightId));
 
-        // Act
-        var result = await _controller.UpdateFlight(flightId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<FlightDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpFlightNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(flightId, dto.FlightId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpFlightNotFoundException>(() => _controller.UpdateFlight(flightId, updateDto));
     }
 
     /// <summary>
-    /// EP3: Invalid flight - should return 400 Bad Request
+    /// EP3: Invalid flight - should throw FlightValidationException
     /// </summary>
     [Unit]
-    public async Task UpdateFlight_InvalidFlight_ShouldReturnBadRequest()
+    public async Task UpdateFlight_InvalidFlight_ShouldThrowValidationException()
     {
         // Arrange
         var flightId = 1;
@@ -351,22 +330,15 @@ public class FlightHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Flight>()))
             .ThrowsAsync(new ServiceFlightValidationException("Invalid flight"));
 
-        // Act
-        var result = await _controller.UpdateFlight(flightId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<FlightDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpFlightValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpFlightValidationException>(() => _controller.UpdateFlight(flightId, updateDto));
     }
 
     /// <summary>
-    /// EP4: ID mismatch - should return 400 Bad Request
+    /// EP4: ID mismatch - should throw FlightInternalServerException (wraps validation)
     /// </summary>
     [Unit]
-    public async Task UpdateFlight_IdMismatch_ShouldReturnBadRequest()
+    public async Task UpdateFlight_IdMismatch_ShouldThrowInternalServerException()
     {
         // Arrange
         var routeFlightId = 1;
@@ -382,15 +354,8 @@ public class FlightHttpControllerUnitTests
         _mockService.Setup(s => s.GetByIdAsync(routeFlightId))
             .ReturnsAsync(existingFlight);
 
-        // Act
-        var result = await _controller.UpdateFlight(routeFlightId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<FlightDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpFlightValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<FlightInternalServerException>(() => _controller.UpdateFlight(routeFlightId, updateDto));
     }
 
     /// <summary>
@@ -434,24 +399,18 @@ public class FlightHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, Flight not found - should return 404 Not Found
+    /// EP2: Valid ID, Flight not found - should throw FlightNotFoundException
     /// </summary>
     [Unit]
-    public async Task DeleteFlight_FlightNotFound_ShouldReturnNotFound()
+    public async Task DeleteFlight_FlightNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var flightId = 999;
         _mockService.Setup(s => s.DeleteAsync(flightId))
             .ThrowsAsync(new ServiceFlightNotFoundException(flightId));
 
-        // Act
-        var result = await _controller.DeleteFlight(flightId);
-
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        var dto = Assert.IsType<HttpFlightNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(flightId, dto.FlightId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpFlightNotFoundException>(() => _controller.DeleteFlight(flightId));
     }
 
     /// <summary>

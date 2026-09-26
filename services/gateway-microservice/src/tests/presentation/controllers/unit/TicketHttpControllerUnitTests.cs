@@ -279,8 +279,8 @@ public class TicketHttpControllerUnitTests
 
         // Assert
         var actionResult = Assert.IsType<ActionResult<BuyTicketResponse>>(result);
-        var createdResult = Assert.IsType<CreatedResult>(actionResult.Result);
-        var dto = Assert.IsType<BuyTicketResponse>(createdResult.Value);
+        var okResult = Assert.IsType<OkObjectResult>(actionResult.Result);
+        var dto = Assert.IsType<BuyTicketResponse>(okResult.Value);
         
         Assert.NotNull(dto.TicketUid);
         _mockService.Verify(s => s.BuyTicketAsync("john_doe", "AFL031", 15000, true), Times.Once);

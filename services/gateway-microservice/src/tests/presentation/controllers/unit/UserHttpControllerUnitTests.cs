@@ -1,5 +1,8 @@
 using core.interfaces.businesslogic.services;
+using core.interfaces.dataaccess.gateways;
+using core.filters;
 using Microsoft.AspNetCore.Http;
+using presentation.exceptions.http.User;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Routing;
@@ -81,10 +84,12 @@ public class UserHttpControllerUnitTests
             ticket.Username = username;
         }
         
-        _mockPrivilegeService.Setup(s => s.GetAllAsync(null))
+        _mockPrivilegeService.Setup(s => s.GetAllAsync(It.IsAny<PrivilegeFilter>()))
             .ReturnsAsync(new List<core.domain.Privilege> { privilege });
-        _mockTicketService.Setup(s => s.GetAllAsync(null))
+        _mockTicketService.Setup(s => s.GetAllAsync(It.IsAny<TicketFilter>()))
             .ReturnsAsync(tickets);
+        _mockFlightGateway.Setup(s => s.GetAllAsync())
+            .ReturnsAsync(new List<core.domain.Flight>());
 
         // Act
         var result = await _controller.GetUserInfo(username);
@@ -130,8 +135,10 @@ public class UserHttpControllerUnitTests
     {
         // Arrange
         var username = "nonexistent";
-        _mockPrivilegeService.Setup(s => s.GetAllAsync(null))
+        _mockPrivilegeService.Setup(s => s.GetAllAsync(It.IsAny<PrivilegeFilter>()))
             .ReturnsAsync(new List<core.domain.Privilege>());
+        _mockFlightGateway.Setup(s => s.GetAllAsync())
+            .ReturnsAsync(new List<core.domain.Flight>());
 
         // Act
         var result = await _controller.GetUserInfo(username);
@@ -144,24 +151,20 @@ public class UserHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP4: Service throws exception - should return 500 Internal Server Error
+    /// EP4: Service throws exception - should throw UserInternalServerException
     /// </summary>
     [Unit]
-    public async Task GetUserInfo_ServiceException_ShouldReturnInternalServerError()
+    public async Task GetUserInfo_ServiceException_ShouldThrowInternalServerException()
     {
         // Arrange
         var username = "testuser";
-        _mockPrivilegeService.Setup(s => s.GetAllAsync(null))
+        _mockPrivilegeService.Setup(s => s.GetAllAsync(It.IsAny<PrivilegeFilter>()))
             .ThrowsAsync(new Exception("Database error"));
+        _mockFlightGateway.Setup(s => s.GetAllAsync())
+            .ReturnsAsync(new List<core.domain.Flight>());
 
-        // Act
-        var result = await _controller.GetUserInfo(username);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<UserInfoDTO>>(result);
-        var objectResult = Assert.IsType<ObjectResult>(actionResult.Result);
-        
-        Assert.Equal(500, objectResult.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<UserInternalServerException>(() => _controller.GetUserInfo(username));
     }
 
     /// <summary>
@@ -176,10 +179,12 @@ public class UserHttpControllerUnitTests
         privilege.Username = username;
         var tickets = new List<core.domain.Ticket>();
         
-        _mockPrivilegeService.Setup(s => s.GetAllAsync(null))
+        _mockPrivilegeService.Setup(s => s.GetAllAsync(It.IsAny<PrivilegeFilter>()))
             .ReturnsAsync(new List<core.domain.Privilege> { privilege });
-        _mockTicketService.Setup(s => s.GetAllAsync(null))
+        _mockTicketService.Setup(s => s.GetAllAsync(It.IsAny<TicketFilter>()))
             .ReturnsAsync(tickets);
+        _mockFlightGateway.Setup(s => s.GetAllAsync())
+            .ReturnsAsync(new List<core.domain.Flight>());
 
         // Act
         var result = await _controller.GetUserInfo(username);

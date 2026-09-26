@@ -114,25 +114,18 @@ public class PrivilegeHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, Privilege not found - should return 404 Not Found
+    /// EP2: Valid ID, Privilege not found - should throw PrivilegeNotFoundException
     /// </summary>
     [Unit]
-    public async Task GetPrivilegeById_PrivilegeNotFound_ShouldReturnNotFound()
+    public async Task GetPrivilegeById_PrivilegeNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var privilegeId = 999;
         _mockService.Setup(s => s.GetByIdAsync(privilegeId))
             .ThrowsAsync(new ServicePrivilegeNotFoundException(privilegeId));
 
-        // Act
-        var result = await _controller.GetPrivilegeById(privilegeId);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(privilegeId, dto.PrivilegeId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeNotFoundException>(() => _controller.GetPrivilegeById(privilegeId));
     }
 
     /// <summary>
@@ -244,25 +237,18 @@ public class PrivilegeHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Invalid privilege - should return 400 Bad Request
+    /// EP2: Invalid privilege - should throw PrivilegeValidationException
     /// </summary>
     [Unit]
-    public async Task CreatePrivilege_InvalidPrivilege_ShouldReturnBadRequest()
+    public async Task CreatePrivilege_InvalidPrivilege_ShouldThrowValidationException()
     {
         // Arrange
         var createDto = new CreatePrivilegeDTO();
         _mockService.Setup(s => s.CreateAsync(It.IsAny<core.domain.Privilege>()))
             .ThrowsAsync(new ServicePrivilegeValidationException("Invalid privilege"));
 
-        // Act
-        var result = await _controller.CreatePrivilege(createDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeValidationException>(() => _controller.CreatePrivilege(createDto));
     }
 
     /// <summary>
@@ -315,10 +301,10 @@ public class PrivilegeHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Privilege not found - should return 404 Not Found
+    /// EP2: Privilege not found - should throw PrivilegeNotFoundException
     /// </summary>
     [Unit]
-    public async Task UpdatePrivilege_PrivilegeNotFound_ShouldReturnNotFound()
+    public async Task UpdatePrivilege_PrivilegeNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var privilegeId = 999;
@@ -326,22 +312,15 @@ public class PrivilegeHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Privilege>()))
             .ThrowsAsync(new ServicePrivilegeNotFoundException(privilegeId));
 
-        // Act
-        var result = await _controller.UpdatePrivilege(privilegeId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(privilegeId, dto.PrivilegeId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeNotFoundException>(() => _controller.UpdatePrivilege(privilegeId, updateDto));
     }
 
     /// <summary>
-    /// EP3: Invalid privilege - should return 400 Bad Request
+    /// EP3: Invalid privilege - should throw PrivilegeValidationException
     /// </summary>
     [Unit]
-    public async Task UpdatePrivilege_InvalidPrivilege_ShouldReturnBadRequest()
+    public async Task UpdatePrivilege_InvalidPrivilege_ShouldThrowValidationException()
     {
         // Arrange
         var privilegeId = 1;
@@ -349,22 +328,15 @@ public class PrivilegeHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Privilege>()))
             .ThrowsAsync(new ServicePrivilegeValidationException("Invalid privilege"));
 
-        // Act
-        var result = await _controller.UpdatePrivilege(privilegeId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeValidationException>(() => _controller.UpdatePrivilege(privilegeId, updateDto));
     }
 
     /// <summary>
-    /// EP4: ID mismatch - should return 400 Bad Request
+    /// EP4: ID mismatch - should throw PrivilegeInternalServerException (wraps validation)
     /// </summary>
     [Unit]
-    public async Task UpdatePrivilege_IdMismatch_ShouldReturnBadRequest()
+    public async Task UpdatePrivilege_IdMismatch_ShouldThrowInternalServerException()
     {
         // Arrange
         var routePrivilegeId = 1;
@@ -379,15 +351,8 @@ public class PrivilegeHttpControllerUnitTests
         _mockService.Setup(s => s.GetByIdAsync(routePrivilegeId))
             .ReturnsAsync(existingPrivilege);
 
-        // Act
-        var result = await _controller.UpdatePrivilege(routePrivilegeId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<PrivilegeDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpPrivilegeValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<PrivilegeInternalServerException>(() => _controller.UpdatePrivilege(routePrivilegeId, updateDto));
     }
 
     /// <summary>
@@ -431,24 +396,18 @@ public class PrivilegeHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, Privilege not found - should return 404 Not Found
+    /// EP2: Valid ID, Privilege not found - should throw PrivilegeNotFoundException
     /// </summary>
     [Unit]
-    public async Task DeletePrivilege_PrivilegeNotFound_ShouldReturnNotFound()
+    public async Task DeletePrivilege_PrivilegeNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var privilegeId = 999;
         _mockService.Setup(s => s.DeleteAsync(privilegeId))
             .ThrowsAsync(new ServicePrivilegeNotFoundException(privilegeId));
 
-        // Act
-        var result = await _controller.DeletePrivilege(privilegeId);
-
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        var dto = Assert.IsType<HttpPrivilegeNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(privilegeId, dto.PrivilegeId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpPrivilegeNotFoundException>(() => _controller.DeletePrivilege(privilegeId));
     }
 
     /// <summary>

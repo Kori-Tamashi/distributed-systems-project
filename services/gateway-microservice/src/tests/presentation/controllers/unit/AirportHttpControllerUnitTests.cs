@@ -112,25 +112,18 @@ public class AirportHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, Airport not found - should return 404 Not Found
+    /// EP2: Valid ID, Airport not found - should throw AirportNotFoundException
     /// </summary>
     [Unit]
-    public async Task GetAirportById_AirportNotFound_ShouldReturnNotFound()
+    public async Task GetAirportById_AirportNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var airportId = 999;
         _mockService.Setup(s => s.GetByIdAsync(airportId))
             .ThrowsAsync(new ServiceAirportNotFoundException(airportId));
 
-        // Act
-        var result = await _controller.GetAirportById(airportId);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<AirportDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpAirportNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(airportId, dto.AirportId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpAirportNotFoundException>(() => _controller.GetAirportById(airportId));
     }
 
     /// <summary>
@@ -242,25 +235,18 @@ public class AirportHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Invalid airport - should return 400 Bad Request
+    /// EP2: Invalid airport - should throw AirportValidationException
     /// </summary>
     [Unit]
-    public async Task CreateAirport_InvalidAirport_ShouldReturnBadRequest()
+    public async Task CreateAirport_InvalidAirport_ShouldThrowValidationException()
     {
         // Arrange
         var createDto = new CreateAirportDTO();
         _mockService.Setup(s => s.CreateAsync(It.IsAny<core.domain.Airport>()))
             .ThrowsAsync(new ServiceAirportValidationException("Invalid airport"));
 
-        // Act
-        var result = await _controller.CreateAirport(createDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<AirportDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpAirportValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpAirportValidationException>(() => _controller.CreateAirport(createDto));
     }
 
     /// <summary>
@@ -313,10 +299,10 @@ public class AirportHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Airport not found - should return 404 Not Found
+    /// EP2: Airport not found - should throw AirportNotFoundException
     /// </summary>
     [Unit]
-    public async Task UpdateAirport_AirportNotFound_ShouldReturnNotFound()
+    public async Task UpdateAirport_AirportNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var airportId = 999;
@@ -324,22 +310,15 @@ public class AirportHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Airport>()))
             .ThrowsAsync(new ServiceAirportNotFoundException(airportId));
 
-        // Act
-        var result = await _controller.UpdateAirport(airportId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<AirportDTO>>(result);
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpAirportNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(airportId, dto.AirportId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpAirportNotFoundException>(() => _controller.UpdateAirport(airportId, updateDto));
     }
 
     /// <summary>
-    /// EP3: Invalid airport - should return 400 Bad Request
+    /// EP3: Invalid airport - should throw AirportValidationException
     /// </summary>
     [Unit]
-    public async Task UpdateAirport_InvalidAirport_ShouldReturnBadRequest()
+    public async Task UpdateAirport_InvalidAirport_ShouldThrowValidationException()
     {
         // Arrange
         var airportId = 1;
@@ -347,22 +326,15 @@ public class AirportHttpControllerUnitTests
         _mockService.Setup(s => s.UpdateAsync(It.IsAny<core.domain.Airport>()))
             .ThrowsAsync(new ServiceAirportValidationException("Invalid airport"));
 
-        // Act
-        var result = await _controller.UpdateAirport(airportId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<AirportDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpAirportValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpAirportValidationException>(() => _controller.UpdateAirport(airportId, updateDto));
     }
 
     /// <summary>
-    /// EP4: ID mismatch - should return 400 Bad Request
+    /// EP4: ID mismatch - should throw AirportInternalServerException (wraps validation)
     /// </summary>
     [Unit]
-    public async Task UpdateAirport_IdMismatch_ShouldReturnBadRequest()
+    public async Task UpdateAirport_IdMismatch_ShouldThrowInternalServerException()
     {
         // Arrange
         var routeAirportId = 1;
@@ -377,15 +349,8 @@ public class AirportHttpControllerUnitTests
         _mockService.Setup(s => s.GetByIdAsync(routeAirportId))
             .ReturnsAsync(existingAirport);
 
-        // Act
-        var result = await _controller.UpdateAirport(routeAirportId, updateDto);
-
-        // Assert
-        var actionResult = Assert.IsType<ActionResult<AirportDTO>>(result);
-        var badRequestResult = Assert.IsType<BadRequestObjectResult>(actionResult.Result);
-        var dto = Assert.IsType<HttpAirportValidationException>(badRequestResult.Value);
-        
-        Assert.Equal(400, dto.StatusCode);
+        // Act & Assert
+        await Assert.ThrowsAsync<AirportInternalServerException>(() => _controller.UpdateAirport(routeAirportId, updateDto));
     }
 
     /// <summary>
@@ -429,24 +394,18 @@ public class AirportHttpControllerUnitTests
     }
 
     /// <summary>
-    /// EP2: Valid ID, Airport not found - should return 404 Not Found
+    /// EP2: Valid ID, Airport not found - should throw AirportNotFoundException
     /// </summary>
     [Unit]
-    public async Task DeleteAirport_AirportNotFound_ShouldReturnNotFound()
+    public async Task DeleteAirport_AirportNotFound_ShouldThrowNotFoundException()
     {
         // Arrange
         var airportId = 999;
         _mockService.Setup(s => s.DeleteAsync(airportId))
             .ThrowsAsync(new ServiceAirportNotFoundException(airportId));
 
-        // Act
-        var result = await _controller.DeleteAirport(airportId);
-
-        // Assert
-        var notFoundResult = Assert.IsType<NotFoundObjectResult>(result);
-        var dto = Assert.IsType<HttpAirportNotFoundException>(notFoundResult.Value);
-        
-        Assert.Equal(airportId, dto.AirportId);
+        // Act & Assert
+        await Assert.ThrowsAsync<HttpAirportNotFoundException>(() => _controller.DeleteAirport(airportId));
     }
 
     /// <summary>
