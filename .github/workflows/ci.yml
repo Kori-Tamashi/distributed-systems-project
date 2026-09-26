@@ -1020,7 +1020,7 @@ jobs:
         run: |
           set -e
           echo "Applying EF Core migrations for bonus and flight..."
-          
+
           # bonus-microservice
           echo "  → bonus"
           docker run --rm \
@@ -1028,8 +1028,26 @@ jobs:
             -v "$(pwd)/services/bonus-microservice/src:/src" \
             -w /src \
             mcr.microsoft.com/dotnet/sdk:10.0 \
-            bash -c "dotnet tool install --global dotnet-ef --version 8.0.0 && export PATH=\$PATH:/root/.dotnet/tools && dotnet ef database update --project dataaccess/dataaccess.csproj --startup-project presentation/presentation.csproj --connection 'Host=postgres-bonus-tests;Port=5432;Database=test_api;Username=program;Password=test'"
-          
+            bash -c "dotnet restore && \
+                     dotnet tool install --global dotnet-ef && \
+                     export PATH=\$PATH:/root/.dotnet/tools && \
+                     dotnet ef database update \
+                       --project dataaccess/dataaccess.csproj \
+                       --startup-project presentation/presentation.csproj \
+                       --connection 'Host=postgres-bonus-tests;Port=5432;Database=test_api;Username=program;Password=test' \
+                       --no-migrations" || { \
+            echo "⚠️ Bonus migrations failed, dropping and recreating database..."; \
+            docker run --rm \
+              --network autograding-network \
+              -v "$(pwd)/services/bonus-microservice/src:/src" \
+              -w /src \
+              mcr.microsoft.com/dotnet/sdk:10.0 \
+              bash -c "export PATH=\$PATH:/root/.dotnet/tools && \
+                       dotnet ef database drop --force --connection 'Host=postgres-bonus-tests;Port=5432;Database=test_api;Username=program;Password=test' && \
+                       dotnet ef database create --connection 'Host=postgres-bonus-tests;Port=5432;Database=test_api;Username=program;Password=test' && \
+                       dotnet ef database update --project dataaccess/dataaccess.csproj --startup-project presentation/presentation.csproj --connection 'Host=postgres-bonus-tests;Port=5432;Database=test_api;Username=program;Password=test'"; \
+          }
+
           # flight-microservice
           echo "  → flight"
           docker run --rm \
@@ -1037,11 +1055,29 @@ jobs:
             -v "$(pwd)/services/flight-microservice/src:/src" \
             -w /src \
             mcr.microsoft.com/dotnet/sdk:10.0 \
-            bash -c "dotnet tool install --global dotnet-ef --version 8.0.0 && export PATH=\$PATH:/root/.dotnet/tools && dotnet ef database update --project dataaccess/dataaccess.csproj --startup-project presentation/presentation.csproj --connection 'Host=postgres-flight-tests;Port=5432;Database=test_api;Username=program;Password=test'"
-          
+            bash -c "dotnet restore && \
+                     dotnet tool install --global dotnet-ef && \
+                     export PATH=\$PATH:/root/.dotnet/tools && \
+                     dotnet ef database update \
+                       --project dataaccess/dataaccess.csproj \
+                       --startup-project presentation/presentation.csproj \
+                       --connection 'Host=postgres-flight-tests;Port=5432;Database=test_api;Username=program;Password=test' \
+                       --no-migrations" || { \
+            echo "⚠️ Flight migrations failed, dropping and recreating database..."; \
+            docker run --rm \
+              --network autograding-network \
+              -v "$(pwd)/services/flight-microservice/src:/src" \
+              -w /src \
+              mcr.microsoft.com/dotnet/sdk:10.0 \
+              bash -c "export PATH=\$PATH:/root/.dotnet/tools && \
+                       dotnet ef database drop --force --connection 'Host=postgres-flight-tests;Port=5432;Database=test_api;Username=program;Password=test' && \
+                       dotnet ef database create --connection 'Host=postgres-flight-tests;Port=5432;Database=test_api;Username=program;Password=test' && \
+                       dotnet ef database update --project dataaccess/dataaccess.csproj --startup-project presentation/presentation.csproj --connection 'Host=postgres-flight-tests;Port=5432;Database=test_api;Username=program;Password=test'"; \
+          }
+
           # ticket-microservice already applies migrations on startup via MigrateAsync()
           echo "  → ticket (applies migrations on startup)"
-          
+
           echo "✅ Migrations applied"
 
       - name: Seed flight and bonus data for autograding
