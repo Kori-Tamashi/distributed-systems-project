@@ -1001,11 +1001,11 @@ jobs:
       - name: Start backend services
         run: |
           echo "Starting bonus, flight, ticket services..."
-          
+
           docker run -d --name bonus-api-e2e --network autograding-network --link postgres-bonus-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8050 -p 8050:8050 bonus-microservice:api
           docker run -d --name flight-api-e2e --network autograding-network --link postgres-flight-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8060 -p 8060:8060 flight-microservice:api
           docker run -d --name ticket-api-e2e --network autograding-network --link postgres-ticket-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8070 -p 8070:8070 ticket-microservice:api
-          
+
           echo "⏳ Waiting for backend services to start..."
           for i in {1..30}; do
             if curl -sf http://localhost:8050/manage/health > /dev/null 2>&1 && curl -sf http://localhost:8060/manage/health > /dev/null 2>&1 && curl -sf http://localhost:8070/manage/health > /dev/null 2>&1; then
@@ -1019,16 +1019,16 @@ jobs:
       - name: Apply database migrations
         run: |
           echo "Applying EF Core migrations to all services..."
-          docker exec bonus-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
-          docker exec flight-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
-          docker exec ticket-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
+          docker exec bonus-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj
+          docker exec flight-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj
+          docker exec ticket-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj
           echo "✅ Migrations applied"
 
       - name: Seed flight and bonus data for autograding
         run: |
           set -e
           echo "Seeding airports and flight for autograding tests..."
-          docker exec postgres-flight-tests psql -U program -d test_api <<'SQL'
+          docker exec -i postgres-flight-tests psql -U program -d test_api <<'SQL'
           INSERT INTO airports (name, city, country) VALUES
             ('Пулково', 'Санкт-Петербург', 'Россия'),
             ('Шереметьево', 'Москва', 'Россия')
@@ -1043,16 +1043,16 @@ jobs:
           SQL
 
           echo "Verifying flight seed..."
-          docker exec postgres-flight-tests psql -U program -d test_api -c "SELECT COUNT(*) as flight_count FROM flights WHERE flight_number='AFL031';"
+          docker exec postgres-flight-tests psql -U program -d test_api -tAc "SELECT COUNT(*) FROM flights WHERE flight_number='AFL031';"
 
           echo "Seeding privilege for Test Max in bonus DB..."
-          docker exec postgres-bonus-tests psql -U program -d test_api <<'SQL'
+          docker exec -i postgres-bonus-tests psql -U program -d test_api <<'SQL'
           INSERT INTO privilege (username, balance, status) VALUES ('Test Max', 0, 0)
           ON CONFLICT DO NOTHING;
           SQL
 
           echo "Verifying privilege seed..."
-          docker exec postgres-bonus-tests psql -U program -d test_api -c "SELECT username, balance, status FROM privilege WHERE username='Test Max';"
+          docker exec postgres-bonus-tests psql -U program -d test_api -tAc "SELECT COUNT(*) FROM privilege WHERE username='Test Max';"
 
           echo "✅ Seed applied successfully"
 
