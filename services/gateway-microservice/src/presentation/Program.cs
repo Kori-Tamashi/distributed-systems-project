@@ -74,7 +74,14 @@ builder.Services.AddControllers()
         options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
     });
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    // Unique schemaId = full type name (handles types with same name in different namespaces)
+    c.CustomSchemaIds(type => type.FullName?.Replace("+", ".") ?? type.Name);
+    
+    // Resolve conflicting actions by taking the first match
+    c.ResolveConflictingActions(apiDescriptions => apiDescriptions.First());
+});
 builder.Services.AddHealthChecks();
 
 // Configure Kestrel to use port from .env
