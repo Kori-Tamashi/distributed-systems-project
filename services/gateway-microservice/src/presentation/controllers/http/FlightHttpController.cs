@@ -72,14 +72,14 @@ public class FlightHttpController : ControllerBase
         catch (ServiceFlightNotFoundException ex)
         {
             _logger.LogWarning(ex, "Flight not found: {FlightId}", flightId);
-            return NotFound(new HttpFlightNotFoundException(flightId));
+            throw new HttpFlightNotFoundException(flightId);
         }
         catch (ServiceFlightValidationException ex)
         {
             _logger.LogWarning(ex, "Flight validation failed for ID: {FlightId}", flightId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpFlightValidationException(errorData));
+            throw new HttpFlightValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -160,7 +160,7 @@ public class FlightHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpFlightValidationException(errorData));
+                throw new HttpFlightValidationException(errorData);
             }
             
             _logger.LogDebug("Creating new flight");
@@ -180,7 +180,7 @@ public class FlightHttpController : ControllerBase
             _logger.LogWarning(ex, "Flight validation failed");
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpFlightValidationException(errorData));
+            throw new HttpFlightValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -217,7 +217,7 @@ public class FlightHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpFlightValidationException(errorData));
+                throw new HttpFlightValidationException(errorData);
             }
             
             _logger.LogDebug("Updating flight: {FlightId}", flightId);
@@ -229,7 +229,7 @@ public class FlightHttpController : ControllerBase
             {
                 _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", flightId, existingFlight.Id);
                 var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
-                return BadRequest(new HttpFlightValidationException(errorData));
+                throw new HttpFlightValidationException(errorData);
             }
             
             var updatedFlight = FlightHttpConverter.ToUpdateDomain(updateDto, existingFlight);
@@ -242,14 +242,14 @@ public class FlightHttpController : ControllerBase
         catch (ServiceFlightNotFoundException ex)
         {
             _logger.LogWarning(ex, "Flight not found for update: {FlightId}", flightId);
-            return NotFound(new HttpFlightNotFoundException(flightId));
+            throw new HttpFlightNotFoundException(flightId);
         }
         catch (ServiceFlightValidationException ex)
         {
             _logger.LogWarning(ex, "Flight validation failed for ID: {FlightId}", flightId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpFlightValidationException(errorData));
+            throw new HttpFlightValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -284,7 +284,7 @@ public class FlightHttpController : ControllerBase
         catch (ServiceFlightNotFoundException ex)
         {
             _logger.LogWarning(ex, "Flight not found for deletion: {FlightId}", flightId);
-            return NotFound(new HttpFlightNotFoundException(flightId));
+            throw new HttpFlightNotFoundException(flightId);
         }
         catch (Exception ex)
         {

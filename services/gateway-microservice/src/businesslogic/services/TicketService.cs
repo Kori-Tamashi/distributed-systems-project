@@ -278,11 +278,22 @@ public class TicketService : ITicketService
             var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
             var privilege = privileges.FirstOrDefault();
             
+            // Create privilege if user doesn't exist
+            if (privilege == null)
+            {
+                privilege = await _privilegeService.CreateAsync(new core.domain.Privilege
+                {
+                    Username = username,
+                    Balance = 0,
+                    Status = core.enums.PrivilegeStatus.BRONZE
+                });
+            }
+            
             int paidByBonuses = 0;
             int paidByMoney = price;
             var ticketUid = Guid.NewGuid();
 
-            if (paidFromBalance && privilege != null && privilege.Balance > 0)
+            if (paidFromBalance && privilege.Balance > 0)
             {
                 // Pay from balance: max(balance, price)
                 paidByBonuses = Math.Min(privilege.Balance, price);
@@ -291,11 +302,12 @@ public class TicketService : ITicketService
                 // Debit balance
                 await _privilegeService.DebitBalanceAsync(privilege.Id, paidByBonuses, ticketUid);
             }
-            else if (!paidFromBalance && privilege != null)
+            else if (!paidFromBalance)
             {
                 // Cash payment: +10% cashback
                 var cashback = price / 10;
-                await _privilegeService.CreditBalanceAsync(privilege.Id, cashback, ticketUid);
+                var updatedPrivilege = await _privilegeService.CreditBalanceAsync(privilege.Id, cashback, ticketUid);
+                privilege = updatedPrivilege; // Use updated privilege with new balance
             }
 
             // 3. Create ticket
@@ -493,10 +505,10 @@ public class TicketService : ITicketService
             errors["Price"] = new[] { "Price must be positive" };
         }
 
-        // Validate Status (PAID=1 or CANCELED=2)
-        if (ticket.Status != 1 && ticket.Status != 2)
+        // Validate Status (Confirmed=0, Cancelled=1, or Refunded=2)
+        if (ticket.Status != 0 && ticket.Status != 1 && ticket.Status != 2)
         {
-            errors["Status"] = new[] { "Status must be PAID (1) or CANCELED (2)" };
+            errors["Status"] = new[] { "Status must be Confirmed (0), Cancelled (1), or Refunded (2)" };
         }
 
         if (errors.Count > 0)

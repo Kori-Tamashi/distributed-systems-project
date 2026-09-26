@@ -81,14 +81,14 @@ public class PrivilegeHttpController : ControllerBase
         catch (ServicePrivilegeNotFoundException ex)
         {
             _logger.LogWarning(ex, "Privilege not found: {PrivilegeId}", privilegeId);
-            return NotFound(new HttpPrivilegeNotFoundException(privilegeId));
+            throw new HttpPrivilegeNotFoundException(privilegeId);
         }
         catch (ServicePrivilegeValidationException ex)
         {
             _logger.LogWarning(ex, "Privilege validation failed for ID: {PrivilegeId}", privilegeId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpPrivilegeValidationException(errorData));
+            throw new HttpPrivilegeValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -161,7 +161,7 @@ public class PrivilegeHttpController : ControllerBase
             if (privilege == null)
             {
                 _logger.LogWarning("Privilege not found for user: {Username}", username);
-                return NotFound(new HttpPrivilegeNotFoundException(0));
+                throw new HttpPrivilegeNotFoundException(0);
             }
             
             // Get history
@@ -212,7 +212,7 @@ public class PrivilegeHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpPrivilegeValidationException(errorData));
+                throw new HttpPrivilegeValidationException(errorData);
             }
             
             _logger.LogDebug("Creating new privilege");
@@ -232,7 +232,7 @@ public class PrivilegeHttpController : ControllerBase
             _logger.LogWarning(ex, "Privilege validation failed");
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpPrivilegeValidationException(errorData));
+            throw new HttpPrivilegeValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -269,7 +269,7 @@ public class PrivilegeHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpPrivilegeValidationException(errorData));
+                throw new HttpPrivilegeValidationException(errorData);
             }
             
             _logger.LogDebug("Updating privilege: {PrivilegeId}", privilegeId);
@@ -281,7 +281,7 @@ public class PrivilegeHttpController : ControllerBase
             {
                 _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", privilegeId, existingPrivilege.Id);
                 var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
-                return BadRequest(new HttpPrivilegeValidationException(errorData));
+                throw new HttpPrivilegeValidationException(errorData);
             }
             
             var updatedPrivilege = PrivilegeHttpConverter.ToUpdateDomain(updateDto, existingPrivilege);
@@ -294,14 +294,14 @@ public class PrivilegeHttpController : ControllerBase
         catch (ServicePrivilegeNotFoundException ex)
         {
             _logger.LogWarning(ex, "Privilege not found for update: {PrivilegeId}", privilegeId);
-            return NotFound(new HttpPrivilegeNotFoundException(privilegeId));
+            throw new HttpPrivilegeNotFoundException(privilegeId);
         }
         catch (ServicePrivilegeValidationException ex)
         {
             _logger.LogWarning(ex, "Privilege validation failed for ID: {PrivilegeId}", privilegeId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpPrivilegeValidationException(errorData));
+            throw new HttpPrivilegeValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -336,7 +336,7 @@ public class PrivilegeHttpController : ControllerBase
         catch (ServicePrivilegeNotFoundException ex)
         {
             _logger.LogWarning(ex, "Privilege not found for deletion: {PrivilegeId}", privilegeId);
-            return NotFound(new HttpPrivilegeNotFoundException(privilegeId));
+            throw new HttpPrivilegeNotFoundException(privilegeId);
         }
         catch (ValidationException ex)
         {

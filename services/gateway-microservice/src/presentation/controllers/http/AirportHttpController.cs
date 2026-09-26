@@ -72,14 +72,14 @@ public class AirportHttpController : ControllerBase
         catch (ServiceAirportNotFoundException ex)
         {
             _logger.LogWarning(ex, "Airport not found: {AirportId}", airportId);
-            return NotFound(new HttpAirportNotFoundException(airportId));
+            throw new HttpAirportNotFoundException(airportId);
         }
         catch (ServiceAirportValidationException ex)
         {
             _logger.LogWarning(ex, "Airport validation failed for ID: {AirportId}", airportId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpAirportValidationException(errorData));
+            throw new HttpAirportValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -150,7 +150,7 @@ public class AirportHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpAirportValidationException(errorData));
+                throw new HttpAirportValidationException(errorData);
             }
             
             _logger.LogDebug("Creating new airport");
@@ -170,7 +170,7 @@ public class AirportHttpController : ControllerBase
             _logger.LogWarning(ex, "Airport validation failed");
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpAirportValidationException(errorData));
+            throw new HttpAirportValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -207,7 +207,7 @@ public class AirportHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpAirportValidationException(errorData));
+                throw new HttpAirportValidationException(errorData);
             }
             
             _logger.LogDebug("Updating airport: {AirportId}", airportId);
@@ -219,7 +219,7 @@ public class AirportHttpController : ControllerBase
             {
                 _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", airportId, existingAirport.Id);
                 var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
-                return BadRequest(new HttpAirportValidationException(errorData));
+                throw new HttpAirportValidationException(errorData);
             }
             
             var updatedAirport = AirportHttpConverter.ToUpdateDomain(updateDto, existingAirport);
@@ -232,14 +232,14 @@ public class AirportHttpController : ControllerBase
         catch (ServiceAirportNotFoundException ex)
         {
             _logger.LogWarning(ex, "Airport not found for update: {AirportId}", airportId);
-            return NotFound(new HttpAirportNotFoundException(airportId));
+            throw new HttpAirportNotFoundException(airportId);
         }
         catch (ServiceAirportValidationException ex)
         {
             _logger.LogWarning(ex, "Airport validation failed for ID: {AirportId}", airportId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpAirportValidationException(errorData));
+            throw new HttpAirportValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -274,7 +274,7 @@ public class AirportHttpController : ControllerBase
         catch (ServiceAirportNotFoundException ex)
         {
             _logger.LogWarning(ex, "Airport not found for deletion: {AirportId}", airportId);
-            return NotFound(new HttpAirportNotFoundException(airportId));
+            throw new HttpAirportNotFoundException(airportId);
         }
         catch (Exception ex)
         {

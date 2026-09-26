@@ -1,7 +1,10 @@
 using core.interfaces.businesslogic.services;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
+using presentation.dto.http;
 using presentation.dto.http.User;
+using presentation.exceptions.http;
+using presentation.exceptions.http.User;
 
 namespace presentation.controllers.http;
 
@@ -57,29 +60,26 @@ public class UserHttpController : ControllerBase
             if (string.IsNullOrWhiteSpace(username))
             {
                 _logger.LogWarning("Username header is missing or empty");
-                return BadRequest(new { error = "Username is required", message = "X-User-Name header must be provided" });
+                return BadRequest(new ErrorResponse("Username is required"));
             }
 
             _logger.LogDebug("Getting user information for: {Username}", username);
 
-            // Get privilege information by username
-            var allPrivileges = await _privilegeService.GetAllAsync(null);
-            var userPrivilege = allPrivileges.FirstOrDefault(p => p.Username == username);
+            // Get privilege information by username using filter
+            var userPrivilege = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
+            var privilege = userPrivilege.FirstOrDefault();
 
-            if (userPrivilege == null)
+            if (privilege == null)
             {
                 _logger.LogWarning("User not found: {Username}", username);
-                return NotFound(new { error = "User not found", message = $"No privilege account found for username: {username}" });
+                return NotFound(new ErrorResponse("User not found"));
             }
 
-            // Get all tickets for this user (filter by username)
-            var allTickets = await _ticketService.GetAllAsync(null);
-            var userTickets = allTickets
-                .Where(t => t.Username.Equals(username, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            // Get all tickets for this user using filter
+            var userTickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
 
             // Use converter to build DTO
-            var userInfo = UserHttpConverter.ToDTO(username, userPrivilege, userTickets);
+            var userInfo = UserHttpConverter.ToDTO(username, privilege, userTickets);
 
             _logger.LogInformation("User information retrieved successfully: {Username}, {TicketCount} tickets", username, userInfo.Tickets.Count);
             return Ok(userInfo);
@@ -87,7 +87,7 @@ public class UserHttpController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting user information for: {Username}", username);
-            return StatusCode(500, new { error = "Internal server error", message = "Failed to retrieve user information" });
+            throw new UserInternalServerException(ex);
         }
     }
 }

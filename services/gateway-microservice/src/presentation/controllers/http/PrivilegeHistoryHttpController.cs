@@ -72,14 +72,14 @@ public class PrivilegeHistoryHttpController : ControllerBase
         catch (ServicePrivilegeHistoryNotFoundException ex)
         {
             _logger.LogWarning(ex, "Privilege history not found: {PrivilegeHistoryId}", privilegeHistoryId);
-            return NotFound(new HttpPrivilegeHistoryNotFoundException(privilegeHistoryId));
+            throw new HttpPrivilegeHistoryNotFoundException(privilegeHistoryId);
         }
         catch (ServicePrivilegeHistoryValidationException ex)
         {
             _logger.LogWarning(ex, "Privilege history validation failed for ID: {PrivilegeHistoryId}", privilegeHistoryId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+            throw new HttpPrivilegeHistoryValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -150,7 +150,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+                throw new HttpPrivilegeHistoryValidationException(errorData);
             }
             
             _logger.LogDebug("Creating new privilege history");
@@ -170,7 +170,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
             _logger.LogWarning(ex, "Privilege history validation failed");
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+            throw new HttpPrivilegeHistoryValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -207,7 +207,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
                     .ToDictionary(
                         kvp => kvp.Key,
                         kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToArray());
-                return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+                throw new HttpPrivilegeHistoryValidationException(errorData);
             }
             
             _logger.LogDebug("Updating privilege history: {PrivilegeHistoryId}", privilegeHistoryId);
@@ -219,7 +219,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
             {
                 _logger.LogWarning("ID mismatch: route ID {RouteId} != entity ID {EntityId}", privilegeHistoryId, existingHistory.Id);
                 var errorData = new Dictionary<string, string[]> { { "id", new[] { "Route ID must match entity ID" } } };
-                return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+                throw new HttpPrivilegeHistoryValidationException(errorData);
             }
             
             var updatedHistory = PrivilegeHistoryHttpConverter.ToUpdateDomain(updateDto, existingHistory);
@@ -232,14 +232,14 @@ public class PrivilegeHistoryHttpController : ControllerBase
         catch (ServicePrivilegeHistoryNotFoundException ex)
         {
             _logger.LogWarning(ex, "Privilege history not found for update: {PrivilegeHistoryId}", privilegeHistoryId);
-            return NotFound(new HttpPrivilegeHistoryNotFoundException(privilegeHistoryId));
+            throw new HttpPrivilegeHistoryNotFoundException(privilegeHistoryId);
         }
         catch (ServicePrivilegeHistoryValidationException ex)
         {
             _logger.LogWarning(ex, "Privilege history validation failed for ID: {PrivilegeHistoryId}", privilegeHistoryId);
             var errorData = ex.Data.Cast<System.Collections.DictionaryEntry>()
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
-            return BadRequest(new HttpPrivilegeHistoryValidationException(errorData));
+            throw new HttpPrivilegeHistoryValidationException(errorData);
         }
         catch (Exception ex)
         {
@@ -274,7 +274,7 @@ public class PrivilegeHistoryHttpController : ControllerBase
         catch (ServicePrivilegeHistoryNotFoundException ex)
         {
             _logger.LogWarning(ex, "Privilege history not found for deletion: {PrivilegeHistoryId}", privilegeHistoryId);
-            return NotFound(new HttpPrivilegeHistoryNotFoundException(privilegeHistoryId));
+            throw new HttpPrivilegeHistoryNotFoundException(privilegeHistoryId);
         }
         catch (Exception ex)
         {
