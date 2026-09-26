@@ -33,6 +33,7 @@ public class UserHttpControllerUnitTests
 {
     private readonly Mock<ITicketService> _mockTicketService;
     private readonly Mock<IPrivilegeService> _mockPrivilegeService;
+    private readonly Mock<core.interfaces.dataaccess.gateways.IFlightGateway> _mockFlightGateway;
     private readonly Mock<ILogger<UserHttpController>> _mockLogger;
     private readonly UserHttpController _controller;
 
@@ -41,9 +42,10 @@ public class UserHttpControllerUnitTests
         // Arrange - Setup mocks
         _mockTicketService = new Mock<ITicketService>();
         _mockPrivilegeService = new Mock<IPrivilegeService>();
+        _mockFlightGateway = new Mock<core.interfaces.dataaccess.gateways.IFlightGateway>();
         _mockLogger = new Mock<ILogger<UserHttpController>>();
         
-        _controller = new UserHttpController(_mockTicketService.Object, _mockPrivilegeService.Object, _mockLogger.Object);
+        _controller = new UserHttpController(_mockTicketService.Object, _mockPrivilegeService.Object, _mockFlightGateway.Object, _mockLogger.Object);
         
         // Setup HTTP context with headers
         var httpContext = new DefaultHttpContext();

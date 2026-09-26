@@ -1,4 +1,5 @@
 using presentation.dto.http;
+using System.Text.Json.Serialization;
 
 namespace presentation.dto.http.Ticket;
 
@@ -30,9 +31,25 @@ public class TicketDTO : BaseHttpDTO
     public int Price { get; set; }
 
     /// <summary>
-    /// Ticket status: PAID (1) or CANCELED (2)
+    /// From airport (city + name)
     /// </summary>
-    public int Status { get; set; }
+    public string FromAirport { get; set; } = string.Empty;
+
+    /// <summary>
+    /// To airport (city + name)
+    /// </summary>
+    public string ToAirport { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Flight date
+    /// </summary>
+    public DateTime Date { get; set; }
+
+    /// <summary>
+    /// Ticket status string (PAID, CANCELED, REFUNDED)
+    /// </summary>
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
 
     /// <summary>
     /// Default constructor
@@ -51,7 +68,11 @@ public class TicketDTO : BaseHttpDTO
         string username,
         string flightNumber,
         int price,
-        int status)
+        int status,
+        string fromAirport,
+        string toAirport,
+        DateTime date,
+        string statusString)
         : base(id)
     {
         Id = id;
@@ -59,6 +80,9 @@ public class TicketDTO : BaseHttpDTO
         Username = username;
         FlightNumber = flightNumber;
         Price = price;
-        Status = status;
+        Status = statusString;
+        FromAirport = fromAirport;
+        ToAirport = toAirport;
+        Date = date;
     }
 }

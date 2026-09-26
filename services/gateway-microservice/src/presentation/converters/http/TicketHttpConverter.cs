@@ -22,7 +22,31 @@ public static class TicketHttpConverter
             Username = ticket.Username,
             FlightNumber = ticket.FlightNumber,
             Price = ticket.Price,
-            Status = ticket.Status,
+            Status = ticket.Status == 0 ? "PAID" : ticket.Status == 1 ? "CANCELED" : "REFUNDED",
+            FromAirport = "",
+            ToAirport = "",
+            Date = DateTime.MinValue
+        };
+    }
+
+    /// <summary>
+    /// Converts domain Ticket to TicketDTO with flight details
+    /// </summary>
+    public static TicketDTO ToDTOWithFlight(core.domain.Ticket ticket, core.domain.Flight flight)
+    {
+        if (ticket == null) return null!;
+        
+        return new TicketDTO
+        {
+            Id = ticket.Id,
+            TicketUid = ticket.TicketUid,
+            Username = ticket.Username,
+            FlightNumber = ticket.FlightNumber,
+            Price = ticket.Price,
+            Status = ticket.Status == 0 ? "PAID" : ticket.Status == 1 ? "CANCELED" : "REFUNDED",
+            FromAirport = flight.FromAirport != null ? $"{flight.FromAirport.City} {flight.FromAirport.Name}" : "Unknown",
+            ToAirport = flight.ToAirport != null ? $"{flight.ToAirport.City} {flight.ToAirport.Name}" : "Unknown",
+            Date = flight.DateTime
         };
     }
 
@@ -38,7 +62,7 @@ public static class TicketHttpConverter
             Username = dto.Username,
             FlightNumber = dto.FlightNumber,
             Price = dto.Price,
-            Status = dto.Status
+            Status = dto.Status == "PAID" ? 0 : dto.Status == "CANCELED" ? 1 : 2
         };
     }
 

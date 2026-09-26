@@ -15,7 +15,7 @@ public static class UserHttpConverter
     /// <param name="privilege">User privilege entity (can be null)</param>
     /// <param name="tickets">List of user tickets</param>
     /// <returns>User information DTO</returns>
-    public static UserInfoDTO ToDTO(string username, core.domain.Privilege? privilege, List<core.domain.Ticket> tickets)
+    public static UserInfoDTO ToDTO(string username, core.domain.Privilege? privilege, List<core.domain.Ticket> tickets, Dictionary<string, core.domain.Flight> flightMap)
     {
         var privilegeInfo = privilege != null
             ? new PrivilegeInfoDTO(
@@ -24,14 +24,12 @@ public static class UserHttpConverter
                 privilege.Balance)
             : null;
 
-        var ticketDTOs = tickets.Select(t => new TicketDTO(
-            id: t.Id,
-            ticketUid: t.TicketUid,
-            username: t.Username,
-            flightNumber: t.FlightNumber,
-            price: t.Price,
-            status: t.Status
-        )).ToList();
+        var ticketDTOs = tickets.Select(t =>
+        {
+            return flightMap.TryGetValue(t.FlightNumber, out var flight)
+                ? TicketHttpConverter.ToDTOWithFlight(t, flight)
+                : TicketHttpConverter.ToDTO(t);
+        }).ToList();
 
         return new UserInfoDTO(username, privilegeInfo, ticketDTOs);
     }

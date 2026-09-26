@@ -1,4 +1,5 @@
 using core.interfaces.businesslogic.services;
+using core.interfaces.dataaccess.gateways;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
@@ -19,6 +20,7 @@ public class UserHttpController : ControllerBase
 {
     private readonly ITicketService _ticketService;
     private readonly IPrivilegeService _privilegeService;
+    private readonly IFlightGateway _flightGateway;
     private readonly ILogger<UserHttpController> _logger;
 
     /// <summary>
@@ -26,14 +28,17 @@ public class UserHttpController : ControllerBase
     /// </summary>
     /// <param name="ticketService">The Ticket business logic service</param>
     /// <param name="privilegeService">The Privilege business logic service</param>
+    /// <param name="flightGateway">The Flight gateway for flight data</param>
     /// <param name="logger">The logger for the controller</param>
     public UserHttpController(
         ITicketService ticketService,
         IPrivilegeService privilegeService,
+        IFlightGateway flightGateway,
         ILogger<UserHttpController> logger)
     {
         _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));
         _privilegeService = privilegeService ?? throw new ArgumentNullException(nameof(privilegeService));
+        _flightGateway = flightGateway ?? throw new ArgumentNullException(nameof(flightGateway));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -78,8 +83,12 @@ public class UserHttpController : ControllerBase
             // Get all tickets for this user using filter
             var userTickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
 
-            // Use converter to build DTO
-            var userInfo = UserHttpConverter.ToDTO(username, privilege, userTickets);
+            // Get all flights for mapping
+            var flights = await _flightGateway.GetAllAsync();
+            var flightMap = flights.ToDictionary(f => f.FlightNumber);
+
+            // Use converter to build DTO with flight details
+            var userInfo = UserHttpConverter.ToDTO(username, privilege, userTickets, flightMap);
 
             _logger.LogInformation("User information retrieved successfully: {Username}, {TicketCount} tickets", username, userInfo.Tickets.Count);
             return Ok(userInfo);

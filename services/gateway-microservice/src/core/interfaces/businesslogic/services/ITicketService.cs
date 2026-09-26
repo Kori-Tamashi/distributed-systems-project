@@ -80,13 +80,13 @@ public interface ITicketService
     /// <param name="flightNumber">Flight number to book</param>
     /// <param name="price">Ticket price</param>
     /// <param name="paidFromBalance">Whether to pay from bonus balance</param>
-    /// <returns>BuyTicketResult with ticketUid, paidByBonuses, paidByMoney</returns>
+    /// <returns>PurchasedTicket with ticket, flight, privilege details</returns>
     /// <exception cref="TicketValidationException">Thrown when ticket data is invalid</exception>
     /// <exception cref="BaseServiceException">Thrown when service operation fails</exception>
-    Task<(Guid ticketUid, int paidByBonuses, int paidByMoney)> BuyTicketAsync(
-        string username, 
-        string flightNumber, 
-        int price, 
+    Task<core.domain.PurchasedTicket> BuyTicketAsync(
+        string username,
+        string flightNumber,
+        int price,
         bool paidFromBalance);
 
     /// <summary>

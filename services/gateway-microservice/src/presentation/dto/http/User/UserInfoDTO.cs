@@ -1,4 +1,5 @@
 using presentation.dto.http.Ticket;
+using System.Text.Json.Serialization;
 
 namespace presentation.dto.http.User;
 
@@ -15,6 +16,7 @@ public class UserInfoDTO
     /// <summary>
     /// Privilege information (bonus account status)
     /// </summary>
+    [JsonPropertyName("privilege")]
     public PrivilegeInfoDTO? PrivilegeInfo { get; set; }
 
     /// <summary>

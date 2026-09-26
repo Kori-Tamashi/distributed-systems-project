@@ -1,4 +1,5 @@
 using presentation.dto.http;
+using System.Text.Json.Serialization;
 
 namespace presentation.dto.http.Flight;
 
@@ -20,6 +21,7 @@ public class FlightDTO : BaseHttpDTO
     /// <summary>
     /// Flight date and time
     /// </summary>
+    [JsonPropertyName("date")]
     public DateTime DateTime { get; set; }
 
     /// <summary>

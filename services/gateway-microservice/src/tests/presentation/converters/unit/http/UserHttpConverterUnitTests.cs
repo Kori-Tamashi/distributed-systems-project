@@ -29,7 +29,7 @@ public class UserHttpConverterUnitTests
         tickets[1].Username = username;
 
         // Act
-        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets);
+        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets, new Dictionary<string, core.domain.Flight>());
 
         // Assert
         Assert.NotNull(userInfo);
@@ -57,7 +57,7 @@ public class UserHttpConverterUnitTests
         var tickets = new List<core.domain.Ticket>();
 
         // Act
-        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets);
+        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets, new Dictionary<string, core.domain.Flight>());
 
         // Assert
         Assert.NotNull(userInfo);
@@ -81,7 +81,7 @@ public class UserHttpConverterUnitTests
         tickets[0].Username = username;
 
         // Act
-        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets);
+        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets, new Dictionary<string, core.domain.Flight>());
 
         // Assert
         Assert.NotNull(userInfo);
@@ -105,7 +105,7 @@ public class UserHttpConverterUnitTests
         var tickets = new List<core.domain.Ticket>();
 
         // Act
-        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets);
+        var userInfo = UserHttpConverter.ToDTO(username, privilege, tickets, new Dictionary<string, core.domain.Flight>());
 
         // Assert
         Assert.NotNull(userInfo);

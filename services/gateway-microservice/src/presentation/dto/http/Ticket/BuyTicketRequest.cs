@@ -22,7 +22,7 @@ public class BuyTicketRequest
 }
 
 /// <summary>
-/// Response DTO for ticket purchase (per lab2-template v1 spec)
+/// Response DTO for ticket purchase (per lab2-template v1 spec + instructor contract)
 /// </summary>
 public class BuyTicketResponse
 {
@@ -43,4 +43,31 @@ public class BuyTicketResponse
 
     [JsonPropertyName("price")]
     public int Price { get; set; }
+
+    [JsonPropertyName("fromAirport")]
+    public string FromAirport { get; set; } = string.Empty;
+
+    [JsonPropertyName("toAirport")]
+    public string ToAirport { get; set; } = string.Empty;
+
+    [JsonPropertyName("date")]
+    public DateTime Date { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "PAID";
+
+    [JsonPropertyName("privilege")]
+    public PrivilegeInfoDto Privilege { get; set; } = new();
+}
+
+/// <summary>
+/// Privilege information for BuyTicketResponse
+/// </summary>
+public class PrivilegeInfoDto
+{
+    [JsonPropertyName("balance")]
+    public int Balance { get; set; }
+
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = string.Empty;
 }

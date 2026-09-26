@@ -33,7 +33,7 @@ public class TicketHttpConverterUnitTests
         Assert.Equal(ticket.Username, dto.Username);
         Assert.Equal(ticket.FlightNumber, dto.FlightNumber);
         Assert.Equal(ticket.Price, dto.Price);
-        Assert.Equal(ticket.Status, dto.Status);
+        Assert.Equal(ticket.Status == 0 ? "PAID" : ticket.Status == 1 ? "CANCELED" : "REFUNDED", dto.Status);
     }
 
     /// <summary>

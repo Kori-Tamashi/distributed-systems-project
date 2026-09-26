@@ -1,5 +1,6 @@
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
+using core.interfaces.dataaccess.gateways;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
@@ -31,13 +32,16 @@ namespace presentation.controllers.http;
 public class TicketHttpController : ControllerBase
 {
     private readonly ITicketService _ticketService;
+    private readonly IFlightGateway _flightGateway;
     private readonly ILogger<TicketHttpController> _logger;
 
     public TicketHttpController(
         ITicketService ticketService,
+        IFlightGateway flightGateway,
         ILogger<TicketHttpController> logger)
     {
         _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));
+        _flightGateway = flightGateway ?? throw new ArgumentNullException(nameof(flightGateway));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -60,7 +64,17 @@ public class TicketHttpController : ControllerBase
             _logger.LogDebug("Getting tickets for user: {Username}", username);
             
             var tickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
-            var dtos = TicketHttpConverter.ToDTO(tickets);
+            
+            // Get all flights for mapping
+            var flights = await _flightGateway.GetAllAsync();
+            var flightMap = flights.ToDictionary(f => f.FlightNumber);
+            
+            var dtos = tickets.Select(t => 
+            {
+                return flightMap.TryGetValue(t.FlightNumber, out var flight)
+                    ? TicketHttpConverter.ToDTOWithFlight(t, flight)
+                    : TicketHttpConverter.ToDTO(t);
+            }).ToList();
             
             _logger.LogInformation("Retrieved {Count} tickets for user {Username}", dtos.Count, username);
             return Ok(dtos);
@@ -100,7 +114,12 @@ public class TicketHttpController : ControllerBase
                 return StatusCode(403, new ErrorResponse($"Ticket {ticketUid} access forbidden"));
             }
             
-            var dto = TicketHttpConverter.ToDTO(ticket);
+            // Get flight details
+            var flights = await _flightGateway.GetAllAsync();
+            var flight = flights.FirstOrDefault(f => f.FlightNumber == ticket.FlightNumber);
+            var dto = flight != null 
+                ? TicketHttpConverter.ToDTOWithFlight(ticket, flight)
+                : TicketHttpConverter.ToDTO(ticket);
             
             _logger.LogInformation("Ticket retrieved: {TicketUid} by {Username}", ticketUid, username);
             return Ok(dto);
@@ -136,7 +155,7 @@ public class TicketHttpController : ControllerBase
 
             _logger.LogDebug("Buying ticket for user: {Username}", username);
 
-            var (ticketUid, paidByBonuses, paidByMoney) = await _ticketService.BuyTicketAsync(
+            var purchase = await _ticketService.BuyTicketAsync(
                 username,
                 request.FlightNumber,
                 request.Price,
@@ -144,16 +163,29 @@ public class TicketHttpController : ControllerBase
 
             var response = new BuyTicketResponse
             {
-                TicketUid = ticketUid,
-                PaidByBonuses = paidByBonuses,
-                PaidByMoney = paidByMoney,
+                TicketUid = purchase.Ticket.TicketUid,
+                PaidByBonuses = purchase.PaidByBonuses,
+                PaidByMoney = purchase.PaidByMoney,
                 Username = username,
-                FlightNumber = request.FlightNumber,
-                Price = request.Price
+                FlightNumber = purchase.Flight.FlightNumber,
+                Price = purchase.Flight.Price,
+                FromAirport = purchase.Flight.FromAirport != null
+                    ? $"{purchase.Flight.FromAirport.City} {purchase.Flight.FromAirport.Name}"
+                    : "Unknown",
+                ToAirport = purchase.Flight.ToAirport != null
+                    ? $"{purchase.Flight.ToAirport.City} {purchase.Flight.ToAirport.Name}"
+                    : "Unknown",
+                Date = purchase.Flight.DateTime,
+                Status = "PAID",
+                Privilege = new PrivilegeInfoDto
+                {
+                    Balance = purchase.Privilege.Balance,
+                    Status = purchase.Privilege.Status.ToString()
+                }
             };
 
-            _logger.LogInformation("Ticket bought: {TicketUid} by {Username}", ticketUid, username);
-            return Created($"/api/v1/tickets/{ticketUid}", response);
+            _logger.LogInformation("Ticket bought: {TicketUid} by {Username}", response.TicketUid, username);
+            return Ok(response);
         }
         catch (ServiceTicketValidationException ex)
         {

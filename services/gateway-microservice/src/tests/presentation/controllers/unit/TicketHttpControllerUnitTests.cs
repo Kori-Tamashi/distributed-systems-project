@@ -64,6 +64,7 @@ namespace tests.presentation.controllers.unit;
 public class TicketHttpControllerUnitTests
 {
     private readonly Mock<ITicketService> _mockService;
+    private readonly Mock<core.interfaces.dataaccess.gateways.IFlightGateway> _mockFlightGateway;
     private readonly Mock<ILogger<TicketHttpController>> _mockLogger;
     private readonly TicketHttpController _controller;
 
@@ -71,9 +72,10 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange - Setup mocks
         _mockService = new Mock<ITicketService>();
+        _mockFlightGateway = new Mock<core.interfaces.dataaccess.gateways.IFlightGateway>();
         _mockLogger = new Mock<ILogger<TicketHttpController>>();
         
-        _controller = new TicketHttpController(_mockService.Object, _mockLogger.Object);
+        _controller = new TicketHttpController(_mockService.Object, _mockFlightGateway.Object, _mockLogger.Object);
         
         // Setup URL helper for Location header
         var httpContext = new DefaultHttpContext();
@@ -240,7 +242,33 @@ public class TicketHttpControllerUnitTests
             Price = 15000,
             PaidFromBalance = true
         };
-        var buyResponse = (Guid.NewGuid(), 0, 15000);
+        var buyResponse = new core.domain.PurchasedTicket
+        {
+            Ticket = new core.domain.Ticket
+            {
+                TicketUid = Guid.NewGuid(),
+                Username = "john_doe",
+                FlightNumber = "AFL031",
+                Price = 15000,
+                Status = 0
+            },
+            Flight = new core.domain.Flight
+            {
+                FlightNumber = "AFL031",
+                Price = 15000,
+                DateTime = DateTime.UtcNow,
+                FromAirport = new core.domain.Airport { Name = "Пулково", City = "Санкт-Петербург" },
+                ToAirport = new core.domain.Airport { Name = "Шереметьево", City = "Москва" }
+            },
+            Privilege = new core.domain.Privilege
+            {
+                Username = "john_doe",
+                Balance = 1500,
+                Status = core.enums.PrivilegeStatus.BRONZE
+            },
+            PaidByBonuses = 0,
+            PaidByMoney = 15000
+        };
         _mockService.Setup(s => s.BuyTicketAsync("john_doe", "AFL031", 15000, true))
             .ReturnsAsync(buyResponse);
         

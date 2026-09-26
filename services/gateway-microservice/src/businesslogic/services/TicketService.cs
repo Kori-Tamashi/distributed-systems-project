@@ -251,7 +251,7 @@ public class TicketService : ITicketService
     }
 
     /// <inheritdoc/>
-    public async Task<(Guid ticketUid, int paidByBonuses, int paidByMoney)> BuyTicketAsync(
+    public async Task<core.domain.PurchasedTicket> BuyTicketAsync(
         string username,
         string flightNumber,
         int price,
@@ -277,7 +277,7 @@ public class TicketService : ITicketService
             // 2. Get or create user privilege
             var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
             var privilege = privileges.FirstOrDefault();
-            
+
             // Create privilege if user doesn't exist
             if (privilege == null)
             {
@@ -288,7 +288,7 @@ public class TicketService : ITicketService
                     Status = core.enums.PrivilegeStatus.BRONZE
                 });
             }
-            
+
             int paidByBonuses = 0;
             int paidByMoney = price;
             var ticketUid = Guid.NewGuid();
@@ -324,7 +324,14 @@ public class TicketService : ITicketService
             var createdTicket = await _ticketGateway.CreateAsync(ticket);
 
             _logger.LogInformation("Ticket bought: {TicketUid} by {Username}", createdTicket.TicketUid, username);
-            return (createdTicket.TicketUid, paidByBonuses, paidByMoney);
+            return new core.domain.PurchasedTicket
+            {
+                Ticket = createdTicket,
+                Flight = flight,
+                Privilege = privilege,
+                PaidByBonuses = paidByBonuses,
+                PaidByMoney = paidByMoney
+            };
         }
         catch (TicketValidationException)
         {
