@@ -83,10 +83,10 @@ public class PrivilegeService : IPrivilegeService
                 : await _privilegeGateway.GetAllAsync();
             return privileges.ToList();
         }
-        catch (PrivilegeGatewayCommunicationException ex)
+        catch (GatewayCommunicationException ex)
         {
             _logger.LogError(ex, "Failed to communicate with Bonus microservice for GetAllAsync");
-            throw new ValidationException($"Failed to communicate with Bonus microservice: {ex.Message}", ex);
+            throw new core.exceptions.businesslogic.services.ServiceUnavailableException("Bonus Service", ex);
         }
         catch (Exception ex)
         {

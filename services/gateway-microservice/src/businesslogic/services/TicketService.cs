@@ -3,6 +3,7 @@ using core.exceptions.businesslogic.services;
 using core.exceptions.dataaccess.gateways;
 using core.filters;
 using core.interfaces.businesslogic.services;
+using core.interfaces.dataaccess;
 using core.interfaces.dataaccess.gateways;
 using Microsoft.Extensions.Logging;
 
@@ -23,6 +24,7 @@ public class TicketService : ITicketService
     private readonly IFlightGateway _flightGateway;
     private readonly IPrivilegeService _privilegeService;
     private readonly IPrivilegeHistoryService _privilegeHistoryService;
+    private readonly IRetryQueue _retryQueue;
     private readonly ILogger<TicketService> _logger;
 
     /// <summary>
@@ -35,12 +37,14 @@ public class TicketService : ITicketService
         IFlightGateway flightGateway,
         IPrivilegeService privilegeService,
         IPrivilegeHistoryService privilegeHistoryService,
+        IRetryQueue retryQueue,
         ILogger<TicketService> logger)
     {
         _ticketGateway = ticketGateway ?? throw new ArgumentNullException(nameof(ticketGateway));
         _flightGateway = flightGateway ?? throw new ArgumentNullException(nameof(flightGateway));
         _privilegeService = privilegeService ?? throw new ArgumentNullException(nameof(privilegeService));
         _privilegeHistoryService = privilegeHistoryService ?? throw new ArgumentNullException(nameof(privilegeHistoryService));
+        _retryQueue = retryQueue ?? throw new ArgumentNullException(nameof(retryQueue));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -264,21 +268,35 @@ public class TicketService : ITicketService
         if (price <= 0)
             throw new TicketValidationException("Price must be positive");
 
+        // 1. Verify flight exists — critical step, no rollback possible
+        var flights = await _flightGateway.GetAllAsync();
+        var flight = flights.FirstOrDefault(f => f.FlightNumber == flightNumber);
+        if (flight == null)
+        {
+            throw new TicketValidationException($"Flight {flightNumber} not found");
+        }
+
+        // 2. Create ticket record FIRST (per Lab 3 spec: Flight → Ticket → Bonus)
+        var ticketUid = Guid.NewGuid();
+        var ticket = new Ticket
+        {
+            Id = 0,
+            TicketUid = ticketUid,
+            Username = username,
+            FlightNumber = flightNumber,
+            Price = price,
+            Status = 0 // Paid
+        };
+
+        var createdTicket = await _ticketGateway.CreateAsync(ticket);
+
+        // 3. Bonus step: debit or credit — with rollback of ticket on failure
         try
         {
-            // 1. Verify flight exists
-            var flights = await _flightGateway.GetAllAsync();
-            var flight = flights.FirstOrDefault(f => f.FlightNumber == flightNumber);
-            if (flight == null)
-            {
-                throw new TicketValidationException($"Flight {flightNumber} not found");
-            }
-
-            // 2. Get or create user privilege
-            var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
+            var privileges = await _privilegeService.GetAllAsync(
+                new core.filters.PrivilegeFilter { Username = username });
             var privilege = privileges.FirstOrDefault();
 
-            // Create privilege if user doesn't exist
             if (privilege == null)
             {
                 privilege = await _privilegeService.CreateAsync(new core.domain.Privilege
@@ -291,39 +309,22 @@ public class TicketService : ITicketService
 
             int paidByBonuses = 0;
             int paidByMoney = price;
-            var ticketUid = Guid.NewGuid();
 
             if (paidFromBalance && privilege.Balance > 0)
             {
-                // Pay from balance: max(balance, price)
                 paidByBonuses = Math.Min(privilege.Balance, price);
                 paidByMoney = price - paidByBonuses;
-
-                // Debit balance
                 await _privilegeService.DebitBalanceAsync(privilege.Id, paidByBonuses, ticketUid);
             }
             else if (!paidFromBalance)
             {
-                // Cash payment: +10% cashback
                 var cashback = price / 10;
                 var updatedPrivilege = await _privilegeService.CreditBalanceAsync(privilege.Id, cashback, ticketUid);
-                privilege = updatedPrivilege; // Use updated privilege with new balance
+                privilege = updatedPrivilege;
             }
 
-            // 3. Create ticket
-            var ticket = new Ticket
-            {
-                Id = 0,
-                TicketUid = ticketUid,
-                Username = username,
-                FlightNumber = flightNumber,
-                Price = price,
-                Status = 0 // Paid
-            };
-
-            var createdTicket = await _ticketGateway.CreateAsync(ticket);
-
             _logger.LogInformation("Ticket bought: {TicketUid} by {Username}", createdTicket.TicketUid, username);
+
             return new core.domain.PurchasedTicket
             {
                 Ticket = createdTicket,
@@ -333,19 +334,23 @@ public class TicketService : ITicketService
                 PaidByMoney = paidByMoney
             };
         }
-        catch (TicketValidationException)
-        {
-            throw;
-        }
         catch (ServicePrivilegeNotFoundException ex)
         {
-            _logger.LogWarning(ex, "Privilege not found for user: {Username}", username);
-            throw new TicketValidationException($"User {username} not found in bonus system");
+            // Bonus Service responded but user/privilege not found → rollback ticket
+            _logger.LogWarning(ex, "Privilege not found for user: {Username} — rolling back ticket {TicketUid}",
+                username, createdTicket.TicketUid);
+
+            await TryRollbackTicketAsync(createdTicket);
+            throw new core.exceptions.businesslogic.services.ServiceUnavailableException("Bonus Service", ex);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to buy ticket for {Username}", username);
-            throw new ValidationException("Failed to buy ticket", ex);
+            // Any other Bonus Service failure (5xx, timeout, unavailable) → rollback ticket
+            _logger.LogError(ex, "Bonus Service failed during BuyTicket for {Username} — rolling back ticket {TicketUid}",
+                username, createdTicket.TicketUid);
+
+            await TryRollbackTicketAsync(createdTicket);
+            throw new core.exceptions.businesslogic.services.ServiceUnavailableException("Bonus Service", ex);
         }
     }
 
@@ -373,54 +378,111 @@ public class TicketService : ITicketService
                 throw new TicketValidationException("Ticket is already canceled");
             }
 
-            // 2. Get privilege for cashback/refund
-            var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
-            var privilege = privileges.FirstOrDefault();
+            // 2. Update ticket status to CANCELED FIRST (critical operation)
+            ticket.Status = 1; // Cancelled
+            await _ticketGateway.UpdateAsync(ticket);
+            _logger.LogInformation("Ticket status updated to CANCELED: {TicketUid}", ticketUid);
 
-            if (privilege != null)
+            // 3. Bonus rollback (non-critical) — enqueue on failure
+            try
             {
-                // Check privilege_history to determine what to do on return
-                var historyList = await _privilegeHistoryService.GetAllAsync(
-                    new core.filters.PrivilegeHistoryFilter { TicketUid = ticketUid, PrivilegeId = privilege.Id });
-                
-                // Find the debit operation (user paid with bonuses)
-                var debitHistory = historyList
-                    .Where(h => h.OperationType == core.enums.OperationType.DEBIT_THE_ACCOUNT)
-                    .OrderByDescending(h => h.DateTime)
-                    .FirstOrDefault();
-                
-                if (debitHistory != null)
+                // Get privilege for cashback/refund
+                var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
+                var privilege = privileges.FirstOrDefault();
+
+                if (privilege != null)
                 {
-                    // User paid with bonuses - return the bonuses (BalanceDiff is negative for debits)
-                    var bonusesToReturn = Math.Abs(debitHistory.BalanceDiff);
-                    await _privilegeService.CreditBalanceAsync(privilege.Id, bonusesToReturn, ticketUid);
-                    _logger.LogInformation("Returning {Bonuses} bonuses for ticket {TicketUid}", bonusesToReturn, ticketUid);
-                }
-                else
-                {
-                    // Find the credit operation (user paid with money and got cashback)
-                    var creditHistory = historyList
-                        .Where(h => h.OperationType == core.enums.OperationType.FILL_IN_BALANCE)
+                    // Check privilege_history to determine what to do on return
+                    var historyList = await _privilegeHistoryService.GetAllAsync(
+                        new core.filters.PrivilegeHistoryFilter { TicketUid = ticketUid, PrivilegeId = privilege.Id });
+                    
+                    // Find the debit operation (user paid with bonuses)
+                    var debitHistory = historyList
+                        .Where(h => h.OperationType == core.enums.OperationType.DEBIT_THE_ACCOUNT)
                         .OrderByDescending(h => h.DateTime)
                         .FirstOrDefault();
                     
-                    if (creditHistory != null)
+                    if (debitHistory != null)
                     {
-                        // User paid with money and got cashback - deduct the cashback
-                        // But balance cannot go below 0 (per TZ: "При списании бонусный счёт не может стать меньше 0")
-                        var cashbackToDeduct = Math.Min(Math.Abs(creditHistory.BalanceDiff), privilege.Balance);
-                        if (cashbackToDeduct > 0)
+                        // User paid with bonuses - return the bonuses (BalanceDiff is negative for debits)
+                        var bonusesToReturn = Math.Abs(debitHistory.BalanceDiff);
+                        await _privilegeService.CreditBalanceAsync(privilege.Id, bonusesToReturn, ticketUid);
+                        _logger.LogInformation("Returning {Bonuses} bonuses for ticket {TicketUid}", bonusesToReturn, ticketUid);
+                    }
+                    else
+                    {
+                        // Find the credit operation (user paid with money and got cashback)
+                        var creditHistory = historyList
+                            .Where(h => h.OperationType == core.enums.OperationType.FILL_IN_BALANCE)
+                            .OrderByDescending(h => h.DateTime)
+                            .FirstOrDefault();
+                        
+                        if (creditHistory != null)
                         {
-                            await _privilegeService.DebitBalanceAsync(privilege.Id, cashbackToDeduct, ticketUid);
-                            _logger.LogInformation("Deducting {Cashback} cashback for ticket {TicketUid}", cashbackToDeduct, ticketUid);
+                            // User paid with money and got cashback - deduct the cashback
+                            // But balance cannot go below 0 (per TZ: "При списании бонусный счёт не может стать меньше 0")
+                            var cashbackToDeduct = Math.Min(Math.Abs(creditHistory.BalanceDiff), privilege.Balance);
+                            if (cashbackToDeduct > 0)
+                            {
+                                await _privilegeService.DebitBalanceAsync(privilege.Id, cashbackToDeduct, ticketUid);
+                                _logger.LogInformation("Deducting {Cashback} cashback for ticket {TicketUid}", cashbackToDeduct, ticketUid);
+                            }
                         }
                     }
                 }
             }
-
-            // 3. Update ticket status to CANCELED
-            ticket.Status = 1; // Cancelled
-            await _ticketGateway.UpdateAsync(ticket);
+            catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+            {
+                _logger.LogWarning(ex, "Bonus Service unavailable during ticket return, enqueueing rollback");
+                _retryQueue.Enqueue($"rollback-{ticketUid}", async () =>
+                {
+                    // Retry logic: same Bonus rollback logic
+                    try
+                    {
+                        var privileges = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
+                        var privilege = privileges.FirstOrDefault();
+                        if (privilege != null)
+                        {
+                            var historyList = await _privilegeHistoryService.GetAllAsync(
+                                new core.filters.PrivilegeHistoryFilter { TicketUid = ticketUid, PrivilegeId = privilege.Id });
+                            
+                            var debitHistory = historyList
+                                .Where(h => h.OperationType == core.enums.OperationType.DEBIT_THE_ACCOUNT)
+                                .OrderByDescending(h => h.DateTime)
+                                .FirstOrDefault();
+                            
+                            if (debitHistory != null)
+                            {
+                                var bonusesToReturn = Math.Abs(debitHistory.BalanceDiff);
+                                await _privilegeService.CreditBalanceAsync(privilege.Id, bonusesToReturn, ticketUid);
+                                _logger.LogInformation("Retry: Returning {Bonuses} bonuses for ticket {TicketUid}", bonusesToReturn, ticketUid);
+                            }
+                            else
+                            {
+                                var creditHistory = historyList
+                                    .Where(h => h.OperationType == core.enums.OperationType.FILL_IN_BALANCE)
+                                    .OrderByDescending(h => h.DateTime)
+                                    .FirstOrDefault();
+                                
+                                if (creditHistory != null)
+                                {
+                                    var cashbackToDeduct = Math.Min(Math.Abs(creditHistory.BalanceDiff), privilege.Balance);
+                                    if (cashbackToDeduct > 0)
+                                    {
+                                        await _privilegeService.DebitBalanceAsync(privilege.Id, cashbackToDeduct, ticketUid);
+                                        _logger.LogInformation("Retry: Deducting {Cashback} cashback for ticket {TicketUid}", cashbackToDeduct, ticketUid);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    catch (Exception retryEx)
+                    {
+                        _logger.LogError(retryEx, "Retry failed for rollback {TicketUid}", ticketUid);
+                        throw; // Re-throw to trigger re-enqueue
+                    }
+                });
+            }
 
             _logger.LogInformation("Ticket returned: {TicketUid} by {Username}", ticketUid, username);
             return true;
@@ -522,6 +584,24 @@ public class TicketService : ITicketService
         {
             var errorMessage = $"Ticket validation failed with {errors.Count} error(s)";
             throw new TicketValidationException(errorMessage, errors);
+        }
+    }
+
+    /// <summary>
+    /// Attempts to roll back a created ticket. Logs but does not throw if rollback itself fails.
+    /// </summary>
+    private async Task TryRollbackTicketAsync(Ticket ticket)
+    {
+        try
+        {
+            await _ticketGateway.DeleteAsync(ticket.Id);
+            _logger.LogInformation("Rolled back ticket {TicketUid} (Id={TicketId})", ticket.TicketUid, ticket.Id);
+        }
+        catch (Exception rollbackEx)
+        {
+            _logger.LogError(rollbackEx, "Failed to roll back ticket {TicketUid} (Id={TicketId})",
+                ticket.TicketUid, ticket.Id);
+            // Swallow: client still gets 503 about Bonus; ticket may need manual cleanup.
         }
     }
 }

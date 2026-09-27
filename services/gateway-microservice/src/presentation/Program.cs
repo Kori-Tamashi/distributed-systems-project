@@ -1,7 +1,11 @@
 using core.interfaces.businesslogic.services;
+using core.interfaces.dataaccess;
 using core.interfaces.dataaccess.gateways;
+using core.circuitbreaker;
 using businesslogic.services;
+using dataaccess.retry;
 using dataaccess.gateways.http;
+using dataaccess.gateways.circuitbreaker;
 using presentation.controllers.http;
 using presentation.middleware;
 using System.Text.Json;
@@ -18,36 +22,76 @@ var builder = WebApplication.CreateBuilder(args);
 // Load settings from environment variables
 var apiTestSettings = LoadApiTestSettings();
 
-// Register HTTP Gateways with dependency injection using IHttpClientFactory
-builder.Services.AddTransient<IAirportGateway>(provider =>
+// Register Circuit Breaker states — one singleton per downstream service
+builder.Services.AddKeyedSingleton<CircuitBreakerState>("flight",
+    new CircuitBreakerState(failureThreshold: 3, probeInterval: TimeSpan.FromSeconds(3)));
+builder.Services.AddKeyedSingleton<CircuitBreakerState>("ticket",
+    new CircuitBreakerState(failureThreshold: 3, probeInterval: TimeSpan.FromSeconds(3)));
+builder.Services.AddKeyedSingleton<CircuitBreakerState>("bonus",
+    new CircuitBreakerState(failureThreshold: 3, probeInterval: TimeSpan.FromSeconds(3)));
+
+// Retry queue for non-critical operations (Bonus rollback on ticket return)
+builder.Services.AddSingleton<InMemoryRetryQueue>(sp =>
+    new InMemoryRetryQueue(
+        sp.GetRequiredService<ILogger<InMemoryRetryQueue>>(),
+        retryDelay: TimeSpan.FromSeconds(10)));
+builder.Services.AddSingleton<IRetryQueue>(sp => sp.GetRequiredService<InMemoryRetryQueue>());
+builder.Services.AddHostedService(sp => sp.GetRequiredService<InMemoryRetryQueue>());
+
+// Register raw HTTP gateways (internal, wrapped by circuit breakers)
+builder.Services.AddTransient<AirportHttpGateway>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new AirportHttpGateway(httpClient, apiTestSettings.FlightMicroserviceUrl);
 });
 
-builder.Services.AddTransient<IFlightGateway>(provider =>
+builder.Services.AddTransient<FlightHttpGateway>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new FlightHttpGateway(httpClient, apiTestSettings.FlightMicroserviceUrl);
 });
 
-builder.Services.AddTransient<ITicketGateway>(provider =>
+builder.Services.AddTransient<TicketHttpGateway>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new TicketHttpGateway(httpClient, apiTestSettings.TicketMicroserviceUrl);
 });
 
-builder.Services.AddTransient<IPrivilegeGateway>(provider =>
+builder.Services.AddTransient<PrivilegeHttpGateway>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new PrivilegeHttpGateway(httpClient, apiTestSettings.BonusMicroserviceUrl);
 });
 
-builder.Services.AddTransient<IPrivilegeHistoryGateway>(provider =>
+builder.Services.AddTransient<PrivilegeHistoryHttpGateway>(provider =>
 {
     var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
     return new PrivilegeHistoryHttpGateway(httpClient, apiTestSettings.BonusMicroserviceUrl);
 });
+
+// Register decorated gateways exposed as I*Gateway interfaces
+builder.Services.AddTransient<IAirportGateway>(provider =>
+    new CircuitBreakerAirportGateway(
+        provider.GetRequiredService<AirportHttpGateway>(),
+        provider.GetRequiredKeyedService<CircuitBreakerState>("flight")));
+
+builder.Services.AddTransient<IFlightGateway>(provider =>
+    new CircuitBreakerFlightGateway(
+        provider.GetRequiredService<FlightHttpGateway>(),
+        provider.GetRequiredKeyedService<CircuitBreakerState>("flight")));
+
+builder.Services.AddTransient<ITicketGateway>(provider =>
+    new CircuitBreakerTicketGateway(
+        provider.GetRequiredService<TicketHttpGateway>(),
+        provider.GetRequiredKeyedService<CircuitBreakerState>("ticket")));
+
+builder.Services.AddTransient<IPrivilegeGateway>(provider =>
+    new CircuitBreakerPrivilegeGateway(
+        provider.GetRequiredService<PrivilegeHttpGateway>(),
+        provider.GetRequiredKeyedService<CircuitBreakerState>("bonus")));
+
+builder.Services.AddTransient<IPrivilegeHistoryGateway>(provider =>
+    provider.GetRequiredService<PrivilegeHistoryHttpGateway>()); // No CB for history
 
 // Register Business Logic Services with dependency injection
 builder.Services.AddScoped<IAirportService, AirportService>();

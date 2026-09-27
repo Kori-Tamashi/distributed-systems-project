@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: flight-microservice-api
+    container_name: flight-api
     env_file:
       - .env
     environment:
@@ -14,7 +14,7 @@ services:
       - ASPNETCORE_URLS=${ASPNETCORE_URLS}
       - DATABASE_PROVIDER=${DATABASE_PROVIDER}
       # PostgreSQL Connection Settings
-      - POSTGRESQL_HOST=postgres-prod
+      - POSTGRESQL_HOST=flight-postgres-prod
       - POSTGRESQL_PORT=5432
       - POSTGRESQL_DATABASE=${POSTGRES_PROD_DATABASE}
       - POSTGRESQL_USER=${POSTGRES_PROD_USER}
@@ -22,7 +22,7 @@ services:
     ports:
       - "${APP_PORT}:8060"
     depends_on:
-      postgres-prod:
+      flight-postgres-prod:
         condition: service_healthy
     networks:
       - rsoi-network
@@ -49,7 +49,7 @@ services:
       - ASPNETCORE_URLS=http://+:8060
       - DATABASE_PROVIDER=${DATABASE_PROVIDER}
       # Connect to Test Database
-      - POSTGRESQL_HOST=postgres-test
+      - POSTGRESQL_HOST=flight-postgres-test
       - POSTGRESQL_PORT=5432
       - POSTGRESQL_DATABASE=${POSTGRES_TEST_DATABASE}
       - POSTGRESQL_USER=${POSTGRES_TEST_USER}
@@ -57,7 +57,7 @@ services:
     ports:
       - "${TEST_APP_PORT}:8060"
     depends_on:
-      postgres-test:
+      flight-postgres-test:
         condition: service_healthy
     networks:
       - rsoi-network
@@ -72,9 +72,9 @@ services:
   # =============================================================================
   # PostgreSQL Production Database
   # =============================================================================
-  postgres-prod:
+  flight-postgres-prod:
     image: postgres:14-alpine
-    container_name: flight-microservice-db-prod
+    container_name: flight-postgres-prod
     ports:
       - "${POSTGRES_PROD_PORT_EXTERNAL}:5432"
     environment:
@@ -96,9 +96,9 @@ services:
   # =============================================================================
   # PostgreSQL Test Database (for Integration Tests)
   # =============================================================================
-  postgres-test:
+  flight-postgres-test:
     image: postgres:14-alpine
-    container_name: flight-microservice-db-test
+    container_name: flight-postgres-test
     ports:
       - "${POSTGRES_TEST_PORT_EXTERNAL}:5432"
     environment:
@@ -116,13 +116,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
-# =============================================================================
-# Networks
-# =============================================================================
-networks:
-  rsoi-network:
-    driver: bridge
 
 # =============================================================================
 # Volumes

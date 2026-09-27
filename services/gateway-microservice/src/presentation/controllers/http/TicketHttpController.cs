@@ -64,10 +64,24 @@ public class TicketHttpController : ControllerBase
             _logger.LogDebug("Getting tickets for user: {Username}", username);
             
             var tickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
-            
-            // Get all flights for mapping
-            var flights = await _flightGateway.GetAllAsync();
-            var flightMap = flights.ToDictionary(f => f.FlightNumber);
+
+            // Flight is a non-critical source here: degrade to ticket-only DTOs if unavailable
+            Dictionary<string, core.domain.Flight> flightMap;
+            try
+            {
+                var flights = await _flightGateway.GetAllAsync();
+                flightMap = flights.ToDictionary(f => f.FlightNumber);
+            }
+            catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+            {
+                _logger.LogWarning(ex, "Flight Service unavailable (Circuit Breaker Open), returning tickets without flight details");
+                flightMap = new Dictionary<string, core.domain.Flight>();
+            }
+            catch (core.exceptions.dataaccess.gateways.GatewayCommunicationException ex)
+            {
+                _logger.LogWarning(ex, "Flight Service communication failed, returning tickets without flight details");
+                flightMap = new Dictionary<string, core.domain.Flight>();
+            }
             
             var dtos = tickets.Select(t => 
             {
@@ -114,9 +128,22 @@ public class TicketHttpController : ControllerBase
                 return StatusCode(403, new ErrorResponse($"Ticket {ticketUid} access forbidden"));
             }
             
-            // Get flight details
-            var flights = await _flightGateway.GetAllAsync();
-            var flight = flights.FirstOrDefault(f => f.FlightNumber == ticket.FlightNumber);
+            // Flight is a non-critical source here
+            core.domain.Flight? flight = null;
+            try
+            {
+                var flights = await _flightGateway.GetAllAsync();
+                flight = flights.FirstOrDefault(f => f.FlightNumber == ticket.FlightNumber);
+            }
+            catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+            {
+                _logger.LogWarning(ex, "Flight Service unavailable (Circuit Breaker Open), returning ticket without flight details");
+            }
+            catch (core.exceptions.dataaccess.gateways.GatewayCommunicationException ex)
+            {
+                _logger.LogWarning(ex, "Flight Service communication failed, returning ticket without flight details");
+            }
+            
             var dto = flight != null 
                 ? TicketHttpConverter.ToDTOWithFlight(ticket, flight)
                 : TicketHttpConverter.ToDTO(ticket);
@@ -192,6 +219,11 @@ public class TicketHttpController : ControllerBase
             _logger.LogWarning(ex, "Ticket validation failed");
             return BadRequest(new ValidationErrorResponse(ex.Message, ex.Errors?.SelectMany(kvp => kvp.Value).ToList() ?? new List<string>()));
         }
+        catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+        {
+            _logger.LogWarning(ex, "Downstream service unavailable during BuyTicket");
+            return StatusCode(503, new ErrorResponse(ex.Message));
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error buying ticket");
@@ -233,6 +265,11 @@ public class TicketHttpController : ControllerBase
         {
             _logger.LogWarning(ex, "Ticket not found for return: {TicketUid}", ticketUid);
             return NotFound(new ErrorResponse($"Ticket {ticketUid} not found"));
+        }
+        catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+        {
+            _logger.LogWarning(ex, "Downstream service unavailable during ReturnTicket");
+            return StatusCode(503, new ErrorResponse(ex.Message));
         }
         catch (Exception ex)
         {

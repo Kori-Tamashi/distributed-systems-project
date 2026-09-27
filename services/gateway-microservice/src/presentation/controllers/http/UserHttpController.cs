@@ -70,22 +70,44 @@ public class UserHttpController : ControllerBase
 
             _logger.LogDebug("Getting user information for: {Username}", username);
 
-            // Get privilege information by username using filter
-            var userPrivilege = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
-            var privilege = userPrivilege.FirstOrDefault();
-
-            if (privilege == null)
+            // Bonus is non-critical for /me: if unavailable, privilege = null
+            core.domain.Privilege? privilege = null;
+            try
             {
-                _logger.LogWarning("User not found: {Username}", username);
-                return NotFound(new ErrorResponse("User not found"));
+                var userPrivilege = await _privilegeService.GetAllAsync(new core.filters.PrivilegeFilter { Username = username });
+                privilege = userPrivilege.FirstOrDefault();
+                if (privilege == null)
+                {
+                    _logger.LogWarning("User not found: {Username}", username);
+                    return NotFound(new ErrorResponse("User not found"));
+                }
+            }
+            catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+            {
+                _logger.LogWarning(ex, "Bonus Service unavailable, returning /me without privilege");
+                // privilege stays null, continue with 200
             }
 
             // Get all tickets for this user using filter
             var userTickets = await _ticketService.GetAllAsync(new core.filters.TicketFilter { Username = username });
 
-            // Get all flights for mapping
-            var flights = await _flightGateway.GetAllAsync();
-            var flightMap = flights.ToDictionary(f => f.FlightNumber);
+            // Flight is non-critical for /me as well
+            Dictionary<string, core.domain.Flight> flightMap;
+            try
+            {
+                var flights = await _flightGateway.GetAllAsync();
+                flightMap = flights.ToDictionary(f => f.FlightNumber);
+            }
+            catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+            {
+                _logger.LogWarning(ex, "Flight Service unavailable (Circuit Breaker Open), returning /me without flight details");
+                flightMap = new Dictionary<string, core.domain.Flight>();
+            }
+            catch (core.exceptions.dataaccess.gateways.GatewayCommunicationException ex)
+            {
+                _logger.LogWarning(ex, "Flight Service communication failed, returning /me without flight details");
+                flightMap = new Dictionary<string, core.domain.Flight>();
+            }
 
             // Use converter to build DTO with flight details
             var userInfo = UserHttpConverter.ToDTO(username, privilege, userTickets, flightMap);

@@ -48,7 +48,7 @@ public class TicketHttpGateway : BaseHttpGateway, ITicketGateway
     public async Task<Ticket> CreateAsync(Ticket ticket)
     {
         var dto = TicketHttpConverter.ToCreateDTO(ticket);
-        var createdDto = await PostAsync<CreateTicketDTO>($"{ApiEndpoint}", dto);
+        var createdDto = await PostAsync<TicketDTO>($"{ApiEndpoint}", dto);
         return TicketHttpConverter.ToDomain(createdDto);
     }
 
