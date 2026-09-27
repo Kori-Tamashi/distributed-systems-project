@@ -78,6 +78,11 @@ public class ExceptionHandlingMiddleware
             errorResponse = new ErrorResponse(exception.Message);
             statusCode = (int)HttpStatusCode.Conflict;
         }
+        else if (exception is presentation.exceptions.http.ServiceUnavailableException su)
+        {
+            errorResponse = new ErrorResponse(su.Message);
+            statusCode = 503;
+        }
         else
         {
             errorResponse = new ErrorResponse("An internal server error occurred");

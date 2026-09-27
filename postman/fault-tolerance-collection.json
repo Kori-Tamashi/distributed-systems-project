@@ -911,7 +911,7 @@
 											"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
 											"    const response = pm.response.json();",
 											"    pm.expect(response.tickets).to.be.an(\"array\")",
-											"    pm.expect(response.privilege).to.be.null",
+											"    pm.expect(response.privilege == null).to.be.true",
 											"})"
 										],
 										"type": "text/javascript"
