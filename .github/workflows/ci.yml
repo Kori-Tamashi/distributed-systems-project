@@ -1074,6 +1074,7 @@ jobs:
             run /etc/newman/collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "username=Test User" \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/results.xml
 
@@ -1223,6 +1224,7 @@ jobs:
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "username=Test User" \
               --folder success \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/success.xml
@@ -1237,6 +1239,7 @@ jobs:
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "username=Test User" \
               --folder step1 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step1.xml
@@ -1257,6 +1260,7 @@ jobs:
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "username=Test User" \
               --folder step2 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step2.xml
@@ -1271,6 +1275,7 @@ jobs:
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "username=Test User" \
               --folder step3 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step3.xml
@@ -1290,6 +1295,7 @@ jobs:
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
+              --env-var "username=Test User" \
               --folder step4 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step4.xml
