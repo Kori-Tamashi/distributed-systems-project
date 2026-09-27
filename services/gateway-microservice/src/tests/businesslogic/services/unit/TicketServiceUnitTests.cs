@@ -4,6 +4,7 @@ using core.exceptions.businesslogic.services;
 using core.exceptions.dataaccess.gateways;
 using core.filters;
 using core.interfaces.businesslogic.services;
+using core.interfaces.dataaccess;
 using core.interfaces.dataaccess.gateways;
 using businesslogic.services;
 using Moq;
@@ -70,6 +71,7 @@ public class TicketServiceUnitTests
     private readonly Mock<IFlightGateway> _mockFlightGateway;
     private readonly Mock<IPrivilegeService> _mockPrivilegeService;
     private readonly Mock<IPrivilegeHistoryService> _mockPrivilegeHistoryService;
+    private readonly Mock<IRetryQueue> _mockRetryQueue;
     private readonly ITicketService _service;
 
     public TicketServiceUnitTests()
@@ -79,10 +81,11 @@ public class TicketServiceUnitTests
         _mockFlightGateway = new Mock<IFlightGateway>();
         _mockPrivilegeService = new Mock<IPrivilegeService>();
         _mockPrivilegeHistoryService = new Mock<IPrivilegeHistoryService>();
+        _mockRetryQueue = new Mock<IRetryQueue>();
         
         _mockFlightGateway.Setup(g => g.GetAllAsync(It.IsAny<FlightFilter>())).ReturnsAsync(Enumerable.Empty<Flight>());
         
-        _service = new TicketService(_mockTicketGateway.Object, _mockFlightGateway.Object, _mockPrivilegeService.Object, _mockPrivilegeHistoryService.Object, Mock.Of<ILogger<TicketService>>());
+        _service = new TicketService(_mockTicketGateway.Object, _mockFlightGateway.Object, _mockPrivilegeService.Object, _mockPrivilegeHistoryService.Object, _mockRetryQueue.Object, Mock.Of<ILogger<TicketService>>());
     }
 
     #region GetByIdAsync Tests

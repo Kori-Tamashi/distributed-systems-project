@@ -201,17 +201,17 @@ public class PrivilegeServiceUnitTests
     }
 
     [Fact]
-    public async Task GetAllAsync_GatewayCommunicationError_ShouldThrowValidationException()
+    public async Task GetAllAsync_GatewayCommunicationError_ShouldThrowServiceUnavailableException()
     {
         // Arrange
         _mockPrivilegeGateway.Setup(g => g.GetAllAsync())
             .ThrowsAsync(new GatewayPrivilegeCommunicationException("Connection failed"));
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ValidationException>(
+        var exception = await Assert.ThrowsAsync<ServiceUnavailableException>(
             () => _service.GetAllAsync()
         );
-        Assert.Contains("Failed to communicate", exception.Message);
+        Assert.Contains("Bonus Service", exception.Message);
     }
 
     #endregion
