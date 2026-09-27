@@ -1256,12 +1256,14 @@ jobs:
           docker run --rm \
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman:/etc/newman-host \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --env-var "username=Test User" \
               --folder step2 \
+              --export-environment /etc/newman-host/env-after-step2.json \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step2.xml
 
@@ -1271,9 +1273,10 @@ jobs:
           docker run --rm \
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman:/etc/newman-host \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
+              -e /etc/newman-host/env-after-step2.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --env-var "username=Test User" \
               --folder step3 \
@@ -1291,9 +1294,10 @@ jobs:
           docker run --rm \
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman:/etc/newman-host \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
+              -e /etc/newman-host/env-after-step2.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --env-var "username=Test User" \
               --folder step4 \
