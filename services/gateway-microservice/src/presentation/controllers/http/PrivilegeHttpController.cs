@@ -90,6 +90,11 @@ public class PrivilegeHttpController : ControllerBase
                 .ToDictionary(kvp => kvp.Key.ToString()!, kvp => new[] { kvp.Value?.ToString() ?? string.Empty });
             throw new HttpPrivilegeValidationException(errorData);
         }
+        catch (core.exceptions.businesslogic.services.ServiceUnavailableException ex)
+        {
+            _logger.LogWarning(ex, "Bonus Service unavailable (Circuit Breaker Open) for Privilege ID: {PrivilegeId}", privilegeId);
+            throw new presentation.exceptions.http.ServiceUnavailableException("Bonus Service");
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting privilege by ID: {PrivilegeId}", privilegeId);

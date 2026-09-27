@@ -63,6 +63,12 @@ public class ExceptionHandlingMiddleware
             errorResponse = new ValidationErrorResponse(be.Message, errors);
             statusCode = be.StatusCode;
         }
+        else if (exception is presentation.exceptions.http.Privilege.PrivilegeInternalServerException privInternalEx && 
+                 privInternalEx.InnerException is core.exceptions.businesslogic.services.ServiceUnavailableException)
+        {
+            errorResponse = new ErrorResponse("Bonus Service unavailable");
+            statusCode = 503;
+        }
         else if (exception is BaseHttpException be2)
         {
             errorResponse = new ErrorResponse(be2.Message);
@@ -78,9 +84,14 @@ public class ExceptionHandlingMiddleware
             errorResponse = new ErrorResponse(exception.Message);
             statusCode = (int)HttpStatusCode.Conflict;
         }
-        else if (exception is presentation.exceptions.http.ServiceUnavailableException su)
+        else if (exception is core.exceptions.businesslogic.services.ServiceUnavailableException coreSu)
         {
-            errorResponse = new ErrorResponse(su.Message);
+            errorResponse = new ErrorResponse(coreSu.Message);
+            statusCode = 503;
+        }
+        else if (exception is presentation.exceptions.http.ServiceUnavailableException httpSu)
+        {
+            errorResponse = new ErrorResponse(httpSu.Message);
             statusCode = 503;
         }
         else
