@@ -1220,7 +1220,7 @@ jobs:
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
-            run /etc/newman/collection.json \
+            run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --folder success \
@@ -1234,7 +1234,7 @@ jobs:
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
-            run /etc/newman/collection.json \
+            run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --folder step1 \
@@ -1254,7 +1254,7 @@ jobs:
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
-            run /etc/newman/collection.json \
+            run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --folder step2 \
@@ -1268,7 +1268,7 @@ jobs:
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
-            run /etc/newman/collection.json \
+            run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --folder step3 \
@@ -1287,7 +1287,7 @@ jobs:
             --network autograding-network \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
-            run /etc/newman/collection.json \
+            run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
               --env-var "baseUrl=http://gateway-api-e2e:8080" \
               --folder step4 \
