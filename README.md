@@ -1,8 +1,11 @@
-# Лабораторная работа #2 — Распределённые системы: Микросервисы
+# Лабораторная работа #3 — Распределённые системы: Отказоустойчивость
 
 ## Описание
 
-Реализация системы бронирования авиабилетов на микросервисной архитектуре.
+Реализация механизмов отказоустойчивости в системе бронирования авиабилетов:
+- **Circuit Breaker** — защита от каскадных сбоев
+- **Graceful Degradation** — возврат частичных данных при недоступности вторичных сервисов
+- **Retry Queue** — асинхронная повторная обработка неудачных операций
 
 ## Architecture
 
@@ -15,6 +18,13 @@
               ┌─────────────────────────┐
               │   Gateway Service       │ :8080
               │   (API Gateway)         │
+              │                         │
+              │  ┌──────────────────┐   │
+              │  │ Circuit Breaker  │   │
+              │  └──────────────────┘   │
+              │  ┌──────────────────┐   │
+              │  │ Retry Queue      │   │
+              │  └──────────────────┘   │
               └──────────┬──────────────┘
                          │
          ┌───────────────┼───────────────┐
@@ -50,8 +60,10 @@
 - `UserHttpGateway` — управление пользователями
 
 **Features**:
-- SAGA pattern для распределённых транзакций
-- Компенсирующие операции при откате
+- **Circuit Breaker Pattern** — защита от каскадных сбоев
+- **Graceful Degradation** — возврат частичных данных при сбоях
+- **Retry Queue** — асинхронная повторная обработка операций
+- **SAGA Pattern** — распределённые транзакции с компенсирующими операциями
 - Health check: `/manage/health`
 - Swagger UI: `http://localhost:8080/swagger`
 
@@ -63,7 +75,7 @@
 - `GET /api/v1/tickets` — получить все билеты
 - `GET /api/v1/tickets/{ticketUid}` — получить билет по ID
 - `POST /api/v1/tickets` — создать билет
-- `DELETE /api/v1/tickets/{ticketUid}` — отменить билет
+- `DELETE /api/v1/tickets/{ticketUid}` — вернуть билет
 
 **Database**: `ticket` schema
 
@@ -89,6 +101,9 @@
 
 ## Features
 
+- **Circuit Breaker Pattern**: Автоматическое отключение неработающих сервисов после 3 неудачных попыток
+- **Graceful Degradation**: Возврат частичных данных вместо ошибок 500
+- **Retry Queue**: Асинхронная повторная обработка неудачных операций (10s delay)
 - **SAGA Pattern**: Координация распределённых транзакций с компенсирующими операциями
 - **Multi-Database**: Каждый сервис имеет свою изолированную БД
 - **RESTful API**: Стандартные HTTP методы и статус-коды
@@ -109,19 +124,19 @@
 
 ```bash
 # Перейти в папку лабораторной работы
-cd labs/lab_02
+cd labs/lab_03
 
 # Запустить все сервисы (PostgreSQL + 4 микросервиса)
-docker-compose up -d
+docker compose up -d
 
 # Проверить статус сервисов
-docker-compose ps
+docker compose ps
 
 # Просмотр логов
-docker-compose logs -f
+docker compose logs -f
 
 # Остановить сервисы
-docker-compose down
+docker compose down
 ```
 
 ### Проверка работы
@@ -150,8 +165,8 @@ curl http://localhost:8080/api/v1/flights
 | GET | `/api/v1/airports` | Get all airports |
 | GET | `/api/v1/tickets` | Get all user tickets |
 | GET | `/api/v1/tickets/{ticketUid}` | Get ticket by ID |
-| POST | `/api/v1/tickets` | Buy ticket (SAGA) |
-| DELETE | `/api/v1/tickets/{ticketUid}` | Cancel ticket |
+| POST | `/api/v1/tickets` | Buy ticket (SAGA + Circuit Breaker) |
+| DELETE | `/api/v1/tickets/{ticketUid}` | Return ticket (with Retry Queue) |
 | GET | `/api/v1/privilege` | Get user privilege status |
 | GET | `/api/v1/privilege-history` | Get privilege history |
 | GET | `/manage/health` | Health check |
@@ -175,12 +190,85 @@ curl http://localhost:8080/api/v1/flights
   "ticketUid": "049161bb-badd-4fa8-9d90-87c9a82b0668",
   "flightNumber": "AFL031",
   "price": 1500,
-  "paidByBonuses": 500,
-  "paidByMoney": 1000,
+  "paidByMoney": 1500,
+  "paidByBonuses": 0,
   "status": "PAID",
   "statusCode": 201,
   "timestamp": "2026-09-22T13:30:50.981803Z"
 }
+```
+
+## Circuit Breaker Pattern Implementation
+
+### How It Works
+
+```
+1. Circuit State: Closed (normal operation)
+2. Service call fails → Failure count++
+3. After 3 failures → Circuit Opens (3s probe interval)
+4. Next request → Short-circuit (immediate 503)
+5. After 3s → Half-Open (probe request)
+6. Success → Circuit Closes, Failure count = 0
+7. Failure → Circuit Opens again
+```
+
+### Circuit Breaker States
+
+| State | Behavior |
+|-------|----------|
+| **Closed** | Requests pass through normally |
+| **Open** | Requests immediately return 503 Service Unavailable |
+| **Half-Open** | One probe request allowed to check if service recovered |
+
+### Affected Gateways
+
+- `CircuitBreakerFlightGateway` — Flight Service calls
+- `CircuitBreakerTicketGateway` — Ticket Service calls
+- `CircuitBreakerPrivilegeGateway` — Bonus Service calls
+- `CircuitBreakerAirportGateway` — Airport Service calls
+
+## Graceful Degradation
+
+### Read Operations (Partial Data)
+
+When secondary services are unavailable:
+
+| Endpoint | Primary Service | Secondary Service | Behavior |
+|----------|----------------|-------------------|----------|
+| `GET /tickets` | Ticket | Flight | Return tickets without flight details (200) |
+| `GET /tickets/{uid}` | Ticket | Flight | Return ticket without flight details (200) |
+| `GET /me` | Ticket | Flight + Bonus | Return user data without flight/bonus info (200) |
+
+### Write Operations (SAGA + Retry Queue)
+
+| Operation | Critical | Non-Critical | Behavior |
+|-----------|----------|--------------|----------|
+| `POST /tickets` | Ticket creation | Bonus debit | SAGA rollback on failure (503) |
+| `DELETE /tickets/{uid}` | Ticket update | Bonus rollback | Retry Queue for bonus (204 + async retry) |
+
+## Retry Queue Pattern
+
+### Implementation
+
+```csharp
+// InMemoryRetryQueue uses Channel<T> for thread-safe queue
+// BackgroundService processes queue with 10s delay
+
+public interface IRetryQueue
+{
+    void Enqueue(string operationId, Func<Task> operation);
+}
+```
+
+### Use Case: Return Ticket
+
+```
+1. Update ticket status to CANCELED (critical) → Always succeeds
+2. Bonus rollback (non-critical) → Try-catch
+   - Success → Complete
+   - Failure (503) → Enqueue to Retry Queue
+   - Retry Queue → Repeat bonus rollback after 10s
+   - Still failing → Re-enqueue (infinite retry)
 ```
 
 ## SAGA Pattern Implementation
@@ -190,8 +278,8 @@ curl http://localhost:8080/api/v1/flights
 ```
 1. Client → Gateway: POST /api/v1/tickets
 2. Gateway → Flight: Validate flight exists
-3. Gateway → Bonus: Check balance & reserve points
-4. Gateway → Ticket: Create ticket record
+3. Gateway → Ticket: Create ticket record
+4. Gateway → Bonus: Check balance & reserve points
 5. Gateway → Bonus: Debit account (commit)
 6. Response: 201 Created with ticket details
 ```
@@ -201,9 +289,10 @@ curl http://localhost:8080/api/v1/flights
 If any step fails:
 
 ```
-1. Ticket creation failed → No compensation needed
-2. Bonus debit failed → Rollback ticket (DELETE)
-3. Flight validation failed → Rollback bonus reservation
+1. Flight validation failed → No compensation needed
+2. Ticket creation failed → No compensation needed
+3. Bonus debit failed → Rollback ticket (DELETE)
+   - TryRollbackTicketAsync (swallow errors, don't fail user request)
 ```
 
 ## Testing
@@ -214,6 +303,7 @@ If any step fails:
 - ✅ Unit Tests (367 тестов)
 - ✅ Integration Tests
 - ✅ Autograding (Postman тесты преподавателя)
+- ✅ Fault Tolerance Tests (Circuit Breaker + Degradation + Retry Queue)
 
 Статус CI: [![CI](https://github.com/Kori-Tamashi/distributed-systems-project/actions/workflows/ci.yml/badge.svg)](https://github.com/Kori-Tamashi/distributed-systems-project/actions)
 
@@ -229,8 +319,30 @@ dotnet test
 ```bash
 # Запустить Postman тесты в Docker
 cd postman
-docker build -t newman-runner .
-docker run --network lab_02_autograding-network newman-runner
+docker build -t lab-03-postman .
+docker run --network lab_03_autograding-network lab-03-postman
+```
+
+### Fault Tolerance Tests
+
+**Circuit Breaker**:
+```bash
+# 1. Stop bonus-api
+docker compose stop bonus-api
+
+# 2. Make 3+ requests → Circuit opens
+# First request: slow (timeout), subsequent: fast (503)
+
+# 3. Wait 3s (probe interval), start bonus-api
+# Circuit closes automatically
+```
+
+**Graceful Degradation**:
+```bash
+# Stop secondary service, verify 200 with partial data
+docker compose stop flight-api
+curl http://localhost:8080/api/v1/tickets -H "X-User-Name: Test User"
+# Returns tickets without flight details
 ```
 
 ## Database Schema
@@ -294,27 +406,35 @@ CREATE TABLE privilege_history (
 ## Project Structure
 
 ```
-labs/lab_02/
+labs/lab_03/
 ├── postman/
-│   ├── collections/           # Postman collections
-│   ├── environments/          # Environment configs
-│   ├── Dockerfile
-│   └── globals/
+│   ├── collection.json              # Instructor autograding tests
+│   ├── fault-tolerance-collection.json  # Lab 03 tests (success + failover)
+│   ├── environment.json
+│   └── Dockerfile
 ├── services/
-│   ├── gateway-microservice/  # API Gateway (:8080)
+│   ├── gateway-microservice/        # API Gateway (:8080)
 │   │   ├── src/
-│   │   │   ├── core/          # Domain layer
-│   │   │   ├── businesslogic/ # Service layer
-│   │   │   ├── dataaccess/    # Repository layer
-│   │   │   ├── presentation/  # API layer (Controllers)
-│   │   │   └── tests/         # Unit & Integration tests
-│   │   └── .env
-│   ├── ticket-microservice/   # Ticket Service (:8070)
-│   │   └── src/               # Same structure
-│   ├── flight-microservice/   # Flight Service (:8060)
-│   │   └── src/               # Same structure
-│   └── bonus-microservice/    # Bonus Service (:8050)
-│       └── src/               # Same structure
+│   │   │   ├── core/
+│   │   │   │   ├── circuitbreaker/  # Circuit Breaker implementation
+│   │   │   │   └── exceptions/businesslogic/services/
+│   │   │   │       └── ServiceUnavailableException.cs
+│   │   │   ├── businesslogic/
+│   │   │   ├── dataaccess/
+│   │   │   │   ├── gateways/circuitbreaker/  # CB decorators
+│   │   │   │   └── retry/  # Retry Queue implementation
+│   │   │   │       └── InMemoryRetryQueue.cs
+│   │   │   ├── presentation/
+│   │   │   │   ├── controllers/http/
+│   │   │   │   ├── middleware/
+│   │   │   │   │   └── ExceptionHandlingMiddleware.cs
+│   │   │   │   └── Program.cs  # CB + Retry Queue registration
+│   │   │   └── tests/
+│   │   └── docker-compose.gateway-microservice.yml
+│   ├── ticket-microservice/         # Ticket Service (:8070)
+│   ├── flight-microservice/         # Flight Service (:8060)
+│   └── bonus-microservice/          # Bonus Service (:8050)
+├── docker-compose.yml  # Root compose with include: statements
 ├── NOTES.md
 ├── TASK.md
 └── README.md
@@ -333,6 +453,9 @@ labs/lab_02/
 ### 🏗️ Architecture
 - **Microservices Pattern** — независимые сервисы с изолированными БД
 - **API Gateway Pattern** — единая точка входа
+- **Circuit Breaker Pattern** — защита от каскадных сбоев (3 failures → open, 3s probe)
+- **Retry Queue Pattern** — асинхронная повторная обработка (Channel + BackgroundService)
+- **Graceful Degradation** — частичные данные вместо ошибок 500
 - **SAGA Pattern** — распределённые транзакции с компенсирующими операциями
 - **Repository Pattern** — абстракция доступа к данным
 - **Dependency Injection** — loose coupling
@@ -341,19 +464,41 @@ labs/lab_02/
 - **367 Unit Tests** — бизнес-логика, контроллеры, конвертеры
 - **Integration Tests** — БД операции, API endpoints
 - **Autograding** — Postman тесты преподавателя
+- **Fault Tolerance Tests** — Circuit Breaker + Degradation + Retry Queue
 - **Health Checks** — `/manage/health` на каждом сервисе
 
-### 🔒 Security
-- **Input Validation** — валидация запросов на всех endpoints
-- **Error Handling** — правильные HTTP статус-коды
-- **Exception Translation** — domain exceptions → HTTP exceptions
+### 🛡️ Fault Tolerance
+- **Circuit Breaker**:
+  - 3 consecutive failures → Circuit Opens
+  - All requests immediately return 503 (short-circuit)
+  - After 3s → Half-Open (probe request)
+  - Success → Circuit Closes
+  - Failure → Circuit Opens again
 
-### 🎫 Ticket Booking (SAGA)
-1. Валидация рейса (Flight Service)
-2. Проверка и резервирование бонусов (Bonus Service)
+- **Graceful Degradation**:
+  - GET /tickets → Return tickets without flight details (200)
+  - GET /tickets/{uid} → Return ticket without flight details (200)
+  - GET /me → Return user data without flight/bonus info (200)
+
+- **Retry Queue**:
+  - Critical operations (ticket update) → Synchronous, must succeed
+  - Non-critical operations (bonus rollback) → Try-catch + enqueue
+  - Background worker → Retry after 10s, re-enqueue on failure
+
+### 🎫 Ticket Booking (SAGA + Circuit Breaker)
+1. Валидация рейса (Flight Service) — Circuit Breaker
+2. Проверка и резервирование бонусов (Bonus Service) — Circuit Breaker
 3. Создание билета (Ticket Service)
-4. Списание бонусов (Bonus Service)
-5. **Rollback** при ошибке на любом этапе
+4. Списание бонусов (Bonus Service) — Circuit Breaker
+5. **Rollback** при ошибке на любом этапе (compensating transaction)
+6. **503 Service Unavailable** — если сервис недоступен (Circuit Breaker Open)
+
+### 🔄 Ticket Return (Retry Queue)
+1. Обновление статуса билета (критично) → Всегда синхронно
+2. Откат бонусов (некритично) → Try-catch
+   - Успех → Завершение
+   - Ошибка → Enqueue в Retry Queue
+   - Background worker → Повтор через 10с
 
 ### 👤 User Management
 - Регистрация пользователей с автоматическим созданием привилегии
@@ -374,6 +519,8 @@ Educational project for BMSTU Distributed Systems course.
 ## References
 
 - [Lab Assignment](TASK.md)
-- [BMSTU RSOI Lab2 Template](https://github.com/bmstu-rsoi/lab2-template)
+- [BMSTU RSOI Lab3 Template](https://github.com/bmstu-rsoi/lab3-template)
+- [Circuit Breaker Pattern](https://microservices.io/patterns/reliability/circuit-breaker.html)
+- [Retry Pattern](https://learn.microsoft.com/en-us/dotnet/architecture/microservices/implement-resilient-applications/use-implement-resilient-applications/use-retry-pattern/)
 - [SAGA Pattern](https://microservices.io/patterns/data/saga.html)
 - [ASP.NET Core Documentation](https://docs.microsoft.com/en-us/aspnet/core/)
