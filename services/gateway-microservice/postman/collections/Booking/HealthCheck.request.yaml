@@ -1,0 +1,10 @@
+$kind: http-request
+order: 100
+method: GET
+url: '{{baseUrl}}/health'
+description: Health check
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });

@@ -1,0 +1,26 @@
+$kind: http-request
+order: 1000
+method: PUT
+url: '{{baseUrl}}/api/v1/tickets/99999'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "Id": 99999,
+      "FlightId": 1,
+      "SeatNumber": "1A",
+      "PassengerName": "Not Found",
+      "PassengerEmail": "notfound@example.com",
+      "TicketClass": "Economy",
+      "Price": 5000
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 404 or 405', function () {
+        pm.expect(pm.response.code).to.be.oneOf([404, 405]);
+      });

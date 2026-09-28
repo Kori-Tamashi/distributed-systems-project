@@ -1,0 +1,23 @@
+$kind: http-request
+order: 1000
+method: PUT
+url: '{{baseUrl}}/api/v1/privileges/99999'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "id": 99999,
+      "username": "Not Found",
+      "status": 0,
+      "balance": 0
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 404 or 405', function () {
+        pm.expect(pm.response.code).to.be.oneOf([404, 405]);
+      });

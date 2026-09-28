@@ -1,0 +1,11 @@
+$kind: http-request
+order: 200
+method: GET
+url: '{{baseUrl}}/api/v1/bookings'
+description: Get all bookings
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });
+      pm.test('Response is array', function () { pm.expect(pm.response.json()).to.be.an('array'); });

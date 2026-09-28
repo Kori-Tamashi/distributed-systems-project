@@ -1,0 +1,34 @@
+$kind: http-request
+order: 300
+method: POST
+url: '{{baseUrl}}/api/v1/tickets'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |
+    {
+      "flightNumber": "{{flightNumber}}",
+      "price": 1500,
+      "paidFromBalance": false
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Купить билет', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        pm.expect(response).to.be.not.undefined;
+        pm.expect(response.ticketUid).to.be.not.empty;
+        pm.expect(response.flightNumber).to.eq(pm.collectionVariables.get('flightNumber'));
+        pm.expect(response.status).to.eq('PAID');
+        pm.expect(response.price).to.eq(1500);
+
+        pm.collectionVariables.set('ticketUid', response.ticketUid);
+      });

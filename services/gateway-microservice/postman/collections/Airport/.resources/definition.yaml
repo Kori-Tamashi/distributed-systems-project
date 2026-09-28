@@ -1,0 +1,22 @@
+$kind: collection
+description: |
+  ## Airport API Tests - Lab 02
+  
+  **Микросервис:** Gateway (port 8080)  
+  **Дата:** 2026-09-19  
+  **Airport ID:** Используется первый аэропорт из БД
+  
+  ### Тесты (13 штук)
+  1. HealthCheck
+  2. GetAllAirportsEmpty
+  3. CreateAirportValid
+  4. CreateAirportEmptyName
+  5. GetAirportByIdValid
+  6. GetAirportByIdNotFound
+  7. UpdateAirportValid
+  8. UpdateAirportNotFound
+  9. GetAllAirportsWithData
+  10. DeleteAirportValid
+  11. GetAirportAfterDeleteNotFound
+  12. DeleteAirportInvalid
+  13. DeleteAirportNotFound

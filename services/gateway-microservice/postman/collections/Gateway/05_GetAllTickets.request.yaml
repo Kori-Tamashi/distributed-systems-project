@@ -1,0 +1,19 @@
+$kind: http-request
+order: 500
+method: GET
+url: '{{baseUrl}}/api/v1/tickets'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Информация по всем билетам пользователя', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        pm.expect(response).to.be.an('array');
+        pm.expect(response.length).to.be.gte(1);
+      });

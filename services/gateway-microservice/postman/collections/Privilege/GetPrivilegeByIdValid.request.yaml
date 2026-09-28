@@ -1,0 +1,12 @@
+$kind: http-request
+order: 600
+method: GET
+url: '{{baseUrl}}/api/v1/privileges/3'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });
+      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('Id'); });
+      pm.test('Has Username', function () { pm.expect(pm.response.json()).to.have.property('Username'); });
+      pm.test('Has Balance', function () { pm.expect(pm.response.json()).to.have.property('Balance'); });

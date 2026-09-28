@@ -1,0 +1,14 @@
+$kind: http-request
+order: 1100
+method: GET
+url: '{{baseUrl}}/api/v1/privileges'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });
+      pm.test('Response is array', function () { pm.expect(pm.response.json()).to.be.an('array'); });
+      pm.test('Array has items', function () {
+        const data = pm.response.json();
+        pm.expect(data.length).to.be.greaterThan(0);
+      });

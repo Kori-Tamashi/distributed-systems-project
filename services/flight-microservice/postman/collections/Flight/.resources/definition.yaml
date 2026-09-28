@@ -1,0 +1,12 @@
+$kind: collection
+description: |
+  ## Flight API Tests - Lab 02
+  
+  **Микросервис:** Flight (port 8060)  
+  **Дата:** 2026-09-20
+  
+  ### Особенности API:
+  - Возвращает массив напрямую (не {items: [...]})
+  - PascalCase свойства (FlightNumber, DepartureAirportId, etc.)
+  - DELETE возвращает 204 NoContent
+  - PUT может возвращать 405 (не поддерживается)

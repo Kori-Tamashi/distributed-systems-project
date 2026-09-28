@@ -1,0 +1,22 @@
+# local template — never commit
+lab4-template/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# IDE
+.idea/
+**/.idea/
+.vs/
+**/.vs/
+
+# build artefacts
+**/bin/
+**/obj/
+**/node_modules/
+
+# test/runtime
+postman/test-results/
+*.log
+.env

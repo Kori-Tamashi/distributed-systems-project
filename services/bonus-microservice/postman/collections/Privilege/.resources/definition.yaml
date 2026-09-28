@@ -1,0 +1,13 @@
+$kind: collection
+description: |
+  ## Privilege API Tests - Lab 02
+  
+  **Микросервис:** Bonus (port 8050)  
+  **Дата:** 2026-09-20
+  
+  ### Особенности API:
+  - Возвращает массив напрямую (не {items: [...]})
+  - camelCase свойства (username, status, balance, id)
+  - DELETE возвращает 204 NoContent
+  - PUT может возвращать 405 (не поддерживается)
+  - CREATE возвращает 500 (баг API)

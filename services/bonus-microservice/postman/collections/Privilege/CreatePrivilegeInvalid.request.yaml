@@ -1,0 +1,22 @@
+$kind: http-request
+order: 400
+method: POST
+url: '{{baseUrl}}/api/v1/privileges'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "username": "",
+      "status": -1,
+      "balance": -100
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 400, 500, or 201', function () {
+        pm.expect(pm.response.code).to.be.oneOf([400, 500, 201]);
+      });

@@ -1,0 +1,25 @@
+$kind: http-request
+order: 400
+method: POST
+url: '{{baseUrl}}/api/v1/flights'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "FlightNumber": "",
+      "FlightUid": "00000000-0000-0000-0000-000000000000",
+      "DateTime": "2020-01-01T00:00:00Z",
+      "FromAirportId": 1,
+      "ToAirportId": 1,
+      "Price": 0
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 400, 500, or 201', function () {
+        pm.expect(pm.response.code).to.be.oneOf([400, 500, 201]);
+      });

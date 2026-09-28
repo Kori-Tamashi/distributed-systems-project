@@ -1,0 +1,9 @@
+$kind: http-request
+order: 1100
+method: GET
+url: '{{baseUrl}}/api/v1/airports'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });
