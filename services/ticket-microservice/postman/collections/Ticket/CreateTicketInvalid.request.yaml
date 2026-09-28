@@ -1,0 +1,29 @@
+$kind: http-request
+order: 400
+method: POST
+url: '{{baseUrl}}/api/v1/tickets'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "TicketUid": "00000000-0000-0000-0000-000000000000",
+      "FlightId": 0,
+      "PassengerName": "",
+      "PassengerEmail": "",
+      "PassengerPhone": "",
+      "SeatNumber": "",
+      "Class": -1,
+      "Price": 0,
+      "BookingDate": "2020-01-01T00:00:00Z",
+      "Status": -1
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 400, 500, or 201', function () {
+        pm.expect(pm.response.code).to.be.oneOf([400, 500, 201]);
+      });

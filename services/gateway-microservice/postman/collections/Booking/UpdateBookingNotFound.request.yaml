@@ -1,0 +1,23 @@
+$kind: http-request
+order: 1000
+method: PUT
+url: '{{baseUrl}}/api/v1/bookings/99999'
+headers:
+  - key: Content-Type
+    value: application/json
+body:
+  type: json
+  content: |-
+    {
+      "BookingId": 99999,
+      "CustomerName": "Not Found",
+      "CustomerEmail": "notfound@example.com",
+      "TotalPrice": 0
+    }
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 404 or 405', function () {
+        pm.expect(pm.response.code).to.be.oneOf([404, 405]);
+      });

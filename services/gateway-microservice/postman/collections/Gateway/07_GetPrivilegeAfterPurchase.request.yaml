@@ -1,0 +1,23 @@
+$kind: http-request
+order: 700
+method: GET
+url: '{{baseUrl}}/api/v1/privilege'
+headers:
+  - key: X-User-Name
+    value: '{{username}}'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Получить информацию о состоянии бонусного счета после покупки билета', () => {
+        pm.response.to.have.status(200);
+        pm.expect(pm.response.headers.get('Content-Type')).to.contains('application/json');
+
+        const response = pm.response.json();
+        const ticketUid = pm.collectionVariables.get('ticketUid');
+        const balance = pm.collectionVariables.get('balance');
+
+        const historyItem = response.history.find(h => h.ticketUid === ticketUid);
+        pm.expect(historyItem).to.be.not.undefined;
+        pm.expect(response.balance).to.be.gte(balance);
+      });

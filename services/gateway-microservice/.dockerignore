@@ -1,0 +1,31 @@
+# Build artifacts
+bin/
+obj/
+*.pidb
+*.user
+*.userosscache
+*.sln.docstates
+
+# Git
+.git/
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# OS
+.DS_Store
+
+# Test results
+TestResults/
+coverage/
+
+# NuGet
+*.nupkg

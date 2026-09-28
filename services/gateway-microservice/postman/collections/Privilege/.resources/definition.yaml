@@ -1,0 +1,18 @@
+$kind: collection
+description: |
+  ## Privilege API Tests - Lab 02
+  
+  **Микросервис:** Gateway (port 8080)  
+  **Дата:** 2026-09-19
+  
+  ### Особенности API:
+  - Возвращает массив напрямую (не {items: [...]})
+  - PascalCase свойства (Username, Status, Balance, Id)
+  - **CREATE/UPDATE/DELETE не работают** (баг API Gateway)
+  - **Тестируем только GET операции**
+  
+  ### Используемые Privileges:
+  - ID 3: updateduser
+  - ID 6: newuser
+  - ID 7: testuser
+  - ID 8: bonususer

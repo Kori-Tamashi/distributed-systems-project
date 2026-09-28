@@ -1,0 +1,9 @@
+include:
+  - services/flight-microservice/docker-compose.flight-microservice.yml
+  - services/ticket-microservice/docker-compose.ticket-microservice.yml
+  - services/bonus-microservice/docker-compose.bonus-microservice.yml
+  - services/gateway-microservice/docker-compose.gateway-microservice.yml
+
+networks:
+  rsoi-network:
+    driver: bridge

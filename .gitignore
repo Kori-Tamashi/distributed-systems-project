@@ -1,0 +1,8 @@
+lab4-template/
+.DS_Store
+**/bin/
+**/obj/
+**/node_modules/
+postman/test-results/
+*.log
+.env
