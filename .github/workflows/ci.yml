@@ -8,9 +8,9 @@ name: CI - Build and Test All Microservices
 
 on:
   push:
-    branches: [main, develop, lab_03]
+    branches: [main, develop, lab_04]
   pull_request:
-    branches: [main, lab_03]
+    branches: [main, lab_04]
 
 # ===========================================
 # Concurrency Control

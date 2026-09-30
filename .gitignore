@@ -20,3 +20,7 @@ lab4-template/
 postman/test-results/
 *.log
 .env
+
+# kubeconfig (temporary files)
+kubeconfig_*.yaml
+deploy/kubeconfig_*.yaml

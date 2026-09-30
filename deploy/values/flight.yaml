@@ -1,0 +1,47 @@
+replicaCount: 1
+
+fullnameOverride: flight
+
+image:
+  repository: kori-tamashi/flight-microservice
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+container:
+  port: 8060
+  env:
+    - name: DATABASE_PROVIDER
+      value: "POSTGRESQL"
+    - name: POSTGRESQL_HOST
+      value: "postgres"
+    - name: POSTGRESQL_PORT
+      value: "5432"
+    - name: POSTGRESQL_DATABASE
+      value: "flight"
+    - name: POSTGRESQL_USER
+      value: "flight"
+    - name: POSTGRESQL_PASSWORD
+      value: "flight"
+
+service:
+  type: ClusterIP
+  port: 8060
+  targetPort: 8060
+
+probes:
+  enabled: true
+  path: /manage/health
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 12
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podLabels:
+  app.kubernetes.io/name: flight

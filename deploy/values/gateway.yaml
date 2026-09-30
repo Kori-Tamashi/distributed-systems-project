@@ -1,0 +1,48 @@
+replicaCount: 1
+
+fullnameOverride: gateway
+
+image:
+  repository: kori-tamashi/gateway-microservice
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+container:
+  port: 8080
+  env:
+    - name: FLIGHT_API_URL
+      value: "http://flight:8060"
+    - name: TICKET_API_URL
+      value: "http://ticket:8070"
+    - name: BONUS_API_URL
+      value: "http://bonus:8050"
+
+service:
+  type: ClusterIP
+  port: 8080
+  targetPort: 8080
+
+probes:
+  enabled: true
+  path: /manage/health
+
+ingress:
+  enabled: true
+  className: nginx
+  host: ""
+  path: /
+  pathType: Prefix
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 384Mi
+
+podLabels:
+  app.kubernetes.io/name: gateway

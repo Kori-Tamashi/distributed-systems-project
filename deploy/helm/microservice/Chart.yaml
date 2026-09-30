@@ -1,0 +1,7 @@
+apiVersion: v2
+name: microservice
+description: Universal chart for RSOI microservices
+  (gateway/flight/ticket/bonus)
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

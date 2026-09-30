@@ -1,0 +1,47 @@
+replicaCount: 1
+
+fullnameOverride: bonus
+
+image:
+  repository: kori-tamashi/bonus-microservice
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+container:
+  port: 8050
+  env:
+    - name: DATABASE_PROVIDER
+      value: "POSTGRESQL"
+    - name: POSTGRESQL_HOST
+      value: "postgres"
+    - name: POSTGRESQL_PORT
+      value: "5432"
+    - name: POSTGRESQL_DATABASE
+      value: "bonus"
+    - name: POSTGRESQL_USER
+      value: "bonus"
+    - name: POSTGRESQL_PASSWORD
+      value: "bonus"
+
+service:
+  type: ClusterIP
+  port: 8050
+  targetPort: 8050
+
+probes:
+  enabled: true
+  path: /manage/health
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 12
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podLabels:
+  app.kubernetes.io/name: bonus

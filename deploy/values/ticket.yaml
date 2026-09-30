@@ -1,0 +1,47 @@
+replicaCount: 1
+
+fullnameOverride: ticket
+
+image:
+  repository: kori-tamashi/ticket-microservice
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+container:
+  port: 8070
+  env:
+    - name: DATABASE_PROVIDER
+      value: "POSTGRESQL"
+    - name: POSTGRESQL_HOST
+      value: "postgres"
+    - name: POSTGRESQL_PORT
+      value: "5432"
+    - name: POSTGRESQL_DATABASE
+      value: "ticket"
+    - name: POSTGRESQL_USER
+      value: "ticket"
+    - name: POSTGRESQL_PASSWORD
+      value: "ticket"
+
+service:
+  type: ClusterIP
+  port: 8070
+  targetPort: 8070
+
+probes:
+  enabled: true
+  path: /manage/health
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 12
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 192Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+podLabels:
+  app.kubernetes.io/name: ticket

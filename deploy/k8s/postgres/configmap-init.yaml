@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: test
+data:
+  init.sql: |
+    CREATE ROLE flight WITH LOGIN PASSWORD 'flight';
+    CREATE ROLE ticket WITH LOGIN PASSWORD 'ticket';
+    CREATE ROLE bonus  WITH LOGIN PASSWORD 'bonus';
+
+    CREATE DATABASE flight OWNER flight;
+    CREATE DATABASE ticket OWNER ticket;
+    CREATE DATABASE bonus  OWNER bonus;
+
+    GRANT ALL PRIVILEGES ON DATABASE flight TO flight;
+    GRANT ALL PRIVILEGES ON DATABASE ticket TO ticket;
+    GRANT ALL PRIVILEGES ON DATABASE bonus  TO bonus;
