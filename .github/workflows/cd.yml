@@ -189,31 +189,6 @@ jobs:
           kubectl get events -n "$NS" \
             --sort-by=.lastTimestamp | tail -20 || true
 
-      - name: Seed flight database
-        run: |
-          kubectl exec -n ${{ env.KUBE_NAMESPACE }} postgres-0 -- sh -c "
-            PGPASSWORD=postgres-admin-password psql -U postgres -d flight -c \\
-              \"INSERT INTO airports (id, name, city, country) VALUES
-                (1, 'Шереметьево', 'Москва', 'Россия'),
-                (2, 'Пулково', 'Санкт-Петербург', 'Россия')
-              ON CONFLICT (id) DO NOTHING;\"
-          kubectl exec -n ${{ env.KUBE_NAMESPACE }} postgres-0 -- sh -c "
-            PGPASSWORD=postgres-admin-password psql -U postgres -d flight -c \\
-              \"INSERT INTO flights (id, flight_uid, flight_number, datetime,
-                from_airport_id, to_airport_id, price) VALUES
-                (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031',
-                '2021-10-08 20:00', 1, 2, 1500)
-              ON CONFLICT (id) DO NOTHING;\"
-          echo "✅ Flight DB seeded"
-
-      - name: Seed bonus database
-        run: |
-          kubectl exec -n ${{ env.KUBE_NAMESPACE }} postgres-0 -- sh -c "
-            PGPASSWORD=postgres-admin-password psql -U postgres -d bonus -c \\
-              \"INSERT INTO privilege (id, username, status, balance) VALUES
-                (1, 'Test User', 0, 0)
-              ON CONFLICT (username) DO NOTHING;\"
-          " || echo "Bonus seed skipped (may already exist)"
 
       - name: Deploy Gateway
         run: |
@@ -250,6 +225,39 @@ jobs:
             --namespace ${{ env.KUBE_NAMESPACE }} \
             --set image.tag=latest \
             --wait --timeout=300s
+
+      - name: Seed flight database
+        run: |
+          NS="${{ env.KUBE_NAMESPACE }}"
+          echo "🌱 Seeding flight DB..."
+          kubectl exec -i -n "$NS" postgres-0 -- \
+            env PGPASSWORD=postgres-admin-password \
+            psql -U postgres -d flight <<'SQL'
+          INSERT INTO airports (id, name, city, country) VALUES
+            (1, 'Шереметьево', 'Москва', 'Россия'),
+            (2, 'Пулково', 'Санкт-Петербург', 'Россия')
+          ON CONFLICT (id) DO NOTHING;
+
+          INSERT INTO flights (id, flight_uid, flight_number, datetime, \
+              from_airport_id, to_airport_id, price) VALUES
+            (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031', \
+              '2021-10-08 20:00', 1, 2, 1500)
+          ON CONFLICT (id) DO NOTHING;
+          SQL
+          echo "✅ Flight DB seeded"
+
+      - name: Seed bonus database
+        run: |
+          NS="${{ env.KUBE_NAMESPACE }}"
+          echo "🌱 Seeding bonus DB..."
+          kubectl exec -i -n "$NS" postgres-0 -- \
+            env PGPASSWORD=postgres-admin-password \
+            psql -U postgres -d bonus <<'SQL'
+          INSERT INTO privilege (id, username, status, balance) VALUES
+            (1, 'Test User', 0, 0)
+          ON CONFLICT (username) DO NOTHING;
+          SQL
+          echo "✅ Bonus DB seeded"
 
       - name: Verify deployments
         run: |
