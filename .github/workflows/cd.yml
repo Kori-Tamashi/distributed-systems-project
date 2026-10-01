@@ -136,9 +136,16 @@ jobs:
           kubectl apply -f deploy/k8s/postgres/configmap-init.yaml
           kubectl apply -f deploy/k8s/postgres/service.yaml
           kubectl apply -f deploy/k8s/postgres/statefulset.yaml
-          echo "⏳ Waiting for PostgreSQL to be ready..."
-          kubectl wait --for=condition=Ready pod -l app=postgres \
+          echo "⏳ Waiting for PostgreSQL StatefulSet to be ready..."
+          kubectl rollout status statefulset/postgres \
             -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
+          echo "PostgreSQL pod status:"
+          kubectl get pods -n ${{ env.KUBE_NAMESPACE }} \
+            -l app=postgres -o wide || true
+          echo ""
+          echo "Recent events in namespace:"
+          kubectl get events -n ${{ env.KUBE_NAMESPACE }} \
+            --sort-by=.lastTimestamp | tail -20 || true
 
       - name: Seed flight database
         run: |
