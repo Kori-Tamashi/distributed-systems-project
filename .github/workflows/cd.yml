@@ -141,9 +141,40 @@ jobs:
           echo "--- Debug: where are statefulsets ---"
           kubectl get statefulsets -A
 
-          echo "⏳ Waiting for PostgreSQL StatefulSet..."
-          echo "  (namespace: $NS)"
-          kubectl rollout status statefulset/postgres -n "$NS" --timeout=300s
+          echo "⏳ Waiting for PostgreSQL StatefulSet (max 300s)..."
+          if ! kubectl rollout status statefulset/postgres \
+              -n "$NS" --timeout=300s; then
+            echo "❌ PostgreSQL rollout FAILED. Dumping diagnostics..."
+
+            echo "=== pods ==="
+            kubectl get pods -n "$NS" -l app=postgres -o wide || true
+
+            echo "=== pvc ==="
+            kubectl get pvc -n "$NS" || true
+
+            echo "=== storageclasses ==="
+            kubectl get storageclass || true
+
+            echo "=== describe pod ==="
+            POD=$(kubectl get pods -n "$NS" -l app=postgres \
+              -o jsonpath='{.items[0].metadata.name}' || echo "")
+            if [ -n "$POD" ]; then
+              kubectl describe pod "$POD" -n "$NS" | tail -60 || true
+              echo "=== postgres container logs ==="
+              kubectl logs "$POD" -n "$NS" -c postgres --tail=80 2>&1 || true
+              echo "=== previous logs ==="
+              kubectl logs "$POD" -n "$NS" -c postgres \
+                --previous --tail=80 2>&1 || true
+            fi
+
+            echo "=== events ==="
+            kubectl get events -n "$NS" \
+              --sort-by=.lastTimestamp | tail -30 || true
+
+            exit 1
+          fi
+
+          echo "✅ PostgreSQL StatefulSet ready"
           echo "PostgreSQL pod status:"
           kubectl get pods -n "$NS" -l app=postgres -o wide || true
           echo ""
