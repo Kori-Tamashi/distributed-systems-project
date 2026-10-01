@@ -132,6 +132,13 @@ jobs:
         run: |
           NS="${{ env.KUBE_NAMESPACE }}"
           echo "📦 Applying PostgreSQL manifests to namespace $NS..."
+
+          # Clean up old statefulset and pending PVC if they exist
+          kubectl delete statefulset postgres -n "$NS" \
+            --ignore-not-found --wait=true || true
+          kubectl delete pvc -n "$NS" -l app=postgres \
+            --ignore-not-found || true
+
           kubectl apply -n "$NS" -f deploy/k8s/postgres/namespace.yaml || true
           kubectl apply -n "$NS" -f deploy/k8s/postgres/secret.yaml
           kubectl apply -n "$NS" -f deploy/k8s/postgres/configmap-init.yaml
