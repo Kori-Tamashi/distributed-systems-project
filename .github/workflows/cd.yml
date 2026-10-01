@@ -120,12 +120,12 @@ jobs:
       - name: Configure kubectl
         run: |
           kubectl cluster-info
-          kubectl config set-context --current
+          kubectl config set-context --current \
             --namespace=${{ env.KUBE_NAMESPACE }}
 
       - name: Create namespace
         run: |
-          kubectl create namespace ${{ env.KUBE_NAMESPACE }}
+          kubectl create namespace ${{ env.KUBE_NAMESPACE }} \
             --dry-run=client -o yaml | kubectl apply -f -
 
       - name: Apply PostgreSQL manifests
@@ -137,7 +137,7 @@ jobs:
           kubectl apply -f deploy/k8s/postgres/service.yaml
           kubectl apply -f deploy/k8s/postgres/statefulset.yaml
           echo "⏳ Waiting for PostgreSQL to be ready..."
-          kubectl wait --for=condition=Ready pod -l app=postgres
+          kubectl wait --for=condition=Ready pod -l app=postgres \
             -n ${{ env.KUBE_NAMESPACE }} --timeout=300s
 
       - name: Seed flight database
@@ -212,7 +212,7 @@ jobs:
           echo ""
           echo "📊 Deployment Status:"
           for svc in gateway flight ticket bonus; do
-            status=$(kubectl get deployment $svc -n ${{ env.KUBE_NAMESPACE }}
+            status=$(kubectl get deployment $svc -n ${{ env.KUBE_NAMESPACE }} \
               -o jsonpath='{.status.availableReplicas}')
             if [ "$status" = "1" ]; then
               echo "  ✅ $svc: ready"
@@ -241,5 +241,5 @@ jobs:
           echo ""
           echo "To view logs:"
           echo "  kubectl get pods -n ${{ env.KUBE_NAMESPACE }}"
-          echo "  kubectl logs -f deployment/gateway
-            -n ${{ env.KUBE_NAMESPACE }}"
+          echo "  kubectl logs -f deployment/gateway"
+          echo "    -n ${{ env.KUBE_NAMESPACE }}"
