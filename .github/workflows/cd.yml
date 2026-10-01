@@ -193,38 +193,60 @@ jobs:
       - name: Deploy Gateway
         run: |
           echo "🚀 Deploying Gateway..."
+          NS="${{ env.KUBE_NAMESPACE }}"
           helm upgrade --install gateway deploy/helm/microservice \
             -f deploy/values/gateway.yaml \
-            --namespace ${{ env.KUBE_NAMESPACE }} \
-            --set image.tag=latest \
-            --wait --timeout=300s
+            --namespace "$NS" \
+            --set image.tag=latest
+          sleep 3
 
       - name: Deploy Flight
         run: |
           echo "🚀 Deploying Flight..."
+          NS="${{ env.KUBE_NAMESPACE }}"
           helm upgrade --install flight deploy/helm/microservice \
             -f deploy/values/flight.yaml \
-            --namespace ${{ env.KUBE_NAMESPACE }} \
-            --set image.tag=latest \
-            --wait --timeout=300s
+            --namespace "$NS" \
+            --set image.tag=latest
+          sleep 3
 
       - name: Deploy Ticket
         run: |
           echo "🚀 Deploying Ticket..."
+          NS="${{ env.KUBE_NAMESPACE }}"
           helm upgrade --install ticket deploy/helm/microservice \
             -f deploy/values/ticket.yaml \
-            --namespace ${{ env.KUBE_NAMESPACE }} \
-            --set image.tag=latest \
-            --wait --timeout=300s
+            --namespace "$NS" \
+            --set image.tag=latest
+          sleep 3
 
       - name: Deploy Bonus
         run: |
           echo "🚀 Deploying Bonus..."
+          NS="${{ env.KUBE_NAMESPACE }}"
           helm upgrade --install bonus deploy/helm/microservice \
             -f deploy/values/bonus.yaml \
-            --namespace ${{ env.KUBE_NAMESPACE }} \
-            --set image.tag=latest \
-            --wait --timeout=300s
+            --namespace "$NS" \
+            --set image.tag=latest
+          sleep 3
+
+      - name: Wait for all deployments to be ready
+        run: |
+          NS="${{ env.KUBE_NAMESPACE }}"
+          echo "⏳ Waiting for all deployments to be ready (max 300s each)..."
+          for svc in gateway flight ticket bonus; do
+            echo "--- $svc ---"
+            if ! kubectl rollout status deployment/$svc \
+                -n "$NS" --timeout=300s; then
+              echo "❌ $svc rollout failed"
+              kubectl get pods -n "$NS" -l app.kubernetes.io/name="$svc" || true
+              kubectl describe deployment "$svc" -n "$NS" | tail -40 || true
+              kubectl get events -n "$NS" \
+                --sort-by=.lastTimestamp | tail -20 || true
+              exit 1
+            fi
+          done
+          echo "✅ All deployments ready"
 
       - name: Seed flight database
         run: |
