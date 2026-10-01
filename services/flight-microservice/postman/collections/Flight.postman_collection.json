@@ -202,7 +202,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"FlightNumber\": \"SU100\",\n  \"FlightUid\": \"d1af9626-9a03-4192-b43c-000a50a86ece\",\n  \"DateTime\": \"2026-10-01T10:00:00Z\",\n  \"FromAirportId\": \"{{departureAirportId}}\",\n  \"ToAirportId\": \"{{arrivalAirportId}}\",\n  \"Price\": 50000\n}",
+					"raw": "{\n  \"FlightNumber\": \"SU100\",\n  \"FlightUid\": \"d1af9626-9a03-4192-b43c-000a50a86ece\",\n  \"DateTime\": \"2035-12-31T10:00:00Z\",\n  \"FromAirportId\": \"{{departureAirportId}}\",\n  \"ToAirportId\": \"{{arrivalAirportId}}\",\n  \"Price\": 50000\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -234,7 +234,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"FlightNumber\": \"\",\n  \"FlightUid\": \"{{$guid}}\",\n  \"DateTime\": \"2026-12-15T10:00:00Z\",\n  \"FromAirportId\": 1,\n  \"ToAirportId\": 2,\n  \"Price\": 15000\n}",
+					"raw": "{\n  \"FlightNumber\": \"\",\n  \"FlightUid\": \"{{$guid}}\",\n  \"DateTime\": \"2035-12-31T10:00:00Z\",\n  \"FromAirportId\": 1,\n  \"ToAirportId\": 2,\n  \"Price\": 15000\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -451,7 +451,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"Id\": \"{{createdFlightId}}\",\n  \"FlightNumber\": \"SU200\",\n  \"FlightUid\": \"b245f6a4-0e0d-43a2-a02f-0bc8cdcdd2bc\",\n  \"DateTime\": \"2026-10-02T10:00:00Z\",\n  \"FromAirportId\": \"{{departureAirportId}}\",\n  \"ToAirportId\": \"{{arrivalAirportId}}\",\n  \"Price\": 20000\n}",
+					"raw": "{\n  \"Id\": \"{{createdFlightId}}\",\n  \"FlightNumber\": \"SU200\",\n  \"FlightUid\": \"b245f6a4-0e0d-43a2-a02f-0bc8cdcdd2bc\",\n  \"DateTime\": \"2035-12-31T10:00:00Z\",\n  \"FromAirportId\": \"{{departureAirportId}}\",\n  \"ToAirportId\": \"{{arrivalAirportId}}\",\n  \"Price\": 20000\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -484,7 +484,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"Id\": 99999,\n  \"FlightNumber\": \"NOTFOUND\",\n  \"FlightUid\": \"{{$guid}}\",\n  \"DateTime\": \"2026-12-16T10:00:00Z\",\n  \"FromAirportId\": 1,\n  \"ToAirportId\": 2,\n  \"Price\": 20000\n}",
+					"raw": "{\n  \"Id\": 99999,\n  \"FlightNumber\": \"NOTFOUND\",\n  \"FlightUid\": \"{{$guid}}\",\n  \"DateTime\": \"2035-12-31T10:00:00Z\",\n  \"FromAirportId\": 1,\n  \"ToAirportId\": 2,\n  \"Price\": 20000\n}",
 					"options": {
 						"raw": {
 							"language": "json"
