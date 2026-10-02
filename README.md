@@ -1,4 +1,4 @@
-# Лабораторная работа #4
+# РСОИ ЛР4 — Распределённая система на Kubernetes
 
 ## Deploy to Cloud (Managed Kubernetes + Helm)
 
@@ -6,6 +6,8 @@
 (Gateway / Flight / Ticket / Bonus) + единый PostgreSQL instance с тремя виртуальными БД
 (`flight`, `ticket`, `bonus`). Образы публикуются в Docker Hub, манифесты описаны
 Helm-чартом, наружу публикуется только Gateway через Ingress.
+
+**Seed данных**: `deploy/k8s/postgres/seed.sql` — единый источник истины, безопасен для запуска на любой БД.
 
 ### Архитектура
 
@@ -38,6 +40,20 @@ Helm-чартом, наружу публикуется только Gateway че
 Namespace: `test`
 Имена Deployment: `gateway`, `flight`, `ticket`, `bonus`
 Порты приложений: Gateway 8080, Flight 8060, Ticket 8070, Bonus 8050
+
+### Публикация наружу (Ingress)
+
+Наружу публикуется **только Gateway** — через ingress-nginx. Остальные сервисы
+(flight, ticket, bonus) — ClusterIP и доступны лишь внутри кластера.
+
+- Ingress-контроллер установлен в namespace `ingress-nginx` (helm-релиз `ingress-nginx`).
+- В managed-кластере нет cloud-controller-manager → LoadBalancer висит в `<pending>`,
+  поэтому фактический адрес — **NodePort ноды**.
+- Публичный адрес Gateway: `http://<EXTERNAL-IP-worker-node>:<nodePort>`
+  (пример: `http://85.117.235.174:30950`).
+- NodePort определяется динамически: `kubectl -n ingress-nginx get svc ingress-nginx-controller -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}'`.
+- Ingress-ресурс создаётся Helm-чартом только для Gateway (`ingress.enabled: true` в `deploy/values/gateway.yaml`).
+- В CI/CD (autograding + fault-tolerance) Ingress-адрес резолвится автоматически и передаётся в Postman.
 
 ### Структура
 
