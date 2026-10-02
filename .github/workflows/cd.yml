@@ -377,11 +377,19 @@ jobs:
           echo "🔌 Port-forwarding Gateway service..."
           kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
           PORT_FWD_PID=$!
-          sleep 5
+
+          # Wait for port-forward to be ready
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/manage/health >/dev/null 2>&1; then
+              echo "✅ Port-forward ready"; break
+            fi
+            echo "  Waiting for port-forward... ($i/30)"
+            sleep 2
+          done
 
           echo "🧪 Running autograding Postman tests..."
           mkdir -p postman/test-results
-          docker run --rm \
+          docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
             run /etc/newman/collection.json \
@@ -467,11 +475,19 @@ jobs:
           echo "🔌 Port-forwarding Gateway service..."
           kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
           PORT_FWD_PID=$!
-          sleep 5
+
+          # Wait for port-forward to be ready
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8080/manage/health >/dev/null 2>&1; then
+              echo "✅ Port-forward ready"; break
+            fi
+            echo "  Waiting for port-forward... ($i/30)"
+            sleep 2
+          done
 
           echo "🧪 Running success folder (baseline)..."
           mkdir -p postman/test-results
-          docker run --rm \
+          docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
@@ -485,7 +501,7 @@ jobs:
           echo "🧪 Running step1 (Bonus stopped)..."
           kubectl scale -n "$NS" deployment/bonus --replicas=0
           sleep 5
-          docker run --rm \
+          docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
@@ -499,7 +515,7 @@ jobs:
           echo "🧪 Running step2 (Bonus started)..."
           kubectl scale -n "$NS" deployment/bonus --replicas=1
           sleep 10
-          docker run --rm \
+          docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             -v $(pwd)/postman:/etc/newman-host \
             postman-newman-instructor:e2e \
@@ -515,7 +531,7 @@ jobs:
           echo "🧪 Running step3 (Bonus stopped again)..."
           kubectl scale -n "$NS" deployment/bonus --replicas=0
           sleep 5
-          docker run --rm \
+          docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             -v $(pwd)/postman:/etc/newman-host \
             postman-newman-instructor:e2e \
@@ -530,7 +546,7 @@ jobs:
           echo "🧪 Running step4 (Bonus started again)..."
           kubectl scale -n "$NS" deployment/bonus --replicas=1
           sleep 10
-          docker run --rm \
+          docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             -v $(pwd)/postman:/etc/newman-host \
             postman-newman-instructor:e2e \
