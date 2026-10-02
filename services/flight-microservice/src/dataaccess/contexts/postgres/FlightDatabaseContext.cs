@@ -145,11 +145,7 @@ public class FlightDatabaseContext : DbContext, IDatabaseContext
         if (!optionsBuilder.IsConfigured)
         {
             var connectionString = GetConnectionStringFromEnvironment();
-            optionsBuilder
-                .UseNpgsql(connectionString)
-                .ConfigureWarnings(w => w.Ignore(
-                    Microsoft.EntityFrameworkCore.Diagnostics
-                        .RelationalEventId.PendingModelChangesWarning));
+            optionsBuilder.UseNpgsql(connectionString);
         }
     }
 

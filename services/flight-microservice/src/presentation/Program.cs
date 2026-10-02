@@ -140,7 +140,11 @@ static FlightDatabaseContext CreatePostgreSQLContext(PostgreSQLSettings pgSettin
         : $"Host={pgSettings.Host};Port={pgSettings.Port};Database={pgSettings.Database};Username={pgSettings.User};Password={pgSettings.Password}";
 
     var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<FlightDatabaseContext>();
-    optionsBuilder.UseNpgsql(connectionString);
+    optionsBuilder
+        .UseNpgsql(connectionString)
+        .ConfigureWarnings(w => w.Ignore(
+            Microsoft.EntityFrameworkCore.Diagnostics
+                .RelationalEventId.PendingModelChangesWarning));
 
     return new FlightDatabaseContext(optionsBuilder.Options);
 }

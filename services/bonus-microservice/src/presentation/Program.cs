@@ -140,7 +140,11 @@ static BonusDatabaseContext CreatePostgreSQLContext(PostgreSQLSettings pgSetting
         : $"Host={pgSettings.Host};Port={pgSettings.Port};Database={pgSettings.Database};Username={pgSettings.User};Password={pgSettings.Password}";
 
     var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<BonusDatabaseContext>();
-    optionsBuilder.UseNpgsql(connectionString);
+    optionsBuilder
+        .UseNpgsql(connectionString)
+        .ConfigureWarnings(w => w.Ignore(
+            Microsoft.EntityFrameworkCore.Diagnostics
+                .RelationalEventId.PendingModelChangesWarning));
 
     return new BonusDatabaseContext(optionsBuilder.Options);
 }
