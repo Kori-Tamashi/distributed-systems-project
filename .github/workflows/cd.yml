@@ -7,7 +7,9 @@
 name: CD - Build Push Deploy
 
 on:
-  push:
+  workflow_run:
+    workflows: ["CI - Build and Test All Microservices"]
+    types: [completed]
     branches: [main, lab_04]
   workflow_dispatch:
 
@@ -23,7 +25,7 @@ jobs:
   docker-build-and-push:
     name: Build and Push ${{ matrix.service }}
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:
@@ -37,7 +39,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -89,7 +91,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Setup kubeconfig
         run: |
@@ -190,7 +192,7 @@ jobs:
         run: |
           echo "🚀 Deploying Gateway..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.sha }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install gateway deploy/helm/microservice \
             -f deploy/values/gateway.yaml \
             --namespace "$NS" \
@@ -203,7 +205,7 @@ jobs:
         run: |
           echo "🚀 Deploying Flight..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.sha }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install flight deploy/helm/microservice \
             -f deploy/values/flight.yaml \
             --namespace "$NS" \
@@ -216,7 +218,7 @@ jobs:
         run: |
           echo "🚀 Deploying Ticket..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.sha }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install ticket deploy/helm/microservice \
             -f deploy/values/ticket.yaml \
             --namespace "$NS" \
@@ -229,7 +231,7 @@ jobs:
         run: |
           echo "🚀 Deploying Bonus..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.sha }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install bonus deploy/helm/microservice \
             -f deploy/values/bonus.yaml \
             --namespace "$NS" \
