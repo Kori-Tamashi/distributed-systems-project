@@ -256,38 +256,27 @@ jobs:
           done
           echo "✅ All deployments ready"
 
-      - name: Seed flight database
+      - name: Seed databases
         run: |
+          set -e
           NS="${{ env.KUBE_NAMESPACE }}"
+          echo "🌱 Applying seed.sql..."
+
+          # Copy seed.sql to postgres pod
+          kubectl cp -n "$NS" \
+            deploy/k8s/postgres/seed.sql postgres-0:/tmp/seed.sql
+
           echo "🌱 Seeding flight DB..."
           kubectl exec -i -n "$NS" postgres-0 -- \
             env PGPASSWORD=postgres-admin-password \
-            psql -U postgres -d flight <<'SQL'
-          INSERT INTO airports (id, name, city, country) VALUES
-            (1, 'Шереметьево', 'Москва', 'Россия'),
-            (2, 'Пулково', 'Санкт-Петербург', 'Россия')
-          ON CONFLICT (id) DO NOTHING;
+            psql -U postgres -d flight -f /tmp/seed.sql
 
-          INSERT INTO flights (id, flight_uid, flight_number, datetime,
-              from_airport_id, to_airport_id, price) VALUES
-            (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031',
-              '2021-10-08 20:00', 2, 1, 1500)
-          ON CONFLICT (id) DO NOTHING;
-          SQL
-          echo "✅ Flight DB seeded"
-
-      - name: Seed bonus database
-        run: |
-          NS="${{ env.KUBE_NAMESPACE }}"
           echo "🌱 Seeding bonus DB..."
           kubectl exec -i -n "$NS" postgres-0 -- \
             env PGPASSWORD=postgres-admin-password \
-            psql -U postgres -d bonus <<'SQL'
-          INSERT INTO privilege (id, username, status, balance) VALUES
-            (1, 'Test User', 0, 0)
-          ON CONFLICT (username) DO NOTHING;
-          SQL
-          echo "✅ Bonus DB seeded"
+            psql -U postgres -d bonus -f /tmp/seed.sql
+
+          echo "✅ Databases seeded"
 
       - name: Verify deployments
         run: |
@@ -400,7 +389,15 @@ jobs:
             fi
           done
 
-          # Проверяем какие таблицы РЕАЛЬНО существуют в БД
+          echo "=== Ingress controller svc ==="
+          kubectl -n ingress-nginx get svc ingress-nginx-controller || true
+          echo ""
+          echo "=== Ingress in namespace ==="
+          kubectl -n "$NS" get ingress -o wide 2>&1 || true
+          echo ""
+          kubectl -n "$NS" describe ingress gateway 2>&1 | head -30 || true
+          echo ""
+          echo "=== List all databases ==="
           PG=$(kubectl get pod -n "$NS" -l app=postgres -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
           if [ -n "$PG" ]; then
             echo ""
@@ -433,26 +430,42 @@ jobs:
             kubectl exec -n "$NS" "$PG" -- psql -U postgres -c '\l' 2>&1 || true
           fi
 
-      - name: Run autograding tests via port-forward
+      - name: Resolve Ingress address
+        id: ingress
         run: |
           set -e
-          NS="${{ env.KUBE_NAMESPACE }}"
           export KUBECONFIG=$HOME/.kube/config
+          echo "🌐 Resolving Ingress address..."
+          LB_IP=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
+            -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
 
-          echo "🔌 Port-forwarding Gateway service..."
-          kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
-          PORT_FWD_PID=$!
-
-          # Wait for port-forward to be ready
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/manage/health >/dev/null 2>&1 \
-              ; then
-              echo "✅ Port-forward ready"; break
+          if [ -n "$LB_IP" ]; then
+            BASE_URL="http://${LB_IP}"
+          else
+            NODE_IP=$(kubectl get nodes \
+              -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+            NODE_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
+              -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+            if [ -z "$NODE_IP" ] || [ -z "$NODE_PORT" ]; then
+              echo "❌ Could not resolve Ingress"; exit 1
             fi
-            echo "  Waiting for port-forward... ($i/30)"
+            BASE_URL="http://${NODE_IP}:${NODE_PORT}"
+          fi
+
+          echo "✅ baseUrl = ${BASE_URL}"
+          echo "base_url=${BASE_URL}" >> $GITHUB_OUTPUT
+
+          for i in $(seq 1 30); do
+            if curl -sf "${BASE_URL}/manage/health" >/dev/null 2>&1; then
+              echo "✅ Ingress routes to gateway"; break
+            fi
+            echo "  Waiting for Ingress to route to gateway... ($i/30)"
             sleep 2
           done
 
+      - name: Run autograding tests via Ingress
+        run: |
+          set -e
           echo "🧪 Running autograding Postman tests..."
           mkdir -p postman/test-results
           docker run --rm --network=host \
@@ -460,7 +473,7 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "baseUrl=${{ steps.ingress.outputs.base_url }}" \
               --env-var "username=Test User" \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/results.xml
@@ -483,13 +496,6 @@ jobs:
           name: Autograding - Instructor Tests (Postman)
           path: postman/test-results/results.xml
           reporter: java-junit
-
-      - name: Cleanup port-forward
-        if: always()
-        run: |
-          echo "🧹 Cleaning up port-forward..."
-          kill $PORT_FWD_PID 2>/dev/null || true
-          echo "✅ Cleanup complete"
 
   # ===========================================
   # Fault Tolerance Tests
@@ -532,23 +538,43 @@ jobs:
           export KUBECONFIG=$HOME/.kube/config
           echo "✅ kubectl configured"
 
-      - name: Run fault-tolerance tests via port-forward
+      - name: Resolve Ingress address
+        id: ingress
+        run: |
+          set -e
+          export KUBECONFIG=$HOME/.kube/config
+          echo "🌐 Resolving Ingress address..."
+          LB_IP=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
+            -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
+
+          if [ -n "$LB_IP" ]; then
+            BASE_URL="http://${LB_IP}"
+          else
+            NODE_IP=$(kubectl get nodes \
+              -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+            NODE_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
+              -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+            if [ -z "$NODE_IP" ] || [ -z "$NODE_PORT" ]; then
+              echo "❌ Could not resolve Ingress"; exit 1
+            fi
+            BASE_URL="http://${NODE_IP}:${NODE_PORT}"
+          fi
+
+          echo "✅ baseUrl = ${BASE_URL}"
+          echo "base_url=${BASE_URL}" >> $GITHUB_OUTPUT
+
+      - name: Run fault-tolerance tests via Ingress
         run: |
           set -e
           NS="${{ env.KUBE_NAMESPACE }}"
           export KUBECONFIG=$HOME/.kube/config
+          BASE_URL="${{ steps.ingress.outputs.base_url }}"
 
-          echo "🔌 Port-forwarding Gateway service..."
-          kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
-          PORT_FWD_PID=$!
-
-          # Wait for port-forward to be ready
           for i in $(seq 1 30); do
-            if curl -sf http://localhost:8080/manage/health >/dev/null 2>&1 \
-              ; then
-              echo "✅ Port-forward ready"; break
+            if curl -sf "${BASE_URL}/manage/health" >/dev/null 2>&1; then
+              echo "✅ Ingress routes to gateway"; break
             fi
-            echo "  Waiting for port-forward... ($i/30)"
+            echo "  Waiting for Ingress... ($i/30)"
             sleep 2
           done
 
@@ -559,7 +585,7 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "baseUrl=${BASE_URL}" \
               --env-var "username=Test User" \
               --folder success \
               --reporters cli,junit \
@@ -573,7 +599,7 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "baseUrl=${BASE_URL}" \
               --env-var "username=Test User" \
               --folder step1 \
               --reporters cli,junit \
@@ -589,7 +615,7 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "baseUrl=${BASE_URL}" \
               --env-var "username=Test User" \
               --folder step2 \
               --export-environment /etc/newman-host/env-after-step2.json \
@@ -605,7 +631,7 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman-host/env-after-step2.json \
-              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "baseUrl=${BASE_URL}" \
               --env-var "username=Test User" \
               --folder step3 \
               --reporters cli,junit \
@@ -621,7 +647,7 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman-host/env-after-step2.json \
-              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "baseUrl=${BASE_URL}" \
               --env-var "username=Test User" \
               --folder step4 \
               --reporters cli,junit \
@@ -645,10 +671,3 @@ jobs:
           name: Fault Tolerance - Bonus Service Failover (Postman)
           path: postman/test-results/step*.xml
           reporter: java-junit
-
-      - name: Cleanup port-forward
-        if: always()
-        run: |
-          echo "🧹 Cleaning up port-forward..."
-          kill $PORT_FWD_PID 2>/dev/null || true
-          echo "✅ Cleanup complete"
