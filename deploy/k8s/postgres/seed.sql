@@ -6,7 +6,7 @@ VALUES (1, 'Шереметьево', 'Москва', 'Россия'),
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO flights (id, flight_uid, flight_number, datetime, from_airport_id, to_airport_id, price)
-VALUES (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031', '2021-10-08 20:00', 1, 2, 1500)
+VALUES (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031', '2021-10-08 20:00', 2, 1, 1500)
 ON CONFLICT (id) DO NOTHING;
 
 -- privilege для пользователя Test User (создаётся Bonus Service)
