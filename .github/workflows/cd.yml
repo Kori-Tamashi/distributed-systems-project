@@ -7,10 +7,7 @@
 name: CD - Build Push Deploy
 
 on:
-  workflow_run:
-    workflows: ["CI - Build and Test All Microservices"]
-    types:
-      - completed
+  push:
     branches: [main, lab_04]
   workflow_dispatch:
 
@@ -26,8 +23,7 @@ jobs:
   docker-build-and-push:
     name: Build and Push ${{ matrix.service }}
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' ||
-      github.event_name == 'workflow_dispatch' }}
+    if: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
     strategy:
       fail-fast: false
       matrix:
@@ -41,7 +37,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          ref: ${{ github.sha }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -93,7 +89,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+          ref: ${{ github.sha }}
 
       - name: Setup kubeconfig
         run: |
@@ -194,7 +190,7 @@ jobs:
         run: |
           echo "🚀 Deploying Gateway..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHA="${{ github.sha }}"
           helm upgrade --install gateway deploy/helm/microservice \
             -f deploy/values/gateway.yaml \
             --namespace "$NS" \
@@ -207,7 +203,7 @@ jobs:
         run: |
           echo "🚀 Deploying Flight..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHA="${{ github.sha }}"
           helm upgrade --install flight deploy/helm/microservice \
             -f deploy/values/flight.yaml \
             --namespace "$NS" \
@@ -220,7 +216,7 @@ jobs:
         run: |
           echo "🚀 Deploying Ticket..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHA="${{ github.sha }}"
           helm upgrade --install ticket deploy/helm/microservice \
             -f deploy/values/ticket.yaml \
             --namespace "$NS" \
@@ -233,7 +229,7 @@ jobs:
         run: |
           echo "🚀 Deploying Bonus..."
           NS="${{ env.KUBE_NAMESPACE }}"
-          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
+          SHA="${{ github.sha }}"
           helm upgrade --install bonus deploy/helm/microservice \
             -f deploy/values/bonus.yaml \
             --namespace "$NS" \
@@ -391,17 +387,38 @@ jobs:
             echo "pod=$p image=$img"
           done
 
-          echo ""
-          echo "=== Flight logs (tail 30) ==="
-          kubectl logs -n "$NS" -l app.kubernetes.io/name=flight --tail=30 || true
+          # СТАРТОВЫЕ логи (с момента запуска pod'а)
+          for svc in flight bonus gateway ticket; do
+            POD=$(kubectl get pod -n "$NS" -l app.kubernetes.io/name=$svc -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+            if [ -n "$POD" ]; then
+              echo ""
+              echo "=== $svc STARTUP logs (first 200 lines from last 20m) ==="
+              kubectl logs -n "$NS" "$POD" --since=20m 2>&1 | head -200 || true
+              echo ""
+              echo "=== $svc logs grep migrations/warnings ==="
+              kubectl logs -n "$NS" "$POD" --since=20m 2>&1 | grep -iE "migration|warning|could not|exception|applied|ensure" | head -30 || true
+            fi
+          done
 
-          echo ""
-          echo "=== Bonus logs (tail 30) ==="
-          kubectl logs -n "$NS" -l app.kubernetes.io/name=bonus --tail=30 || true
-
-          echo ""
-          echo "=== Gateway logs (tail 30) ==="
-          kubectl logs -n "$NS" -l app.kubernetes.io/name=gateway --tail=30 || true
+          # Проверяем какие таблицы РЕАЛЬНО существуют в БД
+          PG=$(kubectl get pod -n "$NS" -l app=postgres -o jsonpath='{.items[0].metadata.name}' 2>/dev/null)
+          if [ -n "$PG" ]; then
+            echo ""
+            echo "=== Bonus DB tables ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U bonus -d bonus -c '\dt' 2>&1 || true
+            echo ""
+            echo "=== Bonus DB __EFMigrationsHistory ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U bonus -d bonus -c 'SELECT * FROM "__EFMigrationsHistory";' 2>&1 || true
+            echo ""
+            echo "=== Flight DB tables ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c '\dt' 2>&1 || true
+            echo ""
+            echo "=== Flight DB __EFMigrationsHistory ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c 'SELECT * FROM "__EFMigrationsHistory";' 2>&1 || true
+            echo ""
+            echo "=== List all databases ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U postgres -c '\l' 2>&1 || true
+          fi
 
       - name: Run autograding tests via port-forward
         run: |
