@@ -12,7 +12,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/manage/manage/health",
+          "raw": "{{baseUrl}}/manage/health",
           "host": [
             "{{baseUrl}}"
           ],
@@ -51,14 +51,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege",
+          "raw": "{{baseUrl}}/api/v1/privileges",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege"
+            "privileges"
           ]
         }
       },
@@ -120,7 +120,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"Username\": \"testuser\",\n  \"Status\": 0,\n  \"Balance\": 100\n}",
+          "raw": "{\n  \"username\": \"testuser\",\n  \"status\": 0,\n  \"balance\": 100\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -128,14 +128,14 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege",
+          "raw": "{{baseUrl}}/api/v1/privileges",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege"
+            "privileges"
           ]
         }
       }
@@ -156,7 +156,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"Username\": \"\",\n  \"Status\": 0,\n  \"Balance\": 100\n}",
+          "raw": "{\n  \"username\": \"\",\n  \"status\": 0,\n  \"balance\": 100\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -164,14 +164,14 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege",
+          "raw": "{{baseUrl}}/api/v1/privileges",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege"
+            "privileges"
           ]
         }
       },
@@ -209,7 +209,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"Username\": \"negativeuser\",\n  \"Status\": 0,\n  \"Balance\": -50\n}",
+          "raw": "{\n  \"username\": \"negativeuser\",\n  \"status\": 0,\n  \"balance\": -50\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -217,14 +217,14 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege",
+          "raw": "{{baseUrl}}/api/v1/privileges",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege"
+            "privileges"
           ]
         }
       },
@@ -257,14 +257,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/{{createdPrivilegeId}}",
+          "raw": "{{baseUrl}}/api/v1/privileges/{{createdPrivilegeId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "{{createdPrivilegeId}}"
           ]
         }
@@ -300,14 +300,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/-1",
+          "raw": "{{baseUrl}}/api/v1/privileges/-1",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "-1"
           ]
         }
@@ -337,14 +337,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/99999",
+          "raw": "{{baseUrl}}/api/v1/privileges/99999",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "99999"
           ]
         }
@@ -398,7 +398,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"Id\": {{createdPrivilegeId}},\n  \"Username\": \"updateduser\",\n  \"Status\": 1,\n  \"Balance\": 200\n}",
+          "raw": "{\n  \"id\": {{createdPrivilegeId}},\n  \"username\": \"updateduser\",\n  \"status\": 1,\n  \"balance\": 200\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -406,14 +406,14 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/{{createdPrivilegeId}}",
+          "raw": "{{baseUrl}}/api/v1/privileges/{{createdPrivilegeId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "{{createdPrivilegeId}}"
           ]
         }
@@ -435,7 +435,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"Id\": 99999,\n  \"Username\": \"Not Found\",\n  \"Status\": 0,\n  \"Balance\": 0\n}",
+          "raw": "{\n  \"id\": 99999,\n  \"username\": \"Not Found\",\n  \"status\": 0,\n  \"balance\": 0\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -443,14 +443,14 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/99999",
+          "raw": "{{baseUrl}}/api/v1/privileges/99999",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "99999"
           ]
         }
@@ -480,14 +480,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege",
+          "raw": "{{baseUrl}}/api/v1/privileges",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege"
+            "privileges"
           ]
         }
       },
@@ -534,14 +534,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/{{createdPrivilegeId}}",
+          "raw": "{{baseUrl}}/api/v1/privileges/{{createdPrivilegeId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "{{createdPrivilegeId}}"
           ]
         }
@@ -558,14 +558,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/{{createdPrivilegeId}}",
+          "raw": "{{baseUrl}}/api/v1/privileges/{{createdPrivilegeId}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "{{createdPrivilegeId}}"
           ]
         }
@@ -595,14 +595,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/-1",
+          "raw": "{{baseUrl}}/api/v1/privileges/-1",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "-1"
           ]
         }
@@ -632,14 +632,14 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/privilege/99999",
+          "raw": "{{baseUrl}}/api/v1/privileges/99999",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
             "v1",
-            "privilege",
+            "privileges",
             "99999"
           ]
         }
