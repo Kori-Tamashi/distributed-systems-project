@@ -68,8 +68,15 @@ app.MapHealthChecks("/manage/health");
 app.UseAuthorization();
 app.MapControllers();
 
-// Apply database migrations
-await ApplyMigrationsAsync(databaseContext);
+// Apply database migrations (Production/Staging) or EnsureCreated (Development/Test)
+if (app.Environment.IsProduction() || app.Environment.IsStaging())
+{
+    await ApplyMigrationsAsync(databaseContext);
+}
+else
+{
+    await EnsureDatabaseCreatedAsync(databaseContext);
+}
 
 app.Run();
 
@@ -185,7 +192,7 @@ static IAirportRepository CreatePostgreSQLAirportRepository(FlightDatabaseContex
 }
 
 /// <summary>
-/// Applies database migrations on application startup
+/// Applies database migrations on application startup (Production/Staging only)
 /// </summary>
 static async Task ApplyMigrationsAsync(FlightDatabaseContext context)
 {
@@ -197,6 +204,22 @@ static async Task ApplyMigrationsAsync(FlightDatabaseContext context)
     catch (Exception ex)
     {
         Console.WriteLine($"Warning: Could not apply migrations: {ex.Message}");
+    }
+}
+
+/// <summary>
+/// Ensures database is created on application startup (Development/Test only)
+/// </summary>
+static async Task EnsureDatabaseCreatedAsync(FlightDatabaseContext context)
+{
+    try
+    {
+        await context.EnsureDatabaseCreatedAsync();
+        Console.WriteLine("Database created successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Warning: Could not create database: {ex.Message}");
     }
 }
 
