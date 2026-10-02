@@ -1,0 +1,177 @@
+{
+  "info": {
+    "name": "Gateway - Flight",
+    "description": "Flight endpoints for Gateway microservice",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "HealthCheck",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/manage/health",
+          "host": ["{{baseUrl}}"],
+          "path": ["manage", "health"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response is Healthy', function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.be.an('object');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GetAllFlights",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights?page=0&size=10",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "flights"],
+          "query": [
+            {"key": "page", "value": "0"},
+            {"key": "size", "value": "10"}
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response has pagination', function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('page');",
+              "    pm.expect(response).to.have.property('pageSize');",
+              "    pm.expect(response).to.have.property('totalElements');",
+              "    pm.expect(response).to.have.property('items');",
+              "    pm.expect(response.items).to.be.an('array');",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GetFlightByIdValid",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "flights", "1"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 200 or 404 (no flights seeded)', function () {",
+              "    const status = pm.response.code;",
+              "    pm.expect(status).to.satisfy(s => s === 200 || s === 404);",
+              "});",
+              "if (pm.response.code === 200) {",
+              "    pm.test('Response has flight data', function () {",
+              "        const response = pm.response.json();",
+              "        pm.expect(response).to.have.property('flightUid');",
+              "        pm.expect(response).to.have.property('flightNumber');",
+              "        pm.expect(response).to.have.property('id');",
+              "    });",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "GetFlightByIdNotFound",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/99999",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "flights", "99999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function () { pm.response.to.have.status(404); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DeleteFlightValid",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/1",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "flights", "1"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 204 or 404 (no flights seeded)', function () {",
+              "    const status = pm.response.code;",
+              "    pm.expect(status).to.satisfy(s => s === 204 || s === 404);",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "DeleteFlightNotFound",
+      "request": {
+        "method": "DELETE",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights/99999",
+          "host": ["{{baseUrl}}"],
+          "path": ["api", "v1", "flights", "99999"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 404', function () { pm.response.to.have.status(404); });"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}

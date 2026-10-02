@@ -1,0 +1,17 @@
+$kind: http-request
+order: 200
+method: GET
+url: '{{baseUrl}}/api/v1/flights?page=0&size=10'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });
+      pm.test('Response has pagination', function () {
+        const response = pm.response.json();
+        pm.expect(response).to.have.property('page');
+        pm.expect(response).to.have.property('pageSize');
+        pm.expect(response).to.have.property('totalElements');
+        pm.expect(response).to.have.property('items');
+        pm.expect(response.items).to.be.an('array');
+      });

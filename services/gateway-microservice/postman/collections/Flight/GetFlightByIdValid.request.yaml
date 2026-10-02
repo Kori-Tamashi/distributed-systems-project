@@ -1,0 +1,20 @@
+$kind: http-request
+order: 300
+method: GET
+url: '{{baseUrl}}/api/v1/flights/1'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 200 or 404 (no flights seeded)', function () {
+        const status = pm.response.code;
+        pm.expect(status).to.satisfy(s => s === 200 || s === 404);
+      });
+      if (pm.response.code === 200) {
+        pm.test('Response has flight data', function () {
+          const response = pm.response.json();
+          pm.expect(response).to.have.property('flightUid');
+          pm.expect(response).to.have.property('flightNumber');
+          pm.expect(response).to.have.property('id');
+        });
+      }

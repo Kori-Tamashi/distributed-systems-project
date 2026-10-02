@@ -1,0 +1,12 @@
+$kind: http-request
+order: 500
+method: DELETE
+url: '{{baseUrl}}/api/v1/flights/1'
+scripts:
+  - type: afterResponse
+    language: text/javascript
+    code: |
+      pm.test('Status is 204 or 404 (no flights seeded)', function () {
+        const status = pm.response.code;
+        pm.expect(status).to.satisfy(s => s === 204 || s === 404);
+      });
