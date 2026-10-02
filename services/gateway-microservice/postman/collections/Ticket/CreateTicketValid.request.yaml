@@ -11,15 +11,13 @@ body:
   type: json
   content: |-
     {
-      "ticketUid": "550e8400-e29b-41d4-a716-446655440000",
-      "username": "Test User",
       "flightNumber": "AFL031",
       "price": 1500,
-      "status": 0
+      "paidFromBalance": false
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |
-      pm.test('Status is 201', function () { pm.response.to.have.status(201); });
-      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('id'); });
+      pm.test('Status is 200', function () { pm.response.to.have.status(200); });
+      pm.test('Has ticketUid', function () { pm.expect(pm.response.json()).to.have.property('ticketUid'); });
