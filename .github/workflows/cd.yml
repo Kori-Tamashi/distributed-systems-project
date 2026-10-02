@@ -581,7 +581,8 @@ jobs:
 
           echo "🧪 Running step2 (Bonus started)..."
           kubectl scale -n "$NS" deployment/bonus --replicas=1
-          sleep 10
+          echo "⏳ Waiting for bonus to be ready (max 120s)..."
+          kubectl rollout status deployment/bonus -n "$NS" --timeout=120s
           docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             -v $(pwd)/postman:/etc/newman-host \
@@ -612,7 +613,8 @@ jobs:
 
           echo "🧪 Running step4 (Bonus started again)..."
           kubectl scale -n "$NS" deployment/bonus --replicas=1
-          sleep 10
+          echo "⏳ Waiting for bonus to be ready (max 120s)..."
+          kubectl rollout status deployment/bonus -n "$NS" --timeout=120s
           docker run --rm --network=host \
             -v $(pwd)/postman/test-results:/etc/newman/results \
             -v $(pwd)/postman:/etc/newman-host \
