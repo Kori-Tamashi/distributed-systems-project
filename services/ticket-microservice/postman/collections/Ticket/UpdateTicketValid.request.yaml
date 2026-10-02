@@ -3,6 +3,8 @@ order: 900
 method: PUT
 url: '{{baseUrl}}/api/v1/tickets/1'
 headers:
+  - key: X-User-Name
+    value: Test User
   - key: Content-Type
     value: application/json
 body:

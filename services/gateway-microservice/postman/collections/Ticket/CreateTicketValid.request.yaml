@@ -3,6 +3,8 @@ order: 300
 method: POST
 url: '{{baseUrl}}/api/v1/tickets'
 headers:
+  - key: X-User-Name
+    value: Test User
   - key: Content-Type
     value: application/json
 body:

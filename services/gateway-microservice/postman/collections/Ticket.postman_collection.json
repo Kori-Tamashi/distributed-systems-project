@@ -37,7 +37,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets",
           "host": [
@@ -70,7 +75,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets",
           "host": [
@@ -210,6 +220,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
           }
         ],
         "body": {
@@ -252,7 +266,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketIntId}}",
           "host": [
@@ -285,7 +304,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets/99999",
           "host": [
@@ -323,7 +347,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets",
           "host": [
@@ -363,6 +392,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
           }
         ],
         "body": {
@@ -405,6 +438,10 @@
           {
             "key": "Content-Type",
             "value": "application/json"
+          },
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
           }
         ],
         "body": {
@@ -443,7 +480,12 @@
       ],
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketIntId}}",
           "host": [
@@ -476,7 +518,12 @@
       ],
       "request": {
         "method": "GET",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets/{{createdTicketIntId}}",
           "host": [
@@ -509,7 +556,12 @@
       ],
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets/invalid-uuid",
           "host": [
@@ -542,7 +594,12 @@
       ],
       "request": {
         "method": "DELETE",
-        "header": [],
+        "header": [
+          {
+            "key": "X-User-Name",
+            "value": "Test User"
+          }
+        ],
         "url": {
           "raw": "{{baseUrl}}/api/v1/tickets/99999",
           "host": [

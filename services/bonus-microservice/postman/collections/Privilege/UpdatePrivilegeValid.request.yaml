@@ -1,8 +1,10 @@
 $kind: http-request
 order: 900
 method: PUT
-url: '{{baseUrl}}/api/v1/privileges/3'
+url: '{{baseUrl}}/api/v1/privilege/3'
 headers:
+  - key: X-User-Name
+    value: Test User
   - key: Content-Type
     value: application/json
 body:

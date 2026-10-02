@@ -2,6 +2,10 @@ $kind: http-request
 order: 800
 method: GET
 url: '{{baseUrl}}/api/v1/tickets/99999'
+headers:
+  - key: X-User-Name
+    value: Test User
+
 scripts:
   - type: afterResponse
     language: text/javascript
