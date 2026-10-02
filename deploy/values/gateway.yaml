@@ -3,7 +3,7 @@ replicaCount: 1
 fullnameOverride: gateway
 
 image:
-  repository: "${{ env.DOCKER_USERNAME }}/gateway-microservice"
+  repository: ""
   tag: "latest"
   pullPolicy: IfNotPresent
 

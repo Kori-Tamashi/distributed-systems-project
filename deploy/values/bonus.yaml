@@ -3,7 +3,7 @@ replicaCount: 1
 fullnameOverride: bonus
 
 image:
-  repository: "${{ env.DOCKER_USERNAME }}/bonus-microservice"
+  repository: ""
   tag: "latest"
   pullPolicy: IfNotPresent
 

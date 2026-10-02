@@ -264,9 +264,9 @@ jobs:
             (2, 'Пулково', 'Санкт-Петербург', 'Россия')
           ON CONFLICT (id) DO NOTHING;
 
-          INSERT INTO flights (id, flight_uid, flight_number, datetime, \
+          INSERT INTO flights (id, flight_uid, flight_number, datetime,
               from_airport_id, to_airport_id, price) VALUES
-            (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031', \
+            (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031',
               '2021-10-08 20:00', 1, 2, 1500)
           ON CONFLICT (id) DO NOTHING;
           SQL
@@ -326,3 +326,232 @@ jobs:
           echo "  kubectl get pods -n ${{ env.KUBE_NAMESPACE }}"
           echo "  kubectl logs -f deployment/gateway"
           echo "    -n ${{ env.KUBE_NAMESPACE }}"
+
+  # ===========================================
+  # Autograding Tests
+  # ===========================================
+  autograding:
+    name: Autograding - Instructor Tests
+    runs-on: ubuntu-latest
+    needs: deploy-k8s
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Build Postman Newman image for Instructor Tests
+        run: |
+          echo "Building Postman Newman image for Instructor Tests..."
+          docker build \
+            --tag postman-newman-instructor:e2e \
+            -f postman/Dockerfile \
+            postman/
+          echo "✅ Postman Newman image built: postman-newman-instructor:e2e"
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "Configuring kubectl..."
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/kubeconfig
+          export KUBECONFIG=$HOME/kubeconfig
+          kubectl config use-context ${{ secrets.KUBE_CONTEXT }} || true
+          echo "✅ kubectl configured"
+
+      - name: Run autograding tests via port-forward
+        run: |
+          set -e
+          NS="${{ env.KUBE_NAMESPACE }}"
+          export KUBECONFIG=$HOME/kubeconfig
+
+          echo "🔌 Port-forwarding Gateway service..."
+          kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
+          PORT_FWD_PID=$!
+          sleep 5
+
+          echo "🧪 Running autograding Postman tests..."
+          mkdir -p postman/test-results
+          docker run --rm \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            postman-newman-instructor:e2e \
+            run /etc/newman/collection.json \
+              -e /etc/newman/environment.json \
+              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "username=Test User" \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/results.xml
+
+          echo "✅ Autograding tests completed"
+
+      - name: Upload Autograding test results (JUnit)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: autograding-junit-results
+          path: postman/test-results/results.xml
+          retention-days: 7
+          if-no-files-found: error
+
+      - name: Publish Autograding test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Autograding - Instructor Tests (Postman)
+          path: postman/test-results/results.xml
+          reporter: java-junit
+
+      - name: Cleanup port-forward
+        if: always()
+        run: |
+          echo "🧹 Cleaning up port-forward..."
+          kill $PORT_FWD_PID 2>/dev/null || true
+          echo "✅ Cleanup complete"
+
+  # ===========================================
+  # Fault Tolerance Tests
+  # ===========================================
+  fault-tolerance:
+    name: Fault Tolerance - Bonus Service Failover
+    runs-on: ubuntu-latest
+    needs: autograding
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Build Postman Newman image for Instructor Tests
+        run: |
+          echo "Building Postman Newman image for Instructor Tests..."
+          docker build \
+            --tag postman-newman-instructor:e2e \
+            -f postman/Dockerfile \
+            postman/
+          echo "✅ Postman Newman image built: postman-newman-instructor:e2e"
+
+      - name: Install kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Configure kubectl
+        run: |
+          echo "Configuring kubectl..."
+          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/kubeconfig
+          export KUBECONFIG=$HOME/kubeconfig
+          kubectl config use-context ${{ secrets.KUBE_CONTEXT }} || true
+          echo "✅ kubectl configured"
+
+      - name: Run fault-tolerance tests via port-forward
+        run: |
+          set -e
+          NS="${{ env.KUBE_NAMESPACE }}"
+          export KUBECONFIG=$HOME/kubeconfig
+
+          echo "🔌 Port-forwarding Gateway service..."
+          kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
+          PORT_FWD_PID=$!
+          sleep 5
+
+          echo "🧪 Running success folder (baseline)..."
+          mkdir -p postman/test-results
+          docker run --rm \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            postman-newman-instructor:e2e \
+            run /etc/newman/fault-tolerance-collection.json \
+              -e /etc/newman/environment.json \
+              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "username=Test User" \
+              --folder success \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/success.xml
+
+          echo "🧪 Running step1 (Bonus stopped)..."
+          kubectl scale -n "$NS" deployment/bonus --replicas=0
+          sleep 5
+          docker run --rm \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            postman-newman-instructor:e2e \
+            run /etc/newman/fault-tolerance-collection.json \
+              -e /etc/newman/environment.json \
+              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "username=Test User" \
+              --folder step1 \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/step1.xml
+
+          echo "🧪 Running step2 (Bonus started)..."
+          kubectl scale -n "$NS" deployment/bonus --replicas=1
+          sleep 10
+          docker run --rm \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman:/etc/newman-host \
+            postman-newman-instructor:e2e \
+            run /etc/newman/fault-tolerance-collection.json \
+              -e /etc/newman/environment.json \
+              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "username=Test User" \
+              --folder step2 \
+              --export-environment /etc/newman-host/env-after-step2.json \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/step2.xml
+
+          echo "🧪 Running step3 (Bonus stopped again)..."
+          kubectl scale -n "$NS" deployment/bonus --replicas=0
+          sleep 5
+          docker run --rm \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman:/etc/newman-host \
+            postman-newman-instructor:e2e \
+            run /etc/newman/fault-tolerance-collection.json \
+              -e /etc/newman-host/env-after-step2.json \
+              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "username=Test User" \
+              --folder step3 \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/step3.xml
+
+          echo "🧪 Running step4 (Bonus started again)..."
+          kubectl scale -n "$NS" deployment/bonus --replicas=1
+          sleep 10
+          docker run --rm \
+            -v $(pwd)/postman/test-results:/etc/newman/results \
+            -v $(pwd)/postman:/etc/newman-host \
+            postman-newman-instructor:e2e \
+            run /etc/newman/fault-tolerance-collection.json \
+              -e /etc/newman-host/env-after-step2.json \
+              --env-var "baseUrl=http://localhost:8080" \
+              --env-var "username=Test User" \
+              --folder step4 \
+              --reporters cli,junit \
+              --reporter-junit-export /etc/newman/results/step4.xml
+
+          echo "✅ Fault-tolerance tests completed"
+
+      - name: Upload fault-tolerance test results (JUnit)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fault-tolerance-junit-results
+          path: postman/test-results/step*.xml
+          retention-days: 7
+          if-no-files-found: warn
+
+      - name: Publish fault-tolerance test results to GitHub
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Fault Tolerance - Bonus Service Failover (Postman)
+          path: postman/test-results/step*.xml
+          reporter: java-junit
+
+      - name: Cleanup port-forward
+        if: always()
+        run: |
+          echo "🧹 Cleaning up port-forward..."
+          kill $PORT_FWD_PID 2>/dev/null || true
+          echo "✅ Cleanup complete"
