@@ -356,17 +356,23 @@ jobs:
 
       - name: Configure kubectl
         run: |
-          echo "Configuring kubectl..."
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/kubeconfig
-          export KUBECONFIG=$HOME/kubeconfig
-          kubectl config use-context ${{ secrets.KUBE_CONTEXT }} || true
+          mkdir -p $HOME/.kube
+          if echo "${{ secrets.KUBE_CONFIG }}" | base64 -d >/dev/null 2>&1; then
+            echo "📦 KUBE_CONFIG is base64 encoded"
+            echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "📦 KUBE_CONFIG is raw text"
+            echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
           echo "✅ kubectl configured"
 
       - name: Run autograding tests via port-forward
         run: |
           set -e
           NS="${{ env.KUBE_NAMESPACE }}"
-          export KUBECONFIG=$HOME/kubeconfig
+          export KUBECONFIG=$HOME/.kube/config
 
           echo "🔌 Port-forwarding Gateway service..."
           kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
@@ -440,17 +446,23 @@ jobs:
 
       - name: Configure kubectl
         run: |
-          echo "Configuring kubectl..."
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/kubeconfig
-          export KUBECONFIG=$HOME/kubeconfig
-          kubectl config use-context ${{ secrets.KUBE_CONTEXT }} || true
+          mkdir -p $HOME/.kube
+          if echo "${{ secrets.KUBE_CONFIG }}" | base64 -d >/dev/null 2>&1; then
+            echo "📦 KUBE_CONFIG is base64 encoded"
+            echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
+          else
+            echo "📦 KUBE_CONFIG is raw text"
+            echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
+          fi
+          chmod 600 $HOME/.kube/config
+          export KUBECONFIG=$HOME/.kube/config
           echo "✅ kubectl configured"
 
       - name: Run fault-tolerance tests via port-forward
         run: |
           set -e
           NS="${{ env.KUBE_NAMESPACE }}"
-          export KUBECONFIG=$HOME/kubeconfig
+          export KUBECONFIG=$HOME/.kube/config
 
           echo "🔌 Port-forwarding Gateway service..."
           kubectl port-forward -n "$NS" svc/gateway 8080:8080 &
