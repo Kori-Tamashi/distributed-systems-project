@@ -1,10 +1,14 @@
 $kind: http-request
+queryParams:
+  - key: id
+    value: "1"
+    disabled: false
+    description: ""
 order: 300
 method: GET
-url: '{{baseUrl}}/api/v1/flights/1'
+url: "{{baseUrl}}/api/v1/flights/1?id=1"
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |
       pm.test('Status is 200 or 404 (no flights seeded)', function () {
         const status = pm.response.code;
@@ -18,3 +22,4 @@ scripts:
           pm.expect(response).to.have.property('id');
         });
       }
+    language: text/javascript
