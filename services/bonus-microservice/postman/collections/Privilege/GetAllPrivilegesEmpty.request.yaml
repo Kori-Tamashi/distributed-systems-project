@@ -1,7 +1,7 @@
 $kind: http-request
 order: 200
 method: GET
-url: '{{baseUrl}}/api/v1/privilege'
+url: '{{baseUrl}}/api/v1/privileges'
 headers:
   - key: X-User-Name
     value: Test User

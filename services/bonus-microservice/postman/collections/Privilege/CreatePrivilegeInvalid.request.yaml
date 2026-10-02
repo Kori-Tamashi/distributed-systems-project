@@ -1,7 +1,7 @@
 $kind: http-request
 order: 400
 method: POST
-url: '{{baseUrl}}/api/v1/privilege'
+url: '{{baseUrl}}/api/v1/privileges'
 headers:
   - key: X-User-Name
     value: Test User

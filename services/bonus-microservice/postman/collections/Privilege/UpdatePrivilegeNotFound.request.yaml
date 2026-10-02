@@ -1,7 +1,7 @@
 $kind: http-request
 order: 1000
 method: PUT
-url: '{{baseUrl}}/api/v1/privilege/99999'
+url: '{{baseUrl}}/api/v1/privileges/99999'
 headers:
   - key: X-User-Name
     value: Test User

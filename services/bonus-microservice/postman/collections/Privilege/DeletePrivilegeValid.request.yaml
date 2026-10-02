@@ -1,7 +1,7 @@
 $kind: http-request
 order: 1200
 method: DELETE
-url: '{{baseUrl}}/api/v1/privilege/3'
+url: '{{baseUrl}}/api/v1/privileges/3'
 headers:
   - key: X-User-Name
     value: Test User
