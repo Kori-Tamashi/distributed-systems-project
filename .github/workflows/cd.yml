@@ -58,7 +58,7 @@ jobs:
         with:
           images: ${{ env.DOCKER_USERNAME }}/${{ matrix.service }}-microservice
           tags: |
-            type=sha,prefix=
+            type=sha,prefix=,format=long
             type=raw,value=latest,enable={{is_default_branch}}
             type=semver,pattern={{version}}
             type=ref,event=branch
@@ -194,44 +194,52 @@ jobs:
         run: |
           echo "🚀 Deploying Gateway..."
           NS="${{ env.KUBE_NAMESPACE }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install gateway deploy/helm/microservice \
             -f deploy/values/gateway.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/gateway-microservice \
-            --set image.tag=latest
+            --set image.tag="$SHA"
+          kubectl rollout restart deployment/gateway -n "$NS"
           sleep 3
 
       - name: Deploy Flight
         run: |
           echo "🚀 Deploying Flight..."
           NS="${{ env.KUBE_NAMESPACE }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install flight deploy/helm/microservice \
             -f deploy/values/flight.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/flight-microservice \
-            --set image.tag=latest
+            --set image.tag="$SHA"
+          kubectl rollout restart deployment/flight -n "$NS"
           sleep 3
 
       - name: Deploy Ticket
         run: |
           echo "🚀 Deploying Ticket..."
           NS="${{ env.KUBE_NAMESPACE }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install ticket deploy/helm/microservice \
             -f deploy/values/ticket.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/ticket-microservice \
-            --set image.tag=latest
+            --set image.tag="$SHA"
+          kubectl rollout restart deployment/ticket -n "$NS"
           sleep 3
 
       - name: Deploy Bonus
         run: |
           echo "🚀 Deploying Bonus..."
           NS="${{ env.KUBE_NAMESPACE }}"
+          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
           helm upgrade --install bonus deploy/helm/microservice \
             -f deploy/values/bonus.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/bonus-microservice \
-            --set image.tag=latest
+            --set image.tag="$SHA"
+          kubectl rollout restart deployment/bonus -n "$NS"
           sleep 3
 
       - name: Wait for all deployments to be ready
@@ -367,6 +375,33 @@ jobs:
           chmod 600 $HOME/.kube/config
           export KUBECONFIG=$HOME/.kube/config
           echo "✅ kubectl configured"
+
+      - name: Diagnostics (always)
+        if: always()
+        run: |
+          set +e
+          NS="${{ env.KUBE_NAMESPACE }}"
+          export KUBECONFIG=$HOME/.kube/config
+
+          echo "=== Pods & images ==="
+          kubectl get pods -n "$NS" -o wide
+          echo ""
+          for p in $(kubectl get pods -n "$NS" -o jsonpath='{.items[*].metadata.name}'); do
+            img=$(kubectl get pod "$p" -n "$NS" -o jsonpath='{.spec.containers[0].image}')
+            echo "pod=$p image=$img"
+          done
+
+          echo ""
+          echo "=== Flight logs (tail 30) ==="
+          kubectl logs -n "$NS" -l app.kubernetes.io/name=flight --tail=30 || true
+
+          echo ""
+          echo "=== Bonus logs (tail 30) ==="
+          kubectl logs -n "$NS" -l app.kubernetes.io/name=bonus --tail=30 || true
+
+          echo ""
+          echo "=== Gateway logs (tail 30) ==="
+          kubectl logs -n "$NS" -l app.kubernetes.io/name=gateway --tail=30 || true
 
       - name: Run autograding tests via port-forward
         run: |
