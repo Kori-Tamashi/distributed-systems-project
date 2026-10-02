@@ -4,7 +4,7 @@ method: GET
 url: '{{baseUrl}}/api/v1/tickets'
 headers:
   - key: X-User-Name
-    value: '{{username}}'
+    value: 'Test User'
 scripts:
   - type: afterResponse
     language: text/javascript
