@@ -407,14 +407,27 @@ jobs:
             echo "=== Bonus DB tables ==="
             kubectl exec -n "$NS" "$PG" -- psql -U bonus -d bonus -c '\dt' 2>&1 || true
             echo ""
+            echo "=== Bonus DB privilege rows ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U bonus -d bonus -c 'SELECT id, username, status, balance FROM privilege;' 2>&1 || true
+            echo ""
             echo "=== Bonus DB __EFMigrationsHistory ==="
             kubectl exec -n "$NS" "$PG" -- psql -U bonus -d bonus -c 'SELECT * FROM "__EFMigrationsHistory";' 2>&1 || true
             echo ""
             echo "=== Flight DB tables ==="
             kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c '\dt' 2>&1 || true
             echo ""
+            echo "=== Flight DB airports rows ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c \
+              'SELECT id, name, city FROM airports ORDER BY id;' 2>&1 || true
+            echo ""
+            echo "=== Flight DB flights rows ==="
+            kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c \
+              'SELECT id, flight_number, from_airport_id, ' \
+              'to_airport_id FROM flights ORDER BY id;' 2>&1 || true
+            echo ""
             echo "=== Flight DB __EFMigrationsHistory ==="
-            kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c 'SELECT * FROM "__EFMigrationsHistory";' 2>&1 || true
+            kubectl exec -n "$NS" "$PG" -- psql -U flight -d flight -c \
+              'SELECT * FROM "__EFMigrationsHistory";' 2>&1 || true
             echo ""
             echo "=== List all databases ==="
             kubectl exec -n "$NS" "$PG" -- psql -U postgres -c '\l' 2>&1 || true
