@@ -3,7 +3,7 @@ replicaCount: 1
 fullnameOverride: ticket
 
 image:
-  repository: kori-tamashi/ticket-microservice
+  repository: "${{ env.DOCKER_USERNAME }}/ticket-microservice"
   tag: "latest"
   pullPolicy: IfNotPresent
 

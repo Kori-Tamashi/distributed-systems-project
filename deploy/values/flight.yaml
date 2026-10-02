@@ -3,7 +3,7 @@ replicaCount: 1
 fullnameOverride: flight
 
 image:
-  repository: kori-tamashi/flight-microservice
+  repository: "${{ env.DOCKER_USERNAME }}/flight-microservice"
   tag: "latest"
   pullPolicy: IfNotPresent
 

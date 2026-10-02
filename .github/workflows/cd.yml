@@ -197,6 +197,7 @@ jobs:
           helm upgrade --install gateway deploy/helm/microservice \
             -f deploy/values/gateway.yaml \
             --namespace "$NS" \
+            --set image.repository="${{ env.DOCKER_USERNAME }}"/gateway-microservice \
             --set image.tag=latest
           sleep 3
 
@@ -207,6 +208,7 @@ jobs:
           helm upgrade --install flight deploy/helm/microservice \
             -f deploy/values/flight.yaml \
             --namespace "$NS" \
+            --set image.repository="${{ env.DOCKER_USERNAME }}"/flight-microservice \
             --set image.tag=latest
           sleep 3
 
@@ -217,6 +219,7 @@ jobs:
           helm upgrade --install ticket deploy/helm/microservice \
             -f deploy/values/ticket.yaml \
             --namespace "$NS" \
+            --set image.repository="${{ env.DOCKER_USERNAME }}"/ticket-microservice \
             --set image.tag=latest
           sleep 3
 
@@ -227,6 +230,7 @@ jobs:
           helm upgrade --install bonus deploy/helm/microservice \
             -f deploy/values/bonus.yaml \
             --namespace "$NS" \
+            --set image.repository="${{ env.DOCKER_USERNAME }}"/bonus-microservice \
             --set image.tag=latest
           sleep 3
 

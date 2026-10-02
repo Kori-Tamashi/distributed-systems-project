@@ -3,7 +3,7 @@ replicaCount: 1
 fullnameOverride: gateway
 
 image:
-  repository: kori-tamashi/gateway-microservice
+  repository: "${{ env.DOCKER_USERNAME }}/gateway-microservice"
   tag: "latest"
   pullPolicy: IfNotPresent
 
