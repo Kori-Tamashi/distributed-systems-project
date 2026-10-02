@@ -11,12 +11,11 @@ body:
   type: json
   content: |-
     {
-      "FlightId": 1,
-      "SeatNumber": "1A",
-      "PassengerName": "Test Passenger",
-      "PassengerEmail": "test@example.com",
-      "TicketClass": "Economy",
-      "price": 5000
+      "ticketUid": "550e8400-e29b-41d4-a716-446655440000",
+      "username": "Test User",
+      "flightNumber": "AFL031",
+      "price": 1500,
+      "status": 0
     }
 scripts:
   - type: afterResponse
