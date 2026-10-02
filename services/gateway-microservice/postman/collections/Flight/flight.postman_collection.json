@@ -12,8 +12,13 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/manage/health",
-          "host": ["{{baseUrl}}"],
-          "path": ["manage", "health"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "manage",
+            "health"
+          ]
         }
       },
       "event": [
@@ -33,17 +38,76 @@
       ]
     },
     {
+      "name": "CreateFlightValid",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"FlightNumber\": \"AFL032\",\n  \"DateTime\": \"2024-12-01T10:00:00Z\",\n  \"FromAirportId\": 1,\n  \"ToAirportId\": 2,\n  \"Price\": 2000,\n  \"FlightUid\": \"550e8400-e29b-41d4-a716-446655440002\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/v1/flights",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status is 201 Created', function () { pm.response.to.have.status(201); });",
+              "pm.test('Response has flight data', function () {",
+              "    const response = pm.response.json();",
+              "    pm.expect(response).to.have.property('flightUid');",
+              "    pm.expect(response).to.have.property('flightNumber');",
+              "    pm.expect(response).to.have.property('id');",
+              "    pm.expect(response.flightNumber).to.be.equal('AFL032');",
+              "});",
+              "const response = pm.response.json();",
+              "pm.collectionVariables.set('flightId', response.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
       "name": "GetAllFlights",
       "request": {
         "method": "GET",
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights?page=0&size=10",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "flights"],
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights"
+          ],
           "query": [
-            {"key": "page", "value": "0"},
-            {"key": "size", "value": "10"}
+            {
+              "key": "page",
+              "value": "0"
+            },
+            {
+              "key": "size",
+              "value": "10"
+            }
           ]
         }
       },
@@ -74,8 +138,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights/1",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "flights", "1"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "1"
+          ]
         }
       },
       "event": [
@@ -108,8 +179,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights/99999",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "flights", "99999"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "99999"
+          ]
         }
       },
       "event": [
@@ -131,8 +209,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights/1",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "flights", "1"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "1"
+          ]
         }
       },
       "event": [
@@ -157,8 +242,15 @@
         "header": [],
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights/99999",
-          "host": ["{{baseUrl}}"],
-          "path": ["api", "v1", "flights", "99999"]
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "flights",
+            "99999"
+          ]
         }
       },
       "event": [

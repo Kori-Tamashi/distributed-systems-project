@@ -1,0 +1,5 @@
+name: kubernetes
+values:
+  - key: baseUrl
+    value: 'http://85.117.235.174:30950'
+color: 214
