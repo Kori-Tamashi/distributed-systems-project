@@ -1,14 +1,17 @@
 $kind: http-request
+queryParams:
+  - key: ""
+    value: null
+    disabled: true
+    description: ""
 order: 600
 method: GET
-url: '{{baseUrl}}/api/v1/tickets/1'
+url: "{{baseUrl}}/api/v1/tickets/1"
 headers:
-  - key: X-User-Name
-    value: Test User
+  X-User-Name: Test User
 
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |
       pm.test('Status is 200 or 404', function () {
         pm.expect(pm.response.code).to.be.oneOf([200, 404]);
@@ -16,3 +19,4 @@ scripts:
       if (pm.response.code === 200) {
         pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('id'); });
       }
+    language: text/javascript

@@ -1,10 +1,12 @@
 $kind: http-request
+queryParams:
+  page: "0"
+  size: "10"
 order: 100
 method: GET
-url: '{{baseUrl}}/api/v1/flights?page=0&size=10'
+url: "{{baseUrl}}/api/v1/flights?page=0&size=10"
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |
       pm.test('Получить список рейсов', () => {
         pm.response.to.have.status(200);
@@ -16,3 +18,4 @@ scripts:
         pm.expect(response.pageSize).to.be.not.undefined;
         pm.expect(response.totalElements).to.be.not.undefined;
       });
+    language: text/javascript

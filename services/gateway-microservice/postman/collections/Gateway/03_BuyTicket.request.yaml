@@ -1,23 +1,20 @@
 $kind: http-request
 order: 300
 method: POST
-url: '{{baseUrl}}/api/v1/tickets'
+url: "{{baseUrl}}/api/v1/tickets"
 headers:
-  - key: X-User-Name
-    value: 'Test User'
-  - key: Content-Type
-    value: application/json
+  X-User-Name: Test User
+  Content-Type: application/json
 body:
   type: json
   content: |
     {
-      "flightNumber": "AFL031",
+      "flightNumber": "AFL032",
       "price": 1500,
       "paidFromBalance": false
     }
 scripts:
   - type: afterResponse
-    language: text/javascript
     code: |
       pm.test('Купить билет', () => {
         pm.response.to.have.status(200);
@@ -32,3 +29,4 @@ scripts:
 
         pm.collectionVariables.set('ticketUid', response.ticketUid);
       });
+    language: text/javascript
