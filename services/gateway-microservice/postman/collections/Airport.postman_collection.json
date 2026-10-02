@@ -114,8 +114,8 @@
 							"    pm.expect(jsonData).to.have.property('name');",
 							"});",
 							"var jsonData = pm.response.json();",
-							"pm.collectionVariables.set('createdAirportId', jsonData.Id || jsonData.id);",
-							"console.log('Created airport ID: ' + jsonData.Id || jsonData.id);"
+							"pm.collectionVariables.set('createdAirportId', jsonData.id);",
+							"console.log('Created airport ID: ' + (jsonData.id || jsonData.Id));"
 						],
 						"type": "text/javascript"
 					}

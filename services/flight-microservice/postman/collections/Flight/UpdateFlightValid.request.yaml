@@ -9,13 +9,13 @@ body:
   type: json
   content: |-
     {
-      "Id": 1,
-      "FlightNumber": "SU200",
+      "id": 1,
+      "flightNumber": "SU200",
       "FlightUid": "550e8400-e29b-41d4-a716-446655440001",
       "DateTime": "2035-12-31T10:00:00Z",
       "FromAirportId": 1,
       "ToAirportId": 2,
-      "Price": 20000
+      "price": 20000
     }
 scripts:
   - type: afterResponse

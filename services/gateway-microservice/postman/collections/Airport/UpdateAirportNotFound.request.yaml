@@ -9,12 +9,12 @@ body:
   type: json
   content: |-
     {
-      "Name": "Not Found",
-      "City": "Not Found",
-      "Country": "Not Found",
-      "IataCode": "NFD",
-      "Latitude": 0.0,
-      "Longitude": 0.0
+      "name": "Not Found",
+      "city": "Not Found",
+      "country": "Not Found",
+      "iataCode": "NFD",
+      "latitude": 0.0,
+      "longitude": 0.0
     }
 scripts:
   - type: afterResponse

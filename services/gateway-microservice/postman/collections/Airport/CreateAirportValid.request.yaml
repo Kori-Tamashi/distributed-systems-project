@@ -9,16 +9,16 @@ body:
   type: json
   content: |-
     {
-      "Name": "Test Airport",
-      "City": "Test City",
-      "Country": "Test Country",
-      "IataCode": "TST",
-      "Latitude": 55.0,
-      "Longitude": 37.0
+      "name": "Test Airport",
+      "city": "Test City",
+      "country": "Test Country",
+      "iataCode": "TST",
+      "latitude": 55.0,
+      "longitude": 37.0
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |
       pm.test('Status is 201', function () { pm.response.to.have.status(201); });
-      pm.test('Has Name', function () { pm.expect(pm.response.json()).to.have.property('Name'); });
+      pm.test('Has Name', function () { pm.expect(pm.response.json()).to.have.property('name'); });

@@ -7,6 +7,6 @@ scripts:
     language: text/javascript
     code: |
       pm.test('Status is 200', function () { pm.response.to.have.status(200); });
-      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('Id'); });
-      pm.test('Has Username', function () { pm.expect(pm.response.json()).to.have.property('Username'); });
-      pm.test('Has Balance', function () { pm.expect(pm.response.json()).to.have.property('Balance'); });
+      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('id'); });
+      pm.test('Has Username', function () { pm.expect(pm.response.json()).to.have.property('username'); });
+      pm.test('Has Balance', function () { pm.expect(pm.response.json()).to.have.property('balance'); });

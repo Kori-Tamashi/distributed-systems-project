@@ -9,12 +9,12 @@ body:
   type: json
   content: |-
     {
-      "Name": "",
-      "City": "Test",
-      "Country": "Test",
-      "IataCode": "TST",
-      "Latitude": 55.0,
-      "Longitude": 37.0
+      "name": "",
+      "city": "Test",
+      "country": "Test",
+      "iataCode": "TST",
+      "latitude": 55.0,
+      "longitude": 37.0
     }
 scripts:
   - type: afterResponse

@@ -1,7 +1,7 @@
 $kind: http-request
 order: 100
 method: GET
-url: '{{baseUrl}}/health'
+url: '{{baseUrl}}/manage/health'
 description: Health check
 scripts:
   - type: afterResponse

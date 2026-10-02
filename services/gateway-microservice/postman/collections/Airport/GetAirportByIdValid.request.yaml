@@ -10,5 +10,5 @@ scripts:
         pm.expect(pm.response.code).to.be.oneOf([200, 404]);
       });
       if (pm.response.code === 200) {
-        pm.test('Has Name', function () { pm.expect(pm.response.json()).to.have.property('Name'); });
+        pm.test('Has Name', function () { pm.expect(pm.response.json()).to.have.property('name'); });
       }

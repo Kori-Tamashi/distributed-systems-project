@@ -14,7 +14,7 @@ body:
       "PassengerName": "",
       "PassengerEmail": "",
       "TicketClass": "",
-      "Price": 0
+      "price": 0
     }
 scripts:
   - type: afterResponse

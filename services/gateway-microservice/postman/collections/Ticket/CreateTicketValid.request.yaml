@@ -14,11 +14,11 @@ body:
       "PassengerName": "Test Passenger",
       "PassengerEmail": "test@example.com",
       "TicketClass": "Economy",
-      "Price": 5000
+      "price": 5000
     }
 scripts:
   - type: afterResponse
     language: text/javascript
     code: |
       pm.test('Status is 201', function () { pm.response.to.have.status(201); });
-      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('Id'); });
+      pm.test('Has Id', function () { pm.expect(pm.response.json()).to.have.property('id'); });

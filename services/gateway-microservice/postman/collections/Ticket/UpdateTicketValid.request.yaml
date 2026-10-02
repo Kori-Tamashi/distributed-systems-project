@@ -9,13 +9,13 @@ body:
   type: json
   content: |-
     {
-      "Id": 1,
+      "id": 1,
       "FlightId": 1,
       "SeatNumber": "2B",
       "PassengerName": "Updated",
       "PassengerEmail": "updated@example.com",
       "TicketClass": "Business",
-      "Price": 10000
+      "price": 10000
     }
 scripts:
   - type: afterResponse

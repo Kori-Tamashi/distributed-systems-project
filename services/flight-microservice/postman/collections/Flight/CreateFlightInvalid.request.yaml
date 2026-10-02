@@ -9,12 +9,12 @@ body:
   type: json
   content: |-
     {
-      "FlightNumber": "",
+      "flightNumber": "",
       "FlightUid": "00000000-0000-0000-0000-000000000000",
       "DateTime": "2020-01-01T00:00:00Z",
       "FromAirportId": 1,
       "ToAirportId": 1,
-      "Price": 0
+      "price": 0
     }
 scripts:
   - type: afterResponse
