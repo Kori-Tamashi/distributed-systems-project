@@ -1,5 +1,6 @@
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
@@ -23,6 +24,7 @@ namespace presentation.controllers.http;
 /// </summary>
 [ApiController]
 [Route("api/v1/flights")]
+[Authorize]
 [Produces("application/json")]
 [Consumes("application/json")]
 public class FlightHttpController : ControllerBase

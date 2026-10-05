@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
 using Microsoft.AspNetCore.Mvc;
@@ -27,6 +28,7 @@ namespace presentation.controllers.http;
 /// HTTP Controller for Privilege CRUD operations
 /// Implements RESTful API endpoints for managing Privilege entities
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/v1/privilege")]
 [Produces("application/json")]
@@ -152,11 +154,20 @@ public class PrivilegeHttpController : ControllerBase
     [ProducesResponseType(typeof(dataaccess.dto.http.Privilege.PrivilegeWithHistoryDTO), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(HttpPrivilegeNotFoundException), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<dataaccess.dto.http.Privilege.PrivilegeWithHistoryDTO>> GetPrivilegeByUser(
-        [FromHeader(Name = "X-User-Name")] string username)
+    public async Task<ActionResult<dataaccess.dto.http.Privilege.PrivilegeWithHistoryDTO>> GetPrivilegeByUser()
     {
+        // Get username from JWT token
+        var username = User.FindFirst("preferred_username")?.Value 
+                    ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+        
         try
         {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                _logger.LogWarning("Username not found in JWT token");
+                return BadRequest(new ErrorResponse("Username is required"));
+            }
+            
             _logger.LogDebug("Getting privilege for user: {Username}", username);
             
             // Get privilege

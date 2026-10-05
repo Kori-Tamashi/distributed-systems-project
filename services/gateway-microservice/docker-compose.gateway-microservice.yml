@@ -13,6 +13,12 @@ services:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT}
       - DATABASE_PROVIDER=POSTGRESQL
       - ASPNETCORE_URLS=http://+:8080
+      # OIDC / Keycloak Settings
+      - OIDC_ISSUER=http://host.docker.internal:8888/realms/rsoi
+      - OIDC_JWKS_URI=http://host.docker.internal:8888/realms/rsoi/protocol/openid-connect/certs
+      - OIDC_TOKEN_ENDPOINT=http://host.docker.internal:8888/realms/rsoi/protocol/openid-connect/token
+      - OIDC_CLIENT_ID=gateway
+      - OIDC_CLIENT_SECRET=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj
       # Inter-Service Communication
       - FLIGHT_CONNECTIONSTRINGS_DEFAULTCONNECTION=${FLIGHT_CONNECTIONSTRINGS_DEFAULTCONNECTION}
       - TICKET_CONNECTIONSTRINGS_DEFAULTCONNECTION=${TICKET_CONNECTIONSTRINGS_DEFAULTCONNECTION}

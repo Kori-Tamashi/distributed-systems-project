@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using core.interfaces.businesslogic.services;
 using core.interfaces.dataaccess.gateways;
 using Microsoft.AspNetCore.Mvc;
@@ -13,6 +14,7 @@ namespace presentation.controllers.http;
 /// HTTP Controller for User information aggregation
 /// Provides endpoints to get complete user information including tickets and privilege status
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/v1")]
 [Produces("application/json")]
@@ -46,25 +48,26 @@ public class UserHttpController : ControllerBase
     /// Gets complete user information including tickets and privilege status
     /// Aggregates data from Ticket and Privilege services
     /// </summary>
-    /// <param name="username">Username from X-User-Name header</param>
     /// <returns>Complete user information with HTTP 200 OK</returns>
     /// <response code="200">Returns user information</response>
-    /// <response code="400">Username is missing or invalid</response>
     /// <response code="404">User not found</response>
     /// <response code="500">Server error</response>
     [HttpGet("me")]
     [ProducesResponseType(typeof(UserInfoDTO), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
-    public async Task<ActionResult<UserInfoDTO>> GetUserInfo([FromHeader(Name = "X-User-Name")] string? username)
+    public async Task<ActionResult<UserInfoDTO>> GetUserInfo()
     {
+        // Get username from JWT token
+        var username = User.FindFirst("preferred_username")?.Value 
+                    ?? User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value;
+        
         try
         {
             // Validate username
             if (string.IsNullOrWhiteSpace(username))
             {
-                _logger.LogWarning("Username header is missing or empty");
+                _logger.LogWarning("Username not found in JWT token");
                 return BadRequest(new ErrorResponse("Username is required"));
             }
 

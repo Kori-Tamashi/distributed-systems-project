@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
 using core.interfaces.dataaccess.gateways;
@@ -25,6 +26,7 @@ namespace presentation.controllers.http;
 /// HTTP Controller for Ticket operations per lab2-template v1 spec
 /// Endpoints: GET /tickets, GET /tickets/{ticketUid}, POST /tickets (BuyTicket), DELETE /tickets/{ticketUid} (ReturnTicket)
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/v1/tickets")]
 [Produces("application/json")]

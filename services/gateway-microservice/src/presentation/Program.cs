@@ -2,12 +2,18 @@ using core.interfaces.businesslogic.services;
 using core.interfaces.dataaccess;
 using core.interfaces.dataaccess.gateways;
 using core.circuitbreaker;
+using core.configuration;
+using core.security;
 using businesslogic.services;
 using dataaccess.retry;
 using dataaccess.gateways.http;
 using dataaccess.gateways.circuitbreaker;
 using presentation.controllers.http;
+using presentation.security;
 using presentation.middleware;
+using presentation.http;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -21,6 +27,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Load settings from environment variables
 var apiTestSettings = LoadApiTestSettings();
+var oidcSettings = LoadOidcSettings();
 
 // Register Circuit Breaker states — one singleton per downstream service
 builder.Services.AddKeyedSingleton<CircuitBreakerState>("flight",
@@ -29,6 +36,32 @@ builder.Services.AddKeyedSingleton<CircuitBreakerState>("ticket",
     new CircuitBreakerState(failureThreshold: 3, probeInterval: TimeSpan.FromSeconds(3)));
 builder.Services.AddKeyedSingleton<CircuitBreakerState>("bonus",
     new CircuitBreakerState(failureThreshold: 3, probeInterval: TimeSpan.FromSeconds(3)));
+
+// Register OIDC settings
+builder.Services.AddSingleton(oidcSettings);
+
+// Register IHttpContextAccessor for ICurrentUser
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<ICurrentUser, HttpContextCurrentUser>();
+
+// Register JWT Bearer authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = oidcSettings.Issuer;
+        options.RequireHttpsMetadata = false; // Development mode
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = oidcSettings.ValidIssuer,
+            ValidateAudience = false, // ROPC tokens have aud="account", we don't check audience
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = "preferred_username"
+        };
+    });
+builder.Services.AddAuthorization();
 
 // Retry queue for non-critical operations (Bonus rollback on ticket return)
 builder.Services.AddSingleton<InMemoryRetryQueue>(sp =>
@@ -106,10 +139,15 @@ builder.Services.AddScoped<FlightHttpController>();
 builder.Services.AddScoped<TicketHttpController>();
 builder.Services.AddScoped<PrivilegeHttpController>();
 builder.Services.AddScoped<PrivilegeHistoryHttpController>();
+builder.Services.AddScoped<UserHttpController>();
+builder.Services.AddScoped<AuthorizeHttpController>();
 
 // Add services to the container
 builder.Services.AddSingleton(apiTestSettings);
-builder.Services.AddHttpClient(); // Register IHttpClientFactory first
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddTransient<ForwardAuthHandler>();
+builder.Services.AddHttpClient("default")
+    .AddHttpMessageHandler<ForwardAuthHandler>(); // Apply to all HttpClient instances
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -140,13 +178,14 @@ var app = builder.Build();
 
 // Configure HTTP request pipeline - Swagger enabled for all environments
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseAuthentication(); // Standard JWT Bearer authentication
+app.UseAuthorization();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Health check endpoint
-app.MapHealthChecks("/manage/health");
+// Health check endpoint (no auth required)
+app.MapHealthChecks("/manage/health").AllowAnonymous();
 
-app.UseAuthorization();
 app.MapControllers();
 
 Console.WriteLine("============================================");
@@ -189,6 +228,27 @@ static ApplicationSettings LoadApplicationSettings()
         Host = Environment.GetEnvironmentVariable("APP_HOST") ?? "0.0.0.0",
         Port = int.Parse(Environment.GetEnvironmentVariable("APP_PORT") ?? "8080"),
         Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
+    };
+}
+
+/// <summary>
+/// Loads OIDC settings from environment variables
+/// </summary>
+static OidcSettings LoadOidcSettings()
+{
+    var issuer = Environment.GetEnvironmentVariable("OIDC_ISSUER") 
+                 ?? "http://localhost:8888/realms/rsoi";
+    
+    return new OidcSettings
+    {
+        Issuer = issuer,
+        JwksUri = Environment.GetEnvironmentVariable("OIDC_JWKS_URI") 
+                  ?? $"{issuer}/protocol/openid-connect/certs",
+        TokenEndpoint = Environment.GetEnvironmentVariable("OIDC_TOKEN_ENDPOINT") 
+                        ?? $"{issuer}/protocol/openid-connect/token",
+        ClientId = Environment.GetEnvironmentVariable("OIDC_CLIENT_ID") ?? "gateway",
+        ClientSecret = Environment.GetEnvironmentVariable("OIDC_CLIENT_SECRET") ?? "",
+        ValidIssuer = issuer
     };
 }
 
