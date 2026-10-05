@@ -29,3 +29,4 @@ postman/test-results/
 # kubeconfig (temporary files)
 kubeconfig_*.yaml
 deploy/kubeconfig_*.yaml
+.env.keycloak
