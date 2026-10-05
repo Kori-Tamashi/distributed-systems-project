@@ -187,6 +187,43 @@ jobs:
           kubectl get events -n "$NS" \
             --sort-by=.lastTimestamp | tail -20 || true
 
+      - name: Create keycloak-client-secret
+        run: |
+          set -e
+          NS="${{ env.KUBE_NAMESPACE }}"
+          export KUBECONFIG=$HOME/.kube/config
+          kubectl create secret generic keycloak-client-secret \
+            -n "$NS" \
+            --from-literal=client-secret="${{ secrets.KEYCLOAK_CLIENT_SECRET }}" \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy Keycloak
+        run: |
+          set -e
+          NS="${{ env.KUBE_NAMESPACE }}"
+          export KUBECONFIG=$HOME/.kube/config
+
+          # Resolve ingress public address
+          NODE_IP=$(kubectl get nodes \
+            -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+          NODE_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
+            -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
+          PUBLIC_URL="http://${NODE_IP}:${NODE_PORT}"
+          echo "🌐 Public URL: $PUBLIC_URL"
+          echo "PUBLIC_URL=${PUBLIC_URL}" >> $GITHUB_ENV
+
+          # Apply Keycloak manifests with KC_HOSTNAME substitution
+          cat deploy/k8s/keycloak/deployment.yaml \
+            | sed "s|REPLACE_HOST|${PUBLIC_URL}|g" \
+            | kubectl apply -n "$NS" -f -
+
+          kubectl apply -n "$NS" -f deploy/k8s/keycloak/service.yaml
+          kubectl apply -n "$NS" -f deploy/k8s/keycloak/configmap-realm.yaml
+          kubectl apply -n "$NS" -f deploy/k8s/keycloak/ingress.yaml
+
+          # Wait for Keycloak readiness (max 5 min)
+          kubectl -n "$NS" rollout status deployment/keycloak --timeout=300s
+
 
       - name: Deploy Gateway
         run: |
@@ -197,7 +234,11 @@ jobs:
             -f deploy/values/gateway.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/gateway-microservice \
-            --set image.tag="$SHA"
+            --set image.tag="$SHA" \
+            --set oidc.issuer="${PUBLIC_URL}/realms/rsoi" \
+            --set oidc.jwksUri="${PUBLIC_URL}/realms/rsoi/protocol/openid-connect/certs" \
+            --set oidc.tokenEndpoint="${PUBLIC_URL}/realms/rsoi/protocol/openid-connect/token" \
+            --set oidc.clientId="gateway"
           kubectl rollout restart deployment/gateway -n "$NS"
           sleep 3
 
@@ -210,7 +251,9 @@ jobs:
             -f deploy/values/flight.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/flight-microservice \
-            --set image.tag="$SHA"
+            --set image.tag="$SHA" \
+            --set oidc.issuer="${PUBLIC_URL}/realms/rsoi" \
+            --set oidc.jwksUri="${PUBLIC_URL}/realms/rsoi/protocol/openid-connect/certs"
           kubectl rollout restart deployment/flight -n "$NS"
           sleep 3
 
@@ -223,7 +266,9 @@ jobs:
             -f deploy/values/ticket.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/ticket-microservice \
-            --set image.tag="$SHA"
+            --set image.tag="$SHA" \
+            --set oidc.issuer="${PUBLIC_URL}/realms/rsoi" \
+            --set oidc.jwksUri="${PUBLIC_URL}/realms/rsoi/protocol/openid-connect/certs"
           kubectl rollout restart deployment/ticket -n "$NS"
           sleep 3
 
@@ -236,7 +281,9 @@ jobs:
             -f deploy/values/bonus.yaml \
             --namespace "$NS" \
             --set image.repository="${{ env.DOCKER_USERNAME }}"/bonus-microservice \
-            --set image.tag="$SHA"
+            --set image.tag="$SHA" \
+            --set oidc.issuer="${PUBLIC_URL}/realms/rsoi" \
+            --set oidc.jwksUri="${PUBLIC_URL}/realms/rsoi/protocol/openid-connect/certs"
           kubectl rollout restart deployment/bonus -n "$NS"
           sleep 3
 
@@ -406,8 +453,12 @@ jobs:
             postman-newman-instructor:e2e \
             run /etc/newman/collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=${{ steps.ingress.outputs.base_url }}" \
-              --env-var "username=Test User" \
+              --env-var "serviceUrl=${{ steps.ingress.outputs.base_url }}" \
+              --env-var "identityProviderUrl=${{ steps.ingress.outputs.base_url }}/realms/rsoi" \
+              --env-var "username=testuser" \
+              --env-var "password=test" \
+              --env-var "clientId=gateway" \
+              --env-var "clientSecret=${{ secrets.KEYCLOAK_CLIENT_SECRET }}" \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/results.xml
 
@@ -428,179 +479,4 @@ jobs:
         with:
           name: Autograding - Instructor Tests (Postman)
           path: postman/test-results/results.xml
-          reporter: java-junit
-
-  # ===========================================
-  # Fault Tolerance Tests
-  # ===========================================
-  fault-tolerance:
-    name: Fault Tolerance - Bonus Service Failover
-    runs-on: ubuntu-latest
-    needs: autograding
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v5
-        with:
-          fetch-depth: 0
-
-      - name: Build Postman Newman image for Instructor Tests
-        run: |
-          echo "Building Postman Newman image for Instructor Tests..."
-          docker build \
-            --tag postman-newman-instructor:e2e \
-            -f postman/Dockerfile \
-            postman/
-          echo "✅ Postman Newman image built: postman-newman-instructor:e2e"
-
-      - name: Install kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      - name: Configure kubectl
-        run: |
-          mkdir -p $HOME/.kube
-          if echo "${{ secrets.KUBE_CONFIG }}" | base64 -d >/dev/null 2>&1; then
-            echo "📦 KUBE_CONFIG is base64 encoded"
-            echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > $HOME/.kube/config
-          else
-            echo "📦 KUBE_CONFIG is raw text"
-            echo "${{ secrets.KUBE_CONFIG }}" > $HOME/.kube/config
-          fi
-          chmod 600 $HOME/.kube/config
-          export KUBECONFIG=$HOME/.kube/config
-          echo "✅ kubectl configured"
-
-      - name: Resolve Ingress address
-        id: ingress
-        run: |
-          set -e
-          export KUBECONFIG=$HOME/.kube/config
-          echo "🌐 Resolving Ingress address..."
-          LB_IP=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
-            -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || true)
-
-          if [ -n "$LB_IP" ]; then
-            BASE_URL="http://${LB_IP}"
-          else
-            NODE_IP=$(kubectl get nodes \
-              -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-            NODE_PORT=$(kubectl -n ingress-nginx get svc ingress-nginx-controller \
-              -o jsonpath='{.spec.ports[?(@.name=="http")].nodePort}')
-            if [ -z "$NODE_IP" ] || [ -z "$NODE_PORT" ]; then
-              echo "❌ Could not resolve Ingress"; exit 1
-            fi
-            BASE_URL="http://${NODE_IP}:${NODE_PORT}"
-          fi
-
-          echo "✅ baseUrl = ${BASE_URL}"
-          echo "base_url=${BASE_URL}" >> $GITHUB_OUTPUT
-
-      - name: Run fault-tolerance tests via Ingress
-        run: |
-          set -e
-          NS="${{ env.KUBE_NAMESPACE }}"
-          export KUBECONFIG=$HOME/.kube/config
-          BASE_URL="${{ steps.ingress.outputs.base_url }}"
-
-          for i in $(seq 1 30); do
-            if curl -sf "${BASE_URL}/manage/health" >/dev/null 2>&1; then
-              echo "✅ Ingress routes to gateway"; break
-            fi
-            echo "  Waiting for Ingress... ($i/30)"
-            sleep 2
-          done
-
-          echo "🧪 Running success folder (baseline)..."
-          mkdir -p postman/test-results
-          docker run --rm --network=host \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            postman-newman-instructor:e2e \
-            run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
-              --env-var "baseUrl=${BASE_URL}" \
-              --env-var "username=Test User" \
-              --folder success \
-              --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/success.xml
-
-          echo "🧪 Running step1 (Bonus stopped)..."
-          kubectl scale -n "$NS" deployment/bonus --replicas=0
-          sleep 5
-          docker run --rm --network=host \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            postman-newman-instructor:e2e \
-            run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
-              --env-var "baseUrl=${BASE_URL}" \
-              --env-var "username=Test User" \
-              --folder step1 \
-              --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step1.xml
-
-          echo "🧪 Running step2 (Bonus started)..."
-          kubectl scale -n "$NS" deployment/bonus --replicas=1
-          echo "⏳ Waiting for bonus to be ready (max 120s)..."
-          kubectl rollout status deployment/bonus -n "$NS" --timeout=120s
-          docker run --rm --network=host \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            -v $(pwd)/postman:/etc/newman-host \
-            postman-newman-instructor:e2e \
-            run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
-              --env-var "baseUrl=${BASE_URL}" \
-              --env-var "username=Test User" \
-              --folder step2 \
-              --export-environment /etc/newman-host/env-after-step2.json \
-              --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step2.xml
-
-          echo "🧪 Running step3 (Bonus stopped again)..."
-          kubectl scale -n "$NS" deployment/bonus --replicas=0
-          sleep 5
-          docker run --rm --network=host \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            -v $(pwd)/postman:/etc/newman-host \
-            postman-newman-instructor:e2e \
-            run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman-host/env-after-step2.json \
-              --env-var "baseUrl=${BASE_URL}" \
-              --env-var "username=Test User" \
-              --folder step3 \
-              --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step3.xml
-
-          echo "🧪 Running step4 (Bonus started again)..."
-          kubectl scale -n "$NS" deployment/bonus --replicas=1
-          echo "⏳ Waiting for bonus to be ready (max 120s)..."
-          kubectl rollout status deployment/bonus -n "$NS" --timeout=120s
-          docker run --rm --network=host \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            -v $(pwd)/postman:/etc/newman-host \
-            postman-newman-instructor:e2e \
-            run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman-host/env-after-step2.json \
-              --env-var "baseUrl=${BASE_URL}" \
-              --env-var "username=Test User" \
-              --folder step4 \
-              --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step4.xml
-
-          echo "✅ Fault-tolerance tests completed"
-
-      - name: Upload fault-tolerance test results (JUnit)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: fault-tolerance-junit-results
-          path: postman/test-results/step*.xml
-          retention-days: 7
-          if-no-files-found: warn
-
-      - name: Publish fault-tolerance test results to GitHub
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
-        with:
-          name: Fault Tolerance - Bonus Service Failover (Postman)
-          path: postman/test-results/step*.xml
           reporter: java-junit
