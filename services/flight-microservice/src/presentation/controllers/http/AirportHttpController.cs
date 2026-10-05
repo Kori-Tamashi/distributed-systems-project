@@ -1,5 +1,6 @@
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http.Airport;
@@ -21,6 +22,7 @@ namespace presentation.controllers.http;
 /// HTTP Controller for Airport CRUD operations
 /// Implements RESTful API endpoints for managing Airport entities
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/v1/airports")]
 [Produces("application/json")]
