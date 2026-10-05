@@ -25,7 +25,7 @@ namespace presentation.controllers.http;
 /// </summary>
 [Authorize]
 [ApiController]
-[Route("api/v1/privilege")]
+[Route("api/v1/privileges")]
 [Produces("application/json")]
 [Consumes("application/json")]
 public class PrivilegeHttpController : ControllerBase
