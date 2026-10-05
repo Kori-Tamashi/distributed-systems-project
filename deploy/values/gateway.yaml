@@ -36,6 +36,12 @@ ingress:
     nginx.ingress.kubernetes.io/proxy-connect-timeout: "10"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
 
+oidc:
+  issuer: ""
+  jwksUri: ""
+  tokenEndpoint: ""
+  clientId: "gateway"
+
 resources:
   requests:
     cpu: 100m

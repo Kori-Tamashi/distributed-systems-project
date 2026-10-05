@@ -41,5 +41,11 @@ ingress:
   pathType: Prefix
   annotations: {}
 
+oidc:
+  issuer: ""
+  jwksUri: ""
+  tokenEndpoint: ""
+  clientId: ""
+
 podLabels: {}
 podAnnotations: {}

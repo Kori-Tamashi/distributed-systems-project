@@ -25,7 +25,7 @@ BEGIN
   IF EXISTS (SELECT 1 FROM information_schema.tables
              WHERE table_schema='public' AND table_name='privilege') THEN
     INSERT INTO privilege (id, username, status, balance)
-    VALUES (1, 'Test User', 0, 0)
+    VALUES (1, 'testuser', 0, 0)
     ON CONFLICT (username) DO NOTHING;
   END IF;
 END $$;

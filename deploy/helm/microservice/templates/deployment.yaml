@@ -37,6 +37,23 @@ spec:
               value: "{{ .Values.container.port }}"
             - name: ASPNETCORE_ENVIRONMENT
               value: "Production"
+            {{- if and .Values.oidc (not (empty .Values.oidc.issuer)) }}
+            - name: OIDC_ISSUER
+              value: "{{ .Values.oidc.issuer }}"
+            - name: OIDC_JWKS_URI
+              value: "{{ .Values.oidc.jwksUri }}"
+            {{- if and .Values.oidc.tokenEndpoint (not (empty .Values.oidc.tokenEndpoint)) }}
+            - name: OIDC_TOKEN_ENDPOINT
+              value: "{{ .Values.oidc.tokenEndpoint }}"
+            - name: OIDC_CLIENT_ID
+              value: "{{ .Values.oidc.clientId }}"
+            - name: OIDC_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: keycloak-client-secret
+                  key: client-secret
+            {{- end }}
+            {{- end }}
             {{- range .Values.container.env }}
             - name: {{ .name }}
               value: {{ .value | quote }}

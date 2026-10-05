@@ -35,6 +35,10 @@ probes:
   periodSeconds: 10
   failureThreshold: 12
 
+oidc:
+  issuer: ""
+  jwksUri: ""
+
 resources:
   requests:
     cpu: 100m
