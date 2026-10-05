@@ -1,6 +1,7 @@
 using core.exceptions.businesslogic.services;
 using core.filters;
 using core.interfaces.businesslogic.services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
@@ -23,6 +24,7 @@ namespace presentation.controllers.http;
 /// HTTP Controller for PrivilegeHistory CRUD operations
 /// Implements RESTful API endpoints for managing PrivilegeHistory entities
 /// </summary>
+[Authorize]
 [ApiController]
 [Route("api/v1/privilege-histories")]
 [Produces("application/json")]

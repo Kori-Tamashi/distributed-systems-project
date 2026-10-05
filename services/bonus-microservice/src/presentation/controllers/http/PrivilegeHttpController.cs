@@ -1,5 +1,6 @@
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
@@ -22,8 +23,9 @@ namespace presentation.controllers.http;
 /// HTTP Controller for Privilege CRUD operations
 /// Implements RESTful API endpoints for managing Privilege entities
 /// </summary>
+[Authorize]
 [ApiController]
-[Route("api/v1/privileges")]
+[Route("api/v1/privilege")]
 [Produces("application/json")]
 [Consumes("application/json")]
 public class PrivilegeHttpController : ControllerBase
