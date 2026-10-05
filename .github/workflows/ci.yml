@@ -55,8 +55,11 @@ jobs:
           languages: csharp
           queries: +security-and-quality
 
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+      - name: Build
+        run: |
+          dotnet restore services/gateway-microservice/src/gateway-microservice.slnx
+          dotnet build services/gateway-microservice/src/gateway-microservice.slnx \
+            --no-restore --configuration Release
 
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v3

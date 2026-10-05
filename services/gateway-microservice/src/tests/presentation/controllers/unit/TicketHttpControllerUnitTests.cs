@@ -75,7 +75,7 @@ public class TicketHttpControllerUnitTests
         _mockFlightGateway = new Mock<core.interfaces.dataaccess.gateways.IFlightGateway>();
         _mockLogger = new Mock<ILogger<TicketHttpController>>();
         
-        _controller = new TicketHttpController(_mockService.Object, _mockFlightGateway.Object, _mockLogger.Object);
+        _controller = new TicketHttpController(_mockService.Object, _mockFlightGateway.Object, new Mock<core.security.ICurrentUser>().Object, _mockLogger.Object);
         
         // Setup URL helper for Location header
         var httpContext = new DefaultHttpContext();

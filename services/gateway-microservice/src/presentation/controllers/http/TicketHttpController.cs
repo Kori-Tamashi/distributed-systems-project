@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using core.exceptions.businesslogic.services;
 using core.interfaces.businesslogic.services;
 using core.interfaces.dataaccess.gateways;
+using core.security;
 using Microsoft.AspNetCore.Mvc;
 using presentation.converters.http;
 using presentation.dto.http;
@@ -35,15 +36,18 @@ public class TicketHttpController : ControllerBase
 {
     private readonly ITicketService _ticketService;
     private readonly IFlightGateway _flightGateway;
+    private readonly ICurrentUser _currentUser;
     private readonly ILogger<TicketHttpController> _logger;
 
     public TicketHttpController(
         ITicketService ticketService,
         IFlightGateway flightGateway,
+        ICurrentUser currentUser,
         ILogger<TicketHttpController> logger)
     {
         _ticketService = ticketService ?? throw new ArgumentNullException(nameof(ticketService));
         _flightGateway = flightGateway ?? throw new ArgumentNullException(nameof(flightGateway));
+        _currentUser = currentUser ?? throw new ArgumentNullException(nameof(currentUser));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -55,7 +59,7 @@ public class TicketHttpController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<List<TicketDTO>>> GetMyTickets()
     {
-        var username = Request.Headers["X-User-Name"].ToString();
+        var username = _currentUser.Username;
         if (string.IsNullOrWhiteSpace(username))
         {
             return BadRequest(new ErrorResponse("X-User-Name header is required"));
@@ -112,7 +116,7 @@ public class TicketHttpController : ControllerBase
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status500InternalServerError)]
     public async Task<ActionResult<TicketDTO>> GetTicketById(Guid ticketUid)
     {
-        var username = Request.Headers["X-User-Name"].ToString();
+        var username = _currentUser.Username;
         if (string.IsNullOrWhiteSpace(username))
         {
             return BadRequest(new ErrorResponse("X-User-Name header is required"));
@@ -176,7 +180,7 @@ public class TicketHttpController : ControllerBase
     {
         try
         {
-            var username = Request.Headers["X-User-Name"].ToString();
+            var username = _currentUser.Username;
             if (string.IsNullOrWhiteSpace(username))
             {
                 return BadRequest(new ValidationErrorResponse("X-User-Name header is required"));
@@ -245,7 +249,7 @@ public class TicketHttpController : ControllerBase
     {
         try
         {
-            var username = Request.Headers["X-User-Name"].ToString();
+            var username = _currentUser.Username;
             if (string.IsNullOrWhiteSpace(username))
             {
                 return BadRequest(new ValidationErrorResponse("X-User-Name header is required"));
