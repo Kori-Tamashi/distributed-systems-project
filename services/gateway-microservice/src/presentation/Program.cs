@@ -74,31 +74,31 @@ builder.Services.AddHostedService(sp => sp.GetRequiredService<InMemoryRetryQueue
 // Register raw HTTP gateways (internal, wrapped by circuit breakers)
 builder.Services.AddTransient<AirportHttpGateway>(provider =>
 {
-    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unnamed");
     return new AirportHttpGateway(httpClient, apiTestSettings.FlightMicroserviceUrl);
 });
 
 builder.Services.AddTransient<FlightHttpGateway>(provider =>
 {
-    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unnamed");
     return new FlightHttpGateway(httpClient, apiTestSettings.FlightMicroserviceUrl);
 });
 
 builder.Services.AddTransient<TicketHttpGateway>(provider =>
 {
-    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unnamed");
     return new TicketHttpGateway(httpClient, apiTestSettings.TicketMicroserviceUrl);
 });
 
 builder.Services.AddTransient<PrivilegeHttpGateway>(provider =>
 {
-    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unnamed");
     return new PrivilegeHttpGateway(httpClient, apiTestSettings.BonusMicroserviceUrl);
 });
 
 builder.Services.AddTransient<PrivilegeHistoryHttpGateway>(provider =>
 {
-    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient();
+    var httpClient = provider.GetRequiredService<IHttpClientFactory>().CreateClient("unnamed");
     return new PrivilegeHistoryHttpGateway(httpClient, apiTestSettings.BonusMicroserviceUrl);
 });
 
@@ -146,7 +146,7 @@ builder.Services.AddScoped<AuthorizeHttpController>();
 builder.Services.AddSingleton(apiTestSettings);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<ForwardAuthHandler>();
-builder.Services.AddHttpClient("default")
+builder.Services.AddHttpClient("unnamed")
     .AddHttpMessageHandler<ForwardAuthHandler>(); // Apply to all HttpClient instances
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
