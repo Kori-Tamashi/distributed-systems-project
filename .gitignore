@@ -1,5 +1,10 @@
 # local template — never commit
 lab4-template/
+lab5-template/
+
+# lab planning docs — never commit
+TASK.md
+PLAN.md
 
 # macOS
 .DS_Store
