@@ -1,10 +1,13 @@
 using core.interfaces.businesslogic.services;
 using core.interfaces.dataaccess.repositories;
+using core.configuration;
 using dataaccess.contexts.postgres;
 using dataaccess.repositories.postgres;
 using businesslogic.services;
 using presentation.controllers.http;
 using presentation.middleware;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -34,6 +37,28 @@ builder.Services.AddScoped<TicketHttpController>();
 
 // Add services to the container
 builder.Services.AddSingleton(appSettings);
+
+// Load OIDC settings and register JWT authentication
+var oidcSettings = LoadOidcSettings();
+builder.Services.AddSingleton(oidcSettings);
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.Authority = oidcSettings.Issuer;
+        options.RequireHttpsMetadata = false; // Development mode
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = oidcSettings.ValidIssuer,
+            ValidateAudience = false,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ClockSkew = TimeSpan.FromSeconds(30),
+            NameClaimType = "preferred_username"
+        };
+    });
+builder.Services.AddAuthorization();
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -53,9 +78,10 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();
 
-// Health check endpoint
-app.MapHealthChecks("/manage/health");
+// Health check endpoint (AllowAnonymous)
+app.MapHealthChecks("/manage/health").AllowAnonymous();
 
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 
@@ -166,6 +192,27 @@ static async Task ApplyMigrationsAsync(TicketsDatabaseContext context)
     {
         Console.WriteLine($"Warning: Could not apply migrations: {ex.Message}");
     }
+}
+
+/// <summary>
+/// Loads OIDC settings from environment variables
+/// </summary>
+static OidcSettings LoadOidcSettings()
+{
+    var issuer = Environment.GetEnvironmentVariable("OIDC_ISSUER")
+                 ?? "http://localhost:8888/realms/rsoi";
+    
+    return new OidcSettings
+    {
+        Issuer = issuer,
+        JwksUri = Environment.GetEnvironmentVariable("OIDC_JWKS_URI")
+                  ?? $"{issuer}/protocol/openid-connect/certs",
+        TokenEndpoint = Environment.GetEnvironmentVariable("OIDC_TOKEN_ENDPOINT")
+                        ?? $"{issuer}/protocol/openid-connect/token",
+        ClientId = Environment.GetEnvironmentVariable("OIDC_CLIENT_ID") ?? "gateway",
+        ClientSecret = Environment.GetEnvironmentVariable("OIDC_CLIENT_SECRET") ?? "",
+        ValidIssuer = issuer
+    };
 }
 
 /// <summary>
