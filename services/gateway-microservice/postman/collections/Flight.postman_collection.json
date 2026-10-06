@@ -146,7 +146,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"FlightNumber\": \"AFL031\",\n  \"DateTime\": \"2026-11-21T20:00:00Z\",\n  \"FromAirportId\": 7,\n  \"ToAirportId\": 52,\n  \"Price\": 1500\n}"
+          "raw": "{\n  \"FlightNumber\": \"AFL031\",\n  \"DateTime\": \"2026-11-21T20:00:00Z\",\n  \"FromAirportId\": 7,\n  \"ToAirportId\": 2,\n  \"Price\": 1500\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights",
