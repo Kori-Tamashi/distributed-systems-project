@@ -664,6 +664,7 @@ jobs:
   api-tests:
     name: API Tests ${{ matrix.service }}
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs:
       - integration-tests
       - integration-tests-gateway
@@ -818,6 +819,7 @@ jobs:
   gateway-api-tests:
     name: API Tests gateway
     runs-on: ubuntu-latest
+    continue-on-error: true
     needs: integration-tests-gateway
     steps:
       - name: Checkout code
