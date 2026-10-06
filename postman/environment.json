@@ -1,13 +1,37 @@
 {
-   "id": "lab5-rsoi-local",
-   "name": "[rsoi][lab5] Keycloak Local",
-   "values": [
-      { "key": "serviceUrl", "value": "http://localhost:8080", "enabled": true },
-      { "key": "identityProviderUrl", "value": "http://localhost:8888/realms/rsoi", "enabled": true },
-      { "key": "username", "value": "testuser", "enabled": true },
-      { "key": "password", "value": "test", "enabled": true },
-      { "key": "clientId", "value": "gateway", "enabled": true },
-      { "key": "clientSecret", "value": "uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj", "enabled": true }
-   ],
-   "_postman_variable_scope": "environment"
+  "id": "lab5-rsoi-local",
+  "name": "[rsoi][lab5] Keycloak Local",
+  "values": [
+    {
+      "key": "serviceUrl",
+      "value": "http://localhost:8080",
+      "enabled": true
+    },
+    {
+      "key": "identityProviderUrl",
+      "value": "http://localhost:8888/realms/rsoi",
+      "enabled": true
+    },
+    {
+      "key": "username",
+      "value": "testuser",
+      "enabled": true
+    },
+    {
+      "key": "password",
+      "value": "test",
+      "enabled": true
+    },
+    {
+      "key": "clientId",
+      "value": "gateway",
+      "enabled": true
+    },
+    {
+      "key": "clientSecret",
+      "value": "uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
 }

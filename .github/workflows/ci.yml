@@ -1350,10 +1350,13 @@ jobs:
   # ===========================================
   # Fault Tolerance Tests
   # ===========================================
+  # Same infrastructure as Autograding (Keycloak + full stack)
+  # Bonus Service stop/start via docker (not kubectl)
   fault-tolerance:
     name: Fault Tolerance
     runs-on: ubuntu-latest
     needs: autograding
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -1365,30 +1368,6 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
-      - name: Build Postman Newman image for Instructor Tests
-        run: |
-          echo "Building Postman Newman image for Instructor Tests..."
-          docker build \
-            --tag postman-newman-instructor:e2e \
-            -f postman/Dockerfile \
-            postman/
-          echo "✅ Postman Newman image built: postman-newman-instructor:e2e"
-
-      - name: Install PostgreSQL client
-        run: sudo apt-get update && sudo apt-get install -y postgresql-client
-
-      - name: Start PostgreSQL containers
-        run: |
-          echo "Starting PostgreSQL containers for all services..."
-          docker network create autograding-network
-
-          docker run -d --name postgres-bonus-tests --network autograding-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
-          docker run -d --name postgres-flight-tests --network autograding-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
-          docker run -d --name postgres-ticket-tests --network autograding-network -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test postgres:14-alpine
-
-          echo "⏳ Waiting for PostgreSQL instances..."
-          sleep 5
-
       - name: Build all microservices
         run: |
           echo "Building bonus, flight, ticket, gateway microservices..."
@@ -1398,54 +1377,152 @@ jobs:
           docker build -t gateway-microservice:api services/gateway-microservice/
           echo "✅ All microservices built"
 
-      - name: Start backend services
+      - name: Start PostgreSQL containers (host network)
         run: |
-          echo "Starting bonus, flight, ticket services..."
+          echo "Starting PostgreSQL containers on host network..."
+          docker run -d --name postgres-bonus-tests --network host \
+            -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test \
+            -e PGPORT=5435 postgres:14-alpine
+          docker run -d --name postgres-flight-tests --network host \
+            -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test \
+            -e PGPORT=5433 postgres:14-alpine
+          docker run -d --name postgres-ticket-tests --network host \
+            -e POSTGRES_DB=test_api -e POSTGRES_USER=program -e POSTGRES_PASSWORD=test \
+            -e PGPORT=5434 postgres:14-alpine
+          
+          echo "⏳ Waiting for PostgreSQL instances..."
+          for p in 5433 5434 5435; do
+            for i in {1..30}; do
+              docker run --rm --network host postgres:14-alpine pg_isready -h localhost -p $p -U program && break
+              echo "  Waiting PostgreSQL $p... ($i/30)"
+              sleep 2
+            done
+          done
 
-          docker run -d --name bonus-api-e2e --network autograding-network --link postgres-bonus-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8050 -p 8050:8050 -e OIDC_TEST_SECRET="ThisIsATestSecretKeyForIntegrationTests1234567890" bonus-microservice:api
-          docker run -d --name flight-api-e2e --network autograding-network --link postgres-flight-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8060 -p 8060:8060 -e OIDC_TEST_SECRET="ThisIsATestSecretKeyForIntegrationTests1234567890" flight-microservice:api
-          docker run -d --name ticket-api-e2e --network autograding-network --link postgres-ticket-tests:postgres -e ASPNETCORE_ENVIRONMENT=Development -e POSTGRESQL_HOST=postgres -e POSTGRESQL_PORT=5432 -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program -e POSTGRESQL_PASSWORD=test -e APP_PORT=8070 -p 8070:8070 -e OIDC_TEST_SECRET="ThisIsATestSecretKeyForIntegrationTests1234567890" ticket-microservice:api
+      - name: Start Keycloak with imported realm
+        run: |
+          echo "Starting Keycloak 26.0 with realm-rsoi.json..."
+          docker run -d --name keycloak --network host \
+            -e KEYCLOAK_ADMIN=admin \
+            -e KEYCLOAK_ADMIN_PASSWORD=admin \
+            -e KC_HOSTNAME=http://localhost:8888 \
+            -e KC_HTTP_ENABLED=true \
+            -e KC_HOSTNAME_STRICT=false \
+            -v "$(pwd)/deploy/k8s/keycloak/realm-rsoi.json:/opt/keycloak/data/import/realm.json:ro" \
+            quay.io/keycloak/keycloak:26.0 \
+            start-dev --import-realm --http-port=8888
 
-          echo "⏳ Waiting for backend services to start..."
-          for i in {1..30}; do
-            if curl -sf http://localhost:8050/manage/health > /dev/null 2>&1 && curl -sf http://localhost:8060/manage/health > /dev/null 2>&1 && curl -sf http://localhost:8070/manage/health > /dev/null 2>&1; then
-              echo "✅ All backend services ready!"
+          echo "⏳ Waiting for Keycloak realm rsoi to be ready..."
+          for i in {1..60}; do
+            if curl -sf http://localhost:8888/realms/rsoi/.well-known/openid-configuration > /dev/null 2>&1; then
+              echo "✅ Keycloak ready"
               break
             fi
-            echo "  Waiting... ($i/30)"
+            echo "  Waiting Keycloak... ($i/60)"
             sleep 2
+          done
+          echo "--- Keycloak logs (last 50 lines) ---"
+          docker logs keycloak 2>&1 | tail -50
+
+      - name: Start downstream services (real Keycloak mode, NO test secret)
+        run: |
+          echo "Starting bonus, flight, ticket services with Keycloak OIDC..."
+          
+          docker run -d --name bonus-api-e2e --network host \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e POSTGRESQL_HOST=localhost -e POSTGRESQL_PORT=5435 \
+            -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program \
+            -e POSTGRESQL_PASSWORD=test -e APP_PORT=8050 \
+            -e OIDC_ISSUER=http://localhost:8888/realms/rsoi \
+            -e OIDC_JWKS_URI=http://localhost:8888/realms/rsoi/protocol/openid-connect/certs \
+            -e OIDC_CLIENT_ID=gateway \
+            -e OIDC_CLIENT_SECRET=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj \
+            bonus-microservice:api
+
+          docker run -d --name flight-api-e2e --network host \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e POSTGRESQL_HOST=localhost -e POSTGRESQL_PORT=5433 \
+            -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program \
+            -e POSTGRESQL_PASSWORD=test -e APP_PORT=8060 \
+            -e OIDC_ISSUER=http://localhost:8888/realms/rsoi \
+            -e OIDC_JWKS_URI=http://localhost:8888/realms/rsoi/protocol/openid-connect/certs \
+            -e OIDC_CLIENT_ID=gateway \
+            -e OIDC_CLIENT_SECRET=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj \
+            flight-microservice:api
+
+          docker run -d --name ticket-api-e2e --network host \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e POSTGRESQL_HOST=localhost -e POSTGRESQL_PORT=5434 \
+            -e POSTGRESQL_DATABASE=test_api -e POSTGRESQL_USER=program \
+            -e POSTGRESQL_PASSWORD=test -e APP_PORT=8070 \
+            -e OIDC_ISSUER=http://localhost:8888/realms/rsoi \
+            -e OIDC_JWKS_URI=http://localhost:8888/realms/rsoi/protocol/openid-connect/certs \
+            -e OIDC_CLIENT_ID=gateway \
+            -e OIDC_CLIENT_SECRET=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj \
+            ticket-microservice:api
+
+          echo "⏳ Waiting for backend services to start..."
+          for port in 8050 8060 8070; do
+            for i in {1..30}; do
+              if curl -sf http://localhost:$port/manage/health > /dev/null 2>&1; then
+                echo "✅ Port $port ready"
+                break
+              fi
+              echo "  Waiting $port... ($i/30)"
+              sleep 2
+            done
           done
 
       - name: Seed flight and bonus data for fault-tolerance
         run: |
           set -e
-          echo "Seeding airports and flight..."
-          docker exec -i postgres-flight-tests psql -U program -d test_api <<'SQL'
-          INSERT INTO airports (name, city, country) VALUES
-            ('Пулково', 'Санкт-Петербург', 'Россия'),
-            ('Шереметьево', 'Москва', 'Россия')
-          ON CONFLICT DO NOTHING;
+          echo "Seeding airports and flight for fault-tolerance tests..."
+          sudo apt-get update && sudo apt-get install -y postgresql-client
+          
+          PGPASSWORD=test psql -h localhost -p 5433 -U program -d test_api <<'SQL'
+          INSERT INTO airports (id, name, city, country) VALUES
+            (1, 'Шереметьево', 'Москва', 'Россия'),
+            (2, 'Пулково', 'Санкт-Петербург', 'Россия'),
+            (7, 'Tokyo Narita', 'Tokyo', 'Japan')
+          ON CONFLICT (id) DO NOTHING;
 
-          INSERT INTO flights (flight_uid, flight_number, datetime, from_airport_id, to_airport_id, price)
-          SELECT '550e8400-e29b-41d4-a716-446655440000', 'AFL031', '2021-10-08 20:00:00+00',
-                 (SELECT id FROM airports WHERE name='Пулково'),
-                 (SELECT id FROM airports WHERE name='Шереметьево'),
-                 1500
-          WHERE NOT EXISTS (SELECT 1 FROM flights WHERE flight_number='AFL031');
+          INSERT INTO flights (id, flight_uid, flight_number, datetime, from_airport_id, to_airport_id, price)
+          VALUES (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031', '2021-10-08 20:00:00+00', 2, 1, 1500)
+          ON CONFLICT (id) DO NOTHING;
+
+          SELECT setval(pg_get_serial_sequence('airports','id'), (SELECT MAX(id) FROM airports));
+          SELECT setval(pg_get_serial_sequence('flights','id'), (SELECT MAX(id) FROM flights));
           SQL
 
-          echo "Seeding privilege for Test Max..."
-          docker exec -i postgres-bonus-tests psql -U program -d test_api <<'SQL'
-          INSERT INTO privilege (username, balance, status) VALUES ('Test Max', 0, 0)
-          ON CONFLICT DO NOTHING;
-          SQL
-          echo "✅ Seed applied"
+          echo "Verifying flight seed..."
+          PGPASSWORD=test psql -h localhost -p 5433 -U program -d test_api -tAc "SELECT COUNT(*) FROM flights WHERE flight_number='AFL031';"
 
-      - name: Start Gateway service
+          echo "Seeding privilege for testuser in bonus DB..."
+          PGPASSWORD=test psql -h localhost -p 5435 -U program -d test_api <<'SQL'
+          INSERT INTO privilege (id, username, status, balance) VALUES (1, 'testuser', 0, 10000)
+          ON CONFLICT (username) DO NOTHING;
+          SQL
+
+          echo "Verifying privilege seed..."
+          PGPASSWORD=test psql -h localhost -p 5435 -U program -d test_api -tAc "SELECT COUNT(*) FROM privilege WHERE username='testuser';"
+
+          echo "✅ Seed applied successfully"
+
+      - name: Start Gateway service (real Keycloak mode, NO test secret)
         run: |
-          echo "Starting Gateway service..."
-          docker run -d --name gateway-api-e2e --network autograding-network -e ASPNETCORE_ENVIRONMENT=Development -e APP_PORT=8080 -e BONUS_API_URL=http://bonus-api-e2e:8050 -e FLIGHT_API_URL=http://flight-api-e2e:8060 -e TICKET_API_URL=http://ticket-api-e2e:8070 -p 8080:8080 -e OIDC_TEST_SECRET="ThisIsATestSecretKeyForIntegrationTests1234567890" gateway-microservice:api
-
+          echo "Starting Gateway service with Keycloak OIDC..."
+          docker run -d --name gateway-api-e2e --network host \
+            -e ASPNETCORE_ENVIRONMENT=Development \
+            -e APP_PORT=8080 \
+            -e BONUS_API_URL=http://localhost:8050 \
+            -e FLIGHT_API_URL=http://localhost:8060 \
+            -e TICKET_API_URL=http://localhost:8070 \
+            -e OIDC_ISSUER=http://localhost:8888/realms/rsoi \
+            -e OIDC_JWKS_URI=http://localhost:8888/realms/rsoi/protocol/openid-connect/certs \
+            -e OIDC_CLIENT_ID=gateway \
+            -e OIDC_CLIENT_SECRET=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj \
+            gateway-microservice:api
+          
           echo "⏳ Waiting for Gateway to start..."
           for i in {1..30}; do
             if curl -sf http://localhost:8080/manage/health > /dev/null 2>&1; then
@@ -1455,119 +1532,184 @@ jobs:
             echo "  Waiting... ($i/30)"
             sleep 2
           done
+          echo "--- Gateway env check ---"
+          docker exec gateway-api-e2e env | grep -E "OIDC|BONUS|FLIGHT|TICKET" | sort
 
-      - name: Success folder (happy path baseline)
+      - name: Build Newman instructor image
         run: |
+          echo "Building Postman Newman image for Fault Tolerance Tests..."
+          docker build \
+            --tag postman-newman-instructor:e2e \
+            -f postman/Dockerfile \
+            postman/
+          echo "✅ Postman Newman image built: postman-newman-instructor:e2e"
+
+      - name: Run fault-tolerance success folder (baseline)
+        run: |
+          echo "Running fault-tolerance success folder..."
           mkdir -p postman/test-results
           docker run --rm \
-            --network autograding-network \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
+            --network host \
+            -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://gateway-api-e2e:8080" \
-              --env-var "username=Test User" \
+              --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
+              --env-var "serviceUrl=http://localhost:8080" \
+              --env-var "clientId=gateway" \
+              --env-var "clientSecret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj" \
+              --env-var "username=testuser" \
+              --env-var "password=test" \
               --folder success \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/success.xml
 
       - name: Step 1 — stop Bonus Service
         run: |
+          echo "=== Step 1: Stopping Bonus Service ==="
           docker stop bonus-api-e2e
+          
           docker run --rm \
-            --network autograding-network \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
+            --network host \
+            -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://gateway-api-e2e:8080" \
-              --env-var "username=Test User" \
+              --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
+              --env-var "serviceUrl=http://localhost:8080" \
+              --env-var "clientId=gateway" \
+              --env-var "clientSecret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj" \
+              --env-var "username=testuser" \
+              --env-var "password=test" \
               --folder step1 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step1.xml
 
       - name: Step 2 — start Bonus Service
         run: |
+          echo "=== Step 2: Starting Bonus Service ==="
           docker start bonus-api-e2e
+          
+          echo "⏳ Waiting for Bonus Service to be ready..."
           for i in {1..30}; do
-            curl -sf http://localhost:8050/manage/health > /dev/null 2>&1 && break
+            if curl -sf http://localhost:8050/manage/health > /dev/null 2>&1; then
+              echo "✅ Bonus Service ready"
+              break
+            fi
+            echo "  Waiting... ($i/30)"
             sleep 2
           done
-          # give CB time to probe and close
+          
+          # Give Circuit Breaker time to probe and close
+          echo "⏳ Waiting for Circuit Breaker to probe..."
           sleep 5
+          
           docker run --rm \
-            --network autograding-network \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            -v $(pwd)/postman:/etc/newman-host \
+            --network host \
+            -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
               -e /etc/newman/environment.json \
-              --env-var "baseUrl=http://gateway-api-e2e:8080" \
-              --env-var "username=Test User" \
+              --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
+              --env-var "serviceUrl=http://localhost:8080" \
+              --env-var "clientId=gateway" \
+              --env-var "clientSecret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj" \
+              --env-var "username=testuser" \
+              --env-var "password=test" \
               --folder step2 \
-              --export-environment /etc/newman-host/env-after-step2.json \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step2.xml
 
       - name: Step 3 — stop Bonus Service again
         run: |
+          echo "=== Step 3: Stopping Bonus Service again ==="
           docker stop bonus-api-e2e
+          
           docker run --rm \
-            --network autograding-network \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            -v $(pwd)/postman:/etc/newman-host \
+            --network host \
+            -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman-host/env-after-step2.json \
-              --env-var "baseUrl=http://gateway-api-e2e:8080" \
-              --env-var "username=Test User" \
+              -e /etc/newman/environment.json \
+              --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
+              --env-var "serviceUrl=http://localhost:8080" \
+              --env-var "clientId=gateway" \
+              --env-var "clientSecret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj" \
+              --env-var "username=testuser" \
+              --env-var "password=test" \
               --folder step3 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step3.xml
 
       - name: Step 4 — start Bonus Service again (final check)
         run: |
+          echo "=== Step 4: Starting Bonus Service again ==="
           docker start bonus-api-e2e
+          
+          echo "⏳ Waiting for Bonus Service to be ready..."
           for i in {1..30}; do
-            curl -sf http://localhost:8050/manage/health > /dev/null 2>&1 && break
+            if curl -sf http://localhost:8050/manage/health > /dev/null 2>&1; then
+              echo "✅ Bonus Service ready"
+              break
+            fi
+            echo "  Waiting... ($i/30)"
             sleep 2
           done
+          
+          # Give Circuit Breaker time to probe and close
+          echo "⏳ Waiting for Circuit Breaker to probe..."
           sleep 5
+          
           docker run --rm \
-            --network autograding-network \
-            -v $(pwd)/postman/test-results:/etc/newman/results \
-            -v $(pwd)/postman:/etc/newman-host \
+            --network host \
+            -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman-host/env-after-step2.json \
-              --env-var "baseUrl=http://gateway-api-e2e:8080" \
-              --env-var "username=Test User" \
+              -e /etc/newman/environment.json \
+              --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
+              --env-var "serviceUrl=http://localhost:8080" \
+              --env-var "clientId=gateway" \
+              --env-var "clientSecret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj" \
+              --env-var "username=testuser" \
+              --env-var "password=test" \
               --folder step4 \
               --reporters cli,junit \
               --reporter-junit-export /etc/newman/results/step4.xml
 
-      - name: Upload fault-tolerance test results (JUnit)
+      - name: Upload Fault Tolerance test results (JUnit)
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: fault-tolerance-junit-results
-          path: postman/test-results/step*.xml
+          path: |
+            postman/test-results/*.xml
           retention-days: 7
           if-no-files-found: warn
 
-      - name: Publish fault-tolerance test results to GitHub
+      - name: Publish Fault Tolerance test results to GitHub
         uses: dorny/test-reporter@v1
         if: success() || failure()
         with:
           name: Fault Tolerance - Bonus Service failover (Postman)
-          path: postman/test-results/step*.xml
+          path: postman/test-results/*.xml
           reporter: java-junit
+
+      - name: Debug — Keycloak logs (on failure)
+        if: failure()
+        run: |
+          echo "=== Keycloak logs (last 100 lines) ==="
+          docker logs keycloak 2>&1 | tail -100
+
+      - name: Debug — Gateway logs (on failure)
+        if: failure()
+        run: |
+          echo "=== Gateway logs (last 100 lines) ==="
+          docker logs gateway-api-e2e 2>&1 | tail -100
 
       - name: Cleanup Docker containers
         if: always()
         run: |
           echo "🧹 Cleaning up Docker containers..."
           docker rm -f gateway-api-e2e bonus-api-e2e flight-api-e2e ticket-api-e2e \
-            postgres-bonus-tests postgres-flight-tests postgres-ticket-tests 2>/dev/null || true
-          docker network rm autograding-network 2>/dev/null || true
+            postgres-bonus-tests postgres-flight-tests postgres-ticket-tests keycloak 2>/dev/null || true
           echo "✅ Cleanup complete"
