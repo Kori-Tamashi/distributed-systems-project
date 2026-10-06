@@ -985,6 +985,13 @@ jobs:
           cat /tmp/gateway.txt
           echo ""
           
+          echo "=== Gateway env vars (from inside container) ==="
+          docker exec gateway-api-e2e env | sort | grep -E "BONUS|FLIGHT|TICKET|OIDC|API_URL" || true
+          
+          echo ""
+          echo "=== Gateway logs (last 150 lines) ==="
+          docker logs gateway-api-e2e 2>&1 | tail -150
+          
           echo "=== DEBUG COMPLETE ==="
           echo ""
           echo "=== Saving HTTP codes ==="
