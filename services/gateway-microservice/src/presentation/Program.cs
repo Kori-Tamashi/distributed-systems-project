@@ -169,8 +169,26 @@ builder.Services.AddScoped<AuthorizeHttpController>();
 builder.Services.AddSingleton(apiTestSettings);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<ForwardAuthHandler>();
+
+// Generate test JWT token if in test mode
+string? testBearerToken = null;
+if (!string.IsNullOrEmpty(testSecret))
+{
+    testBearerToken = GenerateTestJwt(testSecret);
+    Console.WriteLine($"[AUTH] Generated test JWT token (len={testBearerToken.Length})");
+}
+
 builder.Services.AddHttpClient("unnamed")
-    .AddHttpMessageHandler<ForwardAuthHandler>(); // Apply to all HttpClient instances
+    .AddHttpMessageHandler<ForwardAuthHandler>() // Apply to all HttpClient instances
+    .ConfigureHttpClient((services, client) =>
+    {
+        // In test mode, add default Authorization header to all outgoing requests
+        if (!string.IsNullOrEmpty(testBearerToken))
+        {
+            client.DefaultRequestHeaders.Authorization = 
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", testBearerToken);
+        }
+    });
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
@@ -252,6 +270,31 @@ static ApplicationSettings LoadApplicationSettings()
         Port = int.Parse(Environment.GetEnvironmentVariable("APP_PORT") ?? "8080"),
         Environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development"
     };
+}
+
+/// <summary>
+/// Generate test JWT token for integration tests (symmetric HS256)
+/// </summary>
+static string GenerateTestJwt(string secret)
+{
+    var header = "{\"alg\":\"HS256\",\"typ\":\"JWT\"}";
+    var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    var payloadJson = 
+        $"{{\"sub\":\"testuser\",\"preferred_username\":\"testuser\",\"iss\":\"test\",\"aud\":\"gateway\",\"iat\":{now},\"exp\":{now + 3600}}}";
+    
+    string B64Url(byte[] b)
+    {
+        return Convert.ToBase64String(b).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+    }
+    
+    var h = B64Url(System.Text.Encoding.UTF8.GetBytes(header));
+    var p = B64Url(System.Text.Encoding.UTF8.GetBytes(payloadJson));
+    var signingInput = h + "." + p;
+    
+    using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(secret));
+    var sig = B64Url(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(signingInput)));
+    
+    return signingInput + "." + sig;
 }
 
 /// <summary>
