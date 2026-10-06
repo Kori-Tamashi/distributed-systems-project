@@ -900,7 +900,7 @@ jobs:
           echo "Seeding database..."
           
           # Flight DB: airports + flights
-          docker exec flight-api-e2e psql -U program -d test_api << 'SQL'
+          docker exec -i postgres-flight-tests psql -U program -d test_api << 'SQL'
           INSERT INTO airports (id, name, city, country)
           VALUES (1, 'Шереметьево', 'Москва', 'Россия'),
                  (2, 'Пулково', 'Санкт-Петербург', 'Россия'),
@@ -916,7 +916,7 @@ jobs:
           SQL
 
           # Bonus DB: privilege for testuser
-          docker exec bonus-api-e2e psql -U program -d test_api << 'SQL'
+          docker exec -i postgres-bonus-tests psql -U program -d test_api << 'SQL'
           INSERT INTO privilege (id, username, status, balance)
           VALUES (1, 'testuser', 0, 10000)
           ON CONFLICT (username) DO NOTHING;
