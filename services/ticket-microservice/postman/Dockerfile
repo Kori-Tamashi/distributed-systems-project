@@ -14,6 +14,7 @@ RUN mkdir -p /etc/newman/results
 ENTRYPOINT ["sh", "-c", "newman run /etc/newman/collection.json \
   -e /etc/newman/environment.json \
   --env-var \"baseUrl=${BASE_URL:-http://localhost:8070}\" \
+  --env-var \"testSecret=ThisIsATestSecretKeyForIntegrationTests1234567890\" \
   --reporters cli,junit \
   --reporter-junit-export /etc/newman/results/results.xml \
   --delay-request 100 \

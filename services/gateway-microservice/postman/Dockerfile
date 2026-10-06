@@ -6,7 +6,9 @@ FROM postman/newman:alpine
 
 WORKDIR /etc/newman
 
-COPY collections/Airport.postman_collection.json /etc/newman/collection.json
+COPY collections/Flight.postman_collection.json /etc/newman/collection.json
+COPY collections/Ticket.postman_collection.json /etc/newman/collections/Ticket.json
+COPY collections/Airport.postman_collection.json /etc/newman/collections/Airport.json
 COPY environments/local.postman_environment.json /etc/newman/environment.json
 
 RUN mkdir -p /etc/newman/results
@@ -14,6 +16,7 @@ RUN mkdir -p /etc/newman/results
 ENTRYPOINT ["sh", "-c", "newman run /etc/newman/collection.json \
   -e /etc/newman/environment.json \
   --env-var \"baseUrl=${BASE_URL:-http://localhost:8080}\" \
+  --env-var \"testSecret=ThisIsATestSecretKeyForIntegrationTests1234567890\" \
   --reporters cli,junit \
   --reporter-junit-export /etc/newman/results/results.xml \
   --delay-request 100 \
