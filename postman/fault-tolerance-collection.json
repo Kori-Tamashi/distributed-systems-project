@@ -872,6 +872,80 @@
           "name": "step1",
           "item": [
             {
+              "name": "[auth] Get Token",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "scope",
+                      "value": "openid",
+                      "type": "text"
+                    },
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "type": "text"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{username}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "{{clientId}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{clientSecret}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{identityProviderUrl}}/protocol/openid-connect/token",
+                  "host": [
+                    "{{identityProviderUrl}}"
+                  ],
+                  "path": [
+                    "protocol",
+                    "openid-connect",
+                    "token"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Получить токен\", () => {",
+                      "    pm.response.to.have.status(200);",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
+                      "",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.access_token).not.be.empty;",
+                      "    pm.collectionVariables.set(\"authorizationToken\", response.access_token);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
               "name": "[failover] Получить список рейсов",
               "event": [
                 {
@@ -1071,6 +1145,80 @@
         {
           "name": "step2",
           "item": [
+            {
+              "name": "[auth] Get Token",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "scope",
+                      "value": "openid",
+                      "type": "text"
+                    },
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "type": "text"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{username}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "{{clientId}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{clientSecret}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{identityProviderUrl}}/protocol/openid-connect/token",
+                  "host": [
+                    "{{identityProviderUrl}}"
+                  ],
+                  "path": [
+                    "protocol",
+                    "openid-connect",
+                    "token"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Получить токен\", () => {",
+                      "    pm.response.to.have.status(200);",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
+                      "",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.access_token).not.be.empty;",
+                      "    pm.collectionVariables.set(\"authorizationToken\", response.access_token);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
             {
               "name": "[failover] Получить информацию о состоянии бонусного счета",
               "event": [
@@ -1315,6 +1463,80 @@
           "name": "step3",
           "item": [
             {
+              "name": "[auth] Get Token",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "scope",
+                      "value": "openid",
+                      "type": "text"
+                    },
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "type": "text"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{username}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "{{clientId}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{clientSecret}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{identityProviderUrl}}/protocol/openid-connect/token",
+                  "host": [
+                    "{{identityProviderUrl}}"
+                  ],
+                  "path": [
+                    "protocol",
+                    "openid-connect",
+                    "token"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Получить токен\", () => {",
+                      "    pm.response.to.have.status(200);",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
+                      "",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.access_token).not.be.empty;",
+                      "    pm.collectionVariables.set(\"authorizationToken\", response.access_token);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
+            {
               "name": "[failover] Получить информацию о состоянии бонусного счета",
               "event": [
                 {
@@ -1417,6 +1639,80 @@
         {
           "name": "step4",
           "item": [
+            {
+              "name": "[auth] Get Token",
+              "request": {
+                "auth": {
+                  "type": "noauth"
+                },
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "urlencoded",
+                  "urlencoded": [
+                    {
+                      "key": "scope",
+                      "value": "openid",
+                      "type": "text"
+                    },
+                    {
+                      "key": "grant_type",
+                      "value": "password",
+                      "type": "text"
+                    },
+                    {
+                      "key": "username",
+                      "value": "{{username}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "password",
+                      "value": "{{password}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_id",
+                      "value": "{{clientId}}",
+                      "type": "text"
+                    },
+                    {
+                      "key": "client_secret",
+                      "value": "{{clientSecret}}",
+                      "type": "text"
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{identityProviderUrl}}/protocol/openid-connect/token",
+                  "host": [
+                    "{{identityProviderUrl}}"
+                  ],
+                  "path": [
+                    "protocol",
+                    "openid-connect",
+                    "token"
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test(\"Получить токен\", () => {",
+                      "    pm.response.to.have.status(200);",
+                      "    pm.expect(pm.response.headers.get(\"Content-Type\")).to.contains(\"application/json\");",
+                      "",
+                      "    const response = pm.response.json();",
+                      "    pm.expect(response.access_token).not.be.empty;",
+                      "    pm.collectionVariables.set(\"authorizationToken\", response.access_token);",
+                      "});"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ]
+            },
             {
               "name": "[failover] Получить информацию о состоянии бонусного счета",
               "event": [
