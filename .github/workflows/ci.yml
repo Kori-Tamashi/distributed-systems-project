@@ -972,6 +972,12 @@ jobs:
           echo ""
           
           echo "=== DEBUG COMPLETE ==="
+          echo ""
+          echo "=== Saving HTTP codes ==="
+          echo "BONUS:$HTTP_CODE" > /tmp/bonus-code.txt
+          echo "FLIGHT:$HTTP_CODE" > /tmp/flight-code.txt
+          echo "TICKET:$HTTP_CODE" > /tmp/ticket-code.txt
+          echo "GATEWAY:$HTTP_CODE" > /tmp/gateway-code.txt
 
       - name: Run Gateway Postman API tests
         run: |
