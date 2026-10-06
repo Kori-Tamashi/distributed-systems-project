@@ -66,6 +66,7 @@ public class TicketHttpControllerUnitTests
     private readonly Mock<ITicketService> _mockService;
     private readonly Mock<core.interfaces.dataaccess.gateways.IFlightGateway> _mockFlightGateway;
     private readonly Mock<ILogger<TicketHttpController>> _mockLogger;
+    private readonly Mock<core.security.ICurrentUser> _mockCurrentUser;
     private readonly TicketHttpController _controller;
 
     public TicketHttpControllerUnitTests()
@@ -74,8 +75,15 @@ public class TicketHttpControllerUnitTests
         _mockService = new Mock<ITicketService>();
         _mockFlightGateway = new Mock<core.interfaces.dataaccess.gateways.IFlightGateway>();
         _mockLogger = new Mock<ILogger<TicketHttpController>>();
+        _mockCurrentUser = new Mock<core.security.ICurrentUser>();
         
-        _controller = new TicketHttpController(_mockService.Object, _mockFlightGateway.Object, new Mock<core.security.ICurrentUser>().Object, _mockLogger.Object);
+        // Setup default username for all tests
+        _mockCurrentUser.SetupGet(c => c.Username).Returns("testuser");
+        
+        // Setup default flight gateway (empty list) for all tests
+        _mockFlightGateway.Setup(f => f.GetAllAsync()).ReturnsAsync(new List<core.domain.Flight>());
+        
+        _controller = new TicketHttpController(_mockService.Object, _mockFlightGateway.Object, _mockCurrentUser.Object, _mockLogger.Object);
         
         // Setup URL helper for Location header
         var httpContext = new DefaultHttpContext();
@@ -101,10 +109,8 @@ public class TicketHttpControllerUnitTests
     public async Task GetTicketById_ValidId_TicketExists_ShouldReturnOk()
     {
         // Arrange
-        var ticket = new TicketBuilder().WithUsername("test_user").Build();
+        var ticket = new TicketBuilder().WithUsername("testuser").Build();
         _mockService.Setup(s => s.GetByIdByUserAsync(ticket.TicketUid, It.IsAny<string>())).ReturnsAsync(ticket);
-        
-        _controller.ControllerContext.HttpContext.Request.Headers["X-User-Name"] = "test_user";
 
         // Act
         var result = await _controller.GetTicketById(ticket.TicketUid);
@@ -128,8 +134,6 @@ public class TicketHttpControllerUnitTests
         var ticketId = Guid.NewGuid();
         _mockService.Setup(s => s.GetByIdByUserAsync(ticketId, It.IsAny<string>()))
             .ThrowsAsync(new ServiceTicketNotFoundException(0));
-        
-        _controller.ControllerContext.HttpContext.Request.Headers["X-User-Name"] = "test_user";
 
         // Act
         var result = await _controller.GetTicketById(ticketId);
@@ -152,8 +156,6 @@ public class TicketHttpControllerUnitTests
         var ticketId = Guid.NewGuid();
         _mockService.Setup(s => s.GetByIdByUserAsync(ticketId, It.IsAny<string>()))
             .ThrowsAsync(new Exception("Database error"));
-        
-        _controller.ControllerContext.HttpContext.Request.Headers["X-User-Name"] = "test_user";
 
         // Act & Assert
         await Assert.ThrowsAsync<TicketInternalServerException>(() => _controller.GetTicketById(ticketId));
@@ -171,9 +173,7 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange
         var tickets = TicketMother.CreateTicketList(5);
-        _mockService.Setup(s => s.GetAllAsync(It.Is<TicketFilter>(f => f.Username == "test_user"))).ReturnsAsync(tickets);
-        
-        _controller.ControllerContext.HttpContext.Request.Headers["X-User-Name"] = "test_user";
+        _mockService.Setup(s => s.GetAllAsync(It.Is<TicketFilter>(f => f.Username == "testuser"))).ReturnsAsync(tickets);
 
         // Act
         var result = await _controller.GetMyTickets();
@@ -194,9 +194,15 @@ public class TicketHttpControllerUnitTests
     {
         // Arrange
         var tickets = new List<core.domain.Ticket>();
-        _mockService.Setup(s => s.GetAllAsync(It.Is<TicketFilter>(f => f.Username == "test_user"))).ReturnsAsync(tickets);
+        _mockService.Setup(s => s.GetAllAsync(It.Is<TicketFilter>(f => f.Username == "testuser"))).ReturnsAsync(tickets);
         
-        _controller.ControllerContext.HttpContext.Request.Headers["X-User-Name"] = "test_user";
+        // Setup JWT username in HttpContext
+        var httpContext = new DefaultHttpContext();
+        httpContext.User = new System.Security.Claims.ClaimsPrincipal(
+            new System.Security.Claims.ClaimsIdentity(new[] {
+                new System.Security.Claims.Claim("preferred_username", "testuser")
+            }));
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
 
         // Act
         var result = await _controller.GetMyTickets();
@@ -247,7 +253,7 @@ public class TicketHttpControllerUnitTests
             Ticket = new core.domain.Ticket
             {
                 TicketUid = Guid.NewGuid(),
-                Username = "john_doe",
+                Username = "testuser",
                 FlightNumber = "AFL031",
                 Price = 15000,
                 Status = 0
@@ -262,17 +268,15 @@ public class TicketHttpControllerUnitTests
             },
             Privilege = new core.domain.Privilege
             {
-                Username = "john_doe",
+                Username = "testuser",
                 Balance = 1500,
                 Status = core.enums.PrivilegeStatus.BRONZE
             },
             PaidByBonuses = 0,
             PaidByMoney = 15000
         };
-        _mockService.Setup(s => s.BuyTicketAsync("john_doe", "AFL031", 15000, true))
+        _mockService.Setup(s => s.BuyTicketAsync("testuser", "AFL031", 15000, true))
             .ReturnsAsync(buyResponse);
-        
-        _controller.ControllerContext.HttpContext.Request.Headers["X-User-Name"] = "john_doe";
 
         // Act
         var result = await _controller.BuyTicket(buyRequest);
@@ -283,7 +287,7 @@ public class TicketHttpControllerUnitTests
         var dto = Assert.IsType<BuyTicketResponse>(okResult.Value);
         
         Assert.NotNull(dto.TicketUid);
-        _mockService.Verify(s => s.BuyTicketAsync("john_doe", "AFL031", 15000, true), Times.Once);
+        _mockService.Verify(s => s.BuyTicketAsync("testuser", "AFL031", 15000, true), Times.Once);
     }
 
     /// <summary>
