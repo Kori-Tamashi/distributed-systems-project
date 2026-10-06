@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "airport-api-e2e-tests",
     "name": "Airport API - E2E Tests",
-    "description": "End-to-End тесты для Airport API Gateway микросервиса (Lab 02 - Microservices)\n\nCRUD операции для управления аэропортами",
+    "description": "End-to-End \u0442\u0435\u0441\u0442\u044b \u0434\u043b\u044f Airport API Gateway \u043c\u0438\u043a\u0440\u043e\u0441\u0435\u0440\u0432\u0438\u0441\u0430 (Lab 02 - Microservices)\n\nCRUD \u043e\u043f\u0435\u0440\u0430\u0446\u0438\u0438 \u0434\u043b\u044f \u0443\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u0438\u044f \u0430\u044d\u0440\u043e\u043f\u043e\u0440\u0442\u0430\u043c\u0438",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -240,6 +240,53 @@
     {
       "key": "createdAirportId",
       "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Generate fake JWT for integration tests (HS256, OIDC_TEST_SECRET)",
+          "const secret = pm.environment.get('testSecret') || 'ThisIsATestSecretKeyForIntegrationTests1234567890';",
+          "",
+          "function b64url(obj) {",
+          "    return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(obj))",
+          "        .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');",
+          "}",
+          "",
+          "const now = Math.floor(Date.now() / 1000);",
+          "const header = { alg: 'HS256', typ: 'JWT' };",
+          "const payload = {",
+          "    sub: 'testuser',",
+          "    preferred_username: 'testuser',",
+          "    iss: 'test',",
+          "    aud: 'gateway',",
+          "    iat: now,",
+          "    exp: now + 3600",
+          "};",
+          "",
+          "const h = b64url(JSON.stringify(header));",
+          "const p = b64url(JSON.stringify(payload));",
+          "const signingInput = h + '.' + p;",
+          "const sig = CryptoJS.HmacSHA256(signingInput, secret);",
+          "const sigB64 = CryptoJS.enc.Base64.stringify(sig)",
+          "    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');",
+          "",
+          "pm.collectionVariables.set('bearerToken', signingInput + '.' + sigB64);"
+        ]
+      }
     }
   ]
 }

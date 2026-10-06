@@ -95,7 +95,8 @@
             "airports",
             "7"
           ]
-        }
+        },
+        "header": []
       },
       "response": []
     },
@@ -498,6 +499,53 @@
         }
       },
       "response": []
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bearerToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Generate fake JWT for integration tests (HS256, OIDC_TEST_SECRET)",
+          "const secret = pm.environment.get('testSecret') || 'ThisIsATestSecretKeyForIntegrationTests1234567890';",
+          "",
+          "function b64url(obj) {",
+          "    return CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(obj))",
+          "        .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');",
+          "}",
+          "",
+          "const now = Math.floor(Date.now() / 1000);",
+          "const header = { alg: 'HS256', typ: 'JWT' };",
+          "const payload = {",
+          "    sub: 'testuser',",
+          "    preferred_username: 'testuser',",
+          "    iss: 'test',",
+          "    aud: 'gateway',",
+          "    iat: now,",
+          "    exp: now + 3600",
+          "};",
+          "",
+          "const h = b64url(JSON.stringify(header));",
+          "const p = b64url(JSON.stringify(payload));",
+          "const signingInput = h + '.' + p;",
+          "const sig = CryptoJS.HmacSHA256(signingInput, secret);",
+          "const sigB64 = CryptoJS.enc.Base64.stringify(sig)",
+          "    .replace(/\\+/g, '-').replace(/\\//g, '_').replace(/=+$/, '');",
+          "",
+          "pm.collectionVariables.set('bearerToken', signingInput + '.' + sigB64);"
+        ]
+      }
     }
   ]
 }
