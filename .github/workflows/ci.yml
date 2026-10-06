@@ -898,6 +898,20 @@ jobs:
       - name: Start Gateway service
         run: |
           echo "Starting Gateway service..."
+          
+          # Wait for downstream services to be ready
+          echo "⏳ Waiting for downstream services..."
+          for svc in bonus-api-e2e:8050 flight-api-e2e:8060 ticket-api-e2e:8070; do
+            for i in {1..30}; do
+              if curl -sf http://$svc/manage/health > /dev/null 2>&1; then
+                echo "✅ $svc ready!"
+                break
+              fi
+              echo "  Waiting for $svc... ($i/30)"
+              sleep 2
+            done
+          done
+          
           docker run -d --name gateway-api-e2e --network gateway-test-network -e ASPNETCORE_ENVIRONMENT=Development -e APP_PORT=8080 -e BONUS_API_URL=http://bonus-api-e2e:8050 -e FLIGHT_API_URL=http://flight-api-e2e:8060 -e TICKET_API_URL=http://ticket-api-e2e:8070 -p 8080:8080 -e OIDC_TEST_SECRET="ThisIsATestSecretKeyForIntegrationTests1234567890" gateway-microservice:api
           
           echo "⏳ Waiting for Gateway to start..."
