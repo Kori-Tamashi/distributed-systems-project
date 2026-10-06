@@ -982,10 +982,34 @@ jobs:
       - name: Run Gateway Postman API tests
         run: |
           echo "Running Gateway API tests..."
+          
+          # Generate JWT token
+          BEARER_TOKEN=$(python3 << 'PY'
+          import hmac, hashlib, base64, json, time
+          secret = b'ThisIsATestSecretKeyForIntegrationTests1234567890'
+          header = {'alg':'HS256','typ':'JWT'}
+          now = int(time.time())
+          payload = {
+              'sub':'testuser',
+              'preferred_username':'testuser',
+              'iss':'test',
+              'aud':'gateway',
+              'iat':now,
+              'exp':now+3600
+          }
+          def b64u(b): return base64.urlsafe_b64encode(b).rstrip(b'=').decode()
+          h = b64u(json.dumps(header,separators=(',',':')).encode())
+          p = b64u(json.dumps(payload,separators=(',',':')).encode())
+          sig = b64u(hmac.new(secret, f'{h}.{p}'.encode(), hashlib.sha256).digest())
+          print(f'{h}.{p}.{sig}')
+          PY
+          )
+          
           mkdir -p services/gateway-microservice/postman/test-results
           docker run --rm \
             --network gateway-test-network \
             -e BASE_URL=http://gateway-api-e2e:8080 \
+            -e BEARER_TOKEN="$BEARER_TOKEN" \
             -v $(pwd)/services/gateway-microservice/postman/test-results:/etc/newman/results \
             postman-newman-gateway:e2e
 
