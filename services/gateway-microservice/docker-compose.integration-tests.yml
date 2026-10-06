@@ -37,6 +37,8 @@ services:
       # JWT/OIDC settings for Lab 5
       OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
       OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
+      # Test mode: use symmetric key for integration tests
+      OIDC_TEST_SECRET: "ThisIsATestSecretKeyForIntegrationTests1234567890"
     ports:
       - "8053:8050"
     depends_on:
@@ -100,6 +102,8 @@ services:
       # JWT/OIDC settings for Lab 5
       OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
       OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
+      # Test mode: use symmetric key for integration tests
+      OIDC_TEST_SECRET: "ThisIsATestSecretKeyForIntegrationTests1234567890"
     ports:
       - "8063:8060"
     depends_on:
@@ -150,6 +154,8 @@ services:
       # JWT/OIDC settings for Lab 5
       OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
       OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
+      # Test mode: use symmetric key for integration tests
+      OIDC_TEST_SECRET: "ThisIsATestSecretKeyForIntegrationTests1234567890"
     ports:
       - "8073:8070"
     depends_on:

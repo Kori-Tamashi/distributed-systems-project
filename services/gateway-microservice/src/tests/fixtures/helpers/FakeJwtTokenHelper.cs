@@ -11,7 +11,7 @@ public static class FakeJwtTokenHelper
 {
     public static string GenerateFakeToken(string username = "testuser")
     {
-        var securityKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("ThisIsATestSecretKeyForIntegrationTests123456789"));
+        var securityKey = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes("ThisIsATestSecretKeyForIntegrationTests1234567890"));
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
         var claims = new[]

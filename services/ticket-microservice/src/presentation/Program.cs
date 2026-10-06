@@ -40,22 +40,43 @@ builder.Services.AddSingleton(appSettings);
 
 // Load OIDC settings and register JWT authentication
 var oidcSettings = LoadOidcSettings();
+var testSecret = Environment.GetEnvironmentVariable("OIDC_TEST_SECRET");
+
 builder.Services.AddSingleton(oidcSettings);
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        options.Authority = oidcSettings.Issuer;
-        options.RequireHttpsMetadata = false; // Development mode
-        options.TokenValidationParameters = new TokenValidationParameters
+        // Test mode: use symmetric key if OIDC_TEST_SECRET is set
+        if (!string.IsNullOrEmpty(testSecret))
         {
-            ValidateIssuer = true,
-            ValidIssuer = oidcSettings.ValidIssuer,
-            ValidateAudience = false,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ClockSkew = TimeSpan.FromSeconds(30),
-            NameClaimType = "preferred_username"
-        };
+            options.RequireHttpsMetadata = false;
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(
+                    System.Text.Encoding.UTF8.GetBytes(testSecret)),
+                ClockSkew = TimeSpan.FromSeconds(30),
+                NameClaimType = "preferred_username"
+            };
+        }
+        else
+        {
+            options.Authority = oidcSettings.Issuer;
+            options.RequireHttpsMetadata = false; // Development mode
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = oidcSettings.ValidIssuer,
+                ValidateAudience = false,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ClockSkew = TimeSpan.FromSeconds(30),
+                NameClaimType = "preferred_username"
+            };
+        }
     });
 builder.Services.AddAuthorization();
 
