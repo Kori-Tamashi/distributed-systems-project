@@ -895,6 +895,35 @@ jobs:
           docker exec ticket-api-e2e dotnet ef database update --project src/dataaccess/dataaccess.csproj --startup-project src/presentation/presentation.csproj || true
           echo "✅ Migrations applied"
 
+      - name: Seed database
+        run: |
+          echo "Seeding database..."
+          
+          # Flight DB: airports + flights
+          docker exec flight-api-e2e psql -U program -d test_api << 'SQL'
+          INSERT INTO airports (id, name, city, country)
+          VALUES (1, 'Шереметьево', 'Москва', 'Россия'),
+                 (2, 'Пулково', 'Санкт-Петербург', 'Россия'),
+                 (7, 'Tokyo Narita', 'Tokyo', 'Japan')
+          ON CONFLICT (id) DO NOTHING;
+
+          INSERT INTO flights (id, flight_uid, flight_number, datetime, from_airport_id, to_airport_id, price)
+          VALUES (1, 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'AFL031', '2021-10-08 20:00', 2, 1, 1500)
+          ON CONFLICT (id) DO NOTHING;
+
+          SELECT setval(pg_get_serial_sequence('airports','id'), (SELECT MAX(id) FROM airports));
+          SELECT setval(pg_get_serial_sequence('flights','id'), (SELECT MAX(id) FROM flights));
+          SQL
+
+          # Bonus DB: privilege for testuser
+          docker exec bonus-api-e2e psql -U program -d test_api << 'SQL'
+          INSERT INTO privilege (id, username, status, balance)
+          VALUES (1, 'testuser', 0, 10000)
+          ON CONFLICT (username) DO NOTHING;
+          SQL
+
+          echo "✅ Database seeded"
+
       - name: Start Gateway service
         run: |
           echo "Starting Gateway service..."
