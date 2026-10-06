@@ -10,7 +10,8 @@ BEGIN
              WHERE table_schema='public' AND table_name='airports') THEN
     INSERT INTO airports (id, name, city, country)
     VALUES (1, 'Шереметьево', 'Москва', 'Россия'),
-           (2, 'Пулково', 'Санкт-Петербург', 'Россия')
+           (2, 'Пулково', 'Санкт-Петербург', 'Россия'),
+           (7, 'Tokyo Narita', 'Tokyo', 'Japan')
     ON CONFLICT (id) DO NOTHING;
 
     INSERT INTO flights (id, flight_uid, flight_number, datetime, from_airport_id, to_airport_id, price)
