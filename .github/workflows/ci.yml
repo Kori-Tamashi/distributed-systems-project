@@ -751,6 +751,7 @@ jobs:
             -e POSTGRESQL_PASSWORD=test \
             -e APP_PORT=$PORT \
             -p $PORT:$PORT \
+            -e OIDC_TEST_SECRET="ThisIsATestSecretKeyForIntegrationTests1234567890" \
             ${{ matrix.service }}-microservice:api
           echo "⏳ Waiting for API to start..."
           for i in {1..30}; do
