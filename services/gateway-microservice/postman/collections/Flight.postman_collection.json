@@ -310,7 +310,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"Id\": {{createdFlightId}},\n  \"FlightNumber\": \"AFL032\",\n  \"DateTime\": \"2026-11-22T20:00:00Z\",\n  \"FromAirportId\": 7,\n  \"ToAirportId\": 52,\n  \"Price\": 2000\n}"
+          "raw": "{\n  \"Id\": {{createdFlightId}},\n  \"FlightNumber\": \"AFL032\",\n  \"DateTime\": \"2026-11-22T20:00:00Z\",\n  \"FromAirportId\": 7,\n  \"ToAirportId\": 2,\n  \"Price\": 2000\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/api/v1/flights/{{createdFlightId}}",
