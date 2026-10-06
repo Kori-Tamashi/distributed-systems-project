@@ -1095,8 +1095,10 @@ jobs:
   # Autograding (Instructor Postman Tests)
   # ===========================================
   # Runs after all service API tests pass
+  # DISABLED in CI — runs in CD after k8s deployment per Lab 4/5 spec
   autograding:
     name: Autograding
+    if: false  # disabled — instructor tests run in CD against k8s cluster
     runs-on: ubuntu-latest
     needs:
       - gateway-api-tests
