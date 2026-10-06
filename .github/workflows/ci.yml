@@ -933,61 +933,45 @@ jobs:
           print(f'{h}.{p}.{sig}')
           PY
           )
-          echo "JWT: ${TOKEN:0:60}... (len=${#TOKEN})"
+          echo "JWT token: ${TOKEN:0:50}... (len=${#TOKEN})"
+          
           echo ""
-          echo "=== curl bonus /api/v1/privileges with python-generated JWT ==="
-          curl -s -o /tmp/resp.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+          echo "=== TEST 1: curl bonus /api/v1/privileges ==="
+          HTTP_CODE=$(curl -s -o /tmp/bonus.txt -w "%{http_code}" \
             -H "Authorization: Bearer $TOKEN" \
-            -H "Accept: application/json" \
-            http://localhost:8050/api/v1/privileges > /tmp/resp_full.txt
-          echo "--- response body ---"
-          cat /tmp/resp_full.txt || true
+            http://localhost:8050/api/v1/privileges)
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/bonus.txt
           echo ""
-          echo "=== Also try with X-User-Name header ==="
-          curl -s -o /tmp/resp2.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+          
+          echo ""
+          echo "=== TEST 2: curl flight /api/v1/flights ==="
+          HTTP_CODE=$(curl -s -o /tmp/flight.txt -w "%{http_code}" \
             -H "Authorization: Bearer $TOKEN" \
-            -H "X-User-Name: testuser" \
-            http://localhost:8050/api/v1/privileges > /tmp/resp2_full.txt
-          echo "--- response body ---"
-          cat /tmp/resp2_full.txt || true
+            http://localhost:8060/api/v1/flights)
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/flight.txt
           echo ""
-          echo "=== curl flight /api/v1/flights with python-generated JWT ==="
-          curl -s -o /tmp/resp3.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+          
+          echo ""
+          echo "=== TEST 3: curl ticket /api/v1/tickets ==="
+          HTTP_CODE=$(curl -s -o /tmp/ticket.txt -w "%{http_code}" \
             -H "Authorization: Bearer $TOKEN" \
-            -H "Accept: application/json" \
-            http://localhost:8060/api/v1/flights > /tmp/resp3_full.txt
-          echo "--- response body ---"
-          cat /tmp/resp3_full.txt || true
+            http://localhost:8070/api/v1/tickets)
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/ticket.txt
           echo ""
-          echo "=== curl ticket /api/v1/tickets with python-generated JWT ==="
-          curl -s -o /tmp/resp4.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+          
+          echo ""
+          echo "=== TEST 4: curl gateway /api/v1/privilege ==="
+          HTTP_CODE=$(curl -s -o /tmp/gateway.txt -w "%{http_code}" \
             -H "Authorization: Bearer $TOKEN" \
-            -H "Accept: application/json" \
-            http://localhost:8070/api/v1/tickets > /tmp/resp4_full.txt
-          echo "--- response body ---"
-          cat /tmp/resp4_full.txt || true
+            http://localhost:8080/api/v1/privilege)
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/gateway.txt
           echo ""
-          echo "=== curl gateway /api/v1/privilege with python-generated JWT ==="
-          curl -s -o /tmp/resp5.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
-            -H "Authorization: Bearer $TOKEN" \
-            -H "Accept: application/json" \
-            http://localhost:8080/api/v1/privilege > /tmp/resp5_full.txt
-          echo "--- response body ---"
-          cat /tmp/resp5_full.txt || true
-          echo ""
-          echo "=== Saving debug results ==="
-          mkdir -p /tmp/debug-results
-          cp /tmp/resp*_full.txt /tmp/debug-results/
-          cp /tmp/resp*.txt /tmp/debug-results/
-          echo "✅ Debug results saved"
-
-      - name: Upload debug results
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: jwt-debug-results
-          path: /tmp/debug-results/
-          retention-days: 1
+          
+          echo "=== DEBUG COMPLETE ==="
 
       - name: Run Gateway Postman API tests
         run: |
