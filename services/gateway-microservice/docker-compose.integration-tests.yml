@@ -34,9 +34,9 @@ services:
       POSTGRESQL_PASSWORD: "program"
       Redis__Host: "bonus-redis"
       Redis__Port: "6379"
-      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
-      JwtSettings__Issuer: "BonusMicroservice"
-      JwtSettings__Audience: "BonusMicroserviceClient"
+      # JWT/OIDC settings for Lab 5
+      OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
+      OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
     ports:
       - "8053:8050"
     depends_on:
@@ -97,9 +97,9 @@ services:
       POSTGRESQL_DATABASE: "flight"
       POSTGRESQL_USER: "program"
       POSTGRESQL_PASSWORD: "program"
-      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
-      JwtSettings__Issuer: "FlightMicroservice"
-      JwtSettings__Audience: "FlightMicroserviceClient"
+      # JWT/OIDC settings for Lab 5
+      OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
+      OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
     ports:
       - "8063:8060"
     depends_on:
@@ -147,9 +147,9 @@ services:
       POSTGRESQL_DATABASE: "ticket"
       POSTGRESQL_USER: "program"
       POSTGRESQL_PASSWORD: "program"
-      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
-      JwtSettings__Issuer: "TicketMicroservice"
-      JwtSettings__Audience: "TicketMicroserviceClient"
+      # JWT/OIDC settings for Lab 5
+      OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
+      OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
     ports:
       - "8073:8070"
     depends_on:
@@ -194,9 +194,12 @@ services:
       POSTGRESQL_DATABASE: "gateway"
       POSTGRESQL_USER: "program"
       POSTGRESQL_PASSWORD: "program"
-      JwtSettings__Secret: "ThisIsASecretKeyForTestingPurposesOnly12345678901234567890"
-      JwtSettings__Issuer: "GatewayMicroservice"
-      JwtSettings__Audience: "GatewayMicroserviceClient"
+      # JWT/OIDC settings for Lab 5
+      OIDC_ISSUER: "http://localhost:8888/realms/rsoi"
+      OIDC_JWKS_URI: "http://localhost:8888/realms/rsoi/protocol/openid-connect/certs"
+      OIDC_TOKEN_ENDPOINT: "http://localhost:8888/realms/rsoi/protocol/openid-connect/token"
+      OIDC_CLIENT_ID: "gateway"
+      OIDC_CLIENT_SECRET: "test-secret-for-local-dev"
       FlightService__Url: "http://flight-api:8060"
       TicketService__Url: "http://ticket-api:8070"
       BonusService__Url: "http://bonus-api:8050"

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using Microsoft.Extensions.Configuration;
+using tests.fixtures.helpers;
 
 namespace tests.fixtures.contexts.http;
 
@@ -32,13 +34,16 @@ public class HttpGatewayIntegrationTestContext : IDisposable
         _baseUrls["privilege"] = GetEnvVar("BONUS_API_TEST_URL", "http://localhost:8053");
         _baseUrls["privilegehistory"] = GetEnvVar("BONUS_API_TEST_URL", "http://localhost:8053");
 
-        // Create HttpClient instances
+        // Create HttpClient instances with JWT authentication
+        var fakeToken = FakeJwtTokenHelper.GenerateFakeToken("testuser");
         foreach (var baseUrl in _baseUrls)
         {
             var client = new HttpClient
             {
                 BaseAddress = new Uri(baseUrl.Value)
             };
+            client.DefaultRequestHeaders.Authorization = 
+                new AuthenticationHeaderValue("Bearer", fakeToken);
             _clients[baseUrl.Key] = client;
         }
     }
