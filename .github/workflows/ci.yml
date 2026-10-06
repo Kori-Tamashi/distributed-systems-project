@@ -910,6 +910,55 @@ jobs:
             sleep 2
           done
 
+      - name: DEBUG - test JWT with curl directly
+        run: |
+          echo "=== Generate JWT with python ==="
+          TOKEN=$(python3 << 'PY'
+          import hmac, hashlib, base64, json, time
+          secret = b'ThisIsATestSecretKeyForIntegrationTests1234567890'
+          header = {'alg':'HS256','typ':'JWT'}
+          now = int(time.time())
+          payload = {
+              'sub':'testuser',
+              'preferred_username':'testuser',
+              'iss':'test',
+              'aud':'gateway',
+              'iat':now,
+              'exp':now+3600
+          }
+          def b64u(b): return base64.urlsafe_b64encode(b).rstrip(b'=').decode()
+          h = b64u(json.dumps(header,separators=(',',':')).encode())
+          p = b64u(json.dumps(payload,separators=(',',':')).encode())
+          sig = b64u(hmac.new(secret, f'{h}.{p}'.encode(), hashlib.sha256).digest())
+          print(f'{h}.{p}.{sig}')
+          PY
+          )
+          echo "JWT: ${TOKEN:0:60}... (len=${#TOKEN})"
+          echo ""
+          echo "=== curl bonus /api/v1/privileges with python-generated JWT ==="
+          curl -s -o /tmp/resp.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json" \
+            http://localhost:8050/api/v1/privileges
+          echo "--- response body ---"
+          cat /tmp/resp.txt || true
+          echo ""
+          echo "=== Also try with X-User-Name header ==="
+          curl -s -o /tmp/resp2.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "X-User-Name: testuser" \
+            http://localhost:8050/api/v1/privileges
+          echo "--- response body ---"
+          cat /tmp/resp2.txt || true
+          echo ""
+          echo "=== curl flight /api/v1/flights with python-generated JWT ==="
+          curl -s -o /tmp/resp3.txt -w "HTTP %{http_code}  size=%{size_download}\n" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/json" \
+            http://localhost:8060/api/v1/flights
+          echo "--- response body ---"
+          cat /tmp/resp3.txt || true
+
       - name: Run Gateway Postman API tests
         run: |
           echo "Running Gateway API tests..."
