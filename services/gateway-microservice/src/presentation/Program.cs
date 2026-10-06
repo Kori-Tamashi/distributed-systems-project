@@ -30,6 +30,9 @@ var apiTestSettings = LoadApiTestSettings();
 var oidcSettings = LoadOidcSettings();
 var testSecret = Environment.GetEnvironmentVariable("OIDC_TEST_SECRET");
 
+Console.WriteLine($"[AUTH] OIDC_TEST_SECRET length: {testSecret?.Length ?? 0}");
+Console.WriteLine($"[AUTH] Using test mode: {!string.IsNullOrEmpty(testSecret)}");
+
 // Register Circuit Breaker states — one singleton per downstream service
 builder.Services.AddKeyedSingleton<CircuitBreakerState>("flight",
     new CircuitBreakerState(failureThreshold: 3, probeInterval: TimeSpan.FromSeconds(3)));
