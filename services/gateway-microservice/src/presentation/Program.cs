@@ -180,15 +180,7 @@ if (!string.IsNullOrEmpty(testSecret))
 
 builder.Services.AddHttpClient("unnamed")
     .AddHttpMessageHandler<ForwardAuthHandler>() // Apply to all HttpClient instances
-    .ConfigureHttpClient((services, client) =>
-    {
-        // In test mode, add default Authorization header to all outgoing requests
-        if (!string.IsNullOrEmpty(testBearerToken))
-        {
-            client.DefaultRequestHeaders.Authorization = 
-                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", testBearerToken);
-        }
-    });
+    .AddHttpMessageHandler(() => new TestAuthHandler(testBearerToken)); // Test mode: override Authorization after ForwardAuthHandler
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
