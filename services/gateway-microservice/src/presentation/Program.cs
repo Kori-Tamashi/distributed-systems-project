@@ -170,6 +170,10 @@ builder.Services.AddSingleton(apiTestSettings);
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddTransient<ForwardAuthHandler>();
 
+// Register ServiceTokenProvider for service-account token (client_credentials)
+builder.Services.AddHttpClient("token"); // Dedicated client WITHOUT handlers to avoid recursion
+builder.Services.AddSingleton<ServiceTokenProvider>();
+
 // Generate test JWT token if in test mode
 string? testBearerToken = null;
 if (!string.IsNullOrEmpty(testSecret))
