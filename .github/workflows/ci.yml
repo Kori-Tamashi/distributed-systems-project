@@ -1645,6 +1645,15 @@ jobs:
               --reporter-junit-export /etc/newman/results/step3.xml \
               --export-environment /etc/newman/results/env-after-step3.json
 
+      - name: DEBUG — Gateway logs after step3
+        if: always()
+        run: |
+          echo "=== Gateway logs (step3 window) ==="
+          docker logs gateway-api-e2e 2>&1 | tail -200
+          echo ""
+          echo "=== Bonus container status ==="
+          docker ps -a --filter name=bonus-api-e2e --format "{{.Status}}"
+
       - name: Step 4 — start Bonus Service again (final check)
         run: |
           echo "=== Step 4: Starting Bonus Service again ==="
@@ -1680,6 +1689,15 @@ jobs:
             [ "$BALANCE" = "10000" ] && break
             sleep 2
           done
+          
+          echo "=== Gateway logs (after retry wait) ==="
+          docker logs gateway-api-e2e 2>&1 | tail -100
+          echo ""
+          echo "=== Current balance check ==="
+          TOKEN=$(curl -s -X POST http://localhost:8888/realms/rsoi/protocol/openid-connect/token \
+            -d 'grant_type=password&client_id=gateway&client_secret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj&username=testuser&password=test' \
+            | python3 -c 'import sys,json;print(json.load(sys.stdin).get("access_token",""))')
+          curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/privilege | python3 -m json.tool
           
           docker run --rm \
             --network host \
