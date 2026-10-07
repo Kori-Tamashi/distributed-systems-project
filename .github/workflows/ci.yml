@@ -1562,7 +1562,8 @@ jobs:
               --env-var "password=test" \
               --folder success \
               --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/success.xml
+              --reporter-junit-export /etc/newman/results/success.xml \
+              --export-environment /etc/newman/results/env-after-success.json
 
       - name: Step 1 — stop Bonus Service
         run: |
@@ -1574,7 +1575,7 @@ jobs:
             -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
+              -e /etc/newman/results/env-after-success.json \
               --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
               --env-var "serviceUrl=http://localhost:8080" \
               --env-var "clientId=gateway" \
@@ -1583,7 +1584,8 @@ jobs:
               --env-var "password=test" \
               --folder step1 \
               --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step1.xml
+              --reporter-junit-export /etc/newman/results/step1.xml \
+              --export-environment /etc/newman/results/env-after-step1.json
 
       - name: Step 2 — start Bonus Service
         run: |
@@ -1609,7 +1611,7 @@ jobs:
             -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
+              -e /etc/newman/results/env-after-step1.json \
               --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
               --env-var "serviceUrl=http://localhost:8080" \
               --env-var "clientId=gateway" \
@@ -1618,7 +1620,8 @@ jobs:
               --env-var "password=test" \
               --folder step2 \
               --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step2.xml
+              --reporter-junit-export /etc/newman/results/step2.xml \
+              --export-environment /etc/newman/results/env-after-step2.json
 
       - name: Step 3 — stop Bonus Service again
         run: |
@@ -1630,7 +1633,7 @@ jobs:
             -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
+              -e /etc/newman/results/env-after-step2.json \
               --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
               --env-var "serviceUrl=http://localhost:8080" \
               --env-var "clientId=gateway" \
@@ -1639,7 +1642,8 @@ jobs:
               --env-var "password=test" \
               --folder step3 \
               --reporters cli,junit \
-              --reporter-junit-export /etc/newman/results/step3.xml
+              --reporter-junit-export /etc/newman/results/step3.xml \
+              --export-environment /etc/newman/results/env-after-step3.json
 
       - name: Step 4 — start Bonus Service again (final check)
         run: |
@@ -1665,7 +1669,7 @@ jobs:
             -v "$(pwd)/postman/test-results:/etc/newman/results" \
             postman-newman-instructor:e2e \
             run /etc/newman/fault-tolerance-collection.json \
-              -e /etc/newman/environment.json \
+              -e /etc/newman/results/env-after-step3.json \
               --env-var "identityProviderUrl=http://localhost:8888/realms/rsoi" \
               --env-var "serviceUrl=http://localhost:8080" \
               --env-var "clientId=gateway" \
