@@ -1664,6 +1664,23 @@ jobs:
           echo "⏳ Waiting for Circuit Breaker to probe..."
           sleep 5
           
+          # Wait for retry-queue to flush rollback (max 30s)
+          echo "⏳ Waiting for retry-queue to flush rollback (max 30s)..."
+          for i in {1..15}; do
+            TOKEN=$(curl -s -X POST http://localhost:8888/realms/rsoi/protocol/openid-connect/token \
+              -d 'grant_type=password' \
+              -d 'client_id=gateway' \
+              -d 'client_secret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj' \
+              -d 'username=testuser' \
+              -d 'password=test' \
+              | python3 -c 'import sys,json;print(json.load(sys.stdin).get("access_token",""))' 2>/dev/null)
+            BALANCE=$(curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/privilege \
+              | python3 -c 'import sys,json;print(json.load(sys.stdin).get("balance",-1))' 2>/dev/null || echo -1)
+            echo "  attempt $i/15: balance=$BALANCE (expected 10000)"
+            [ "$BALANCE" = "10000" ] && break
+            sleep 2
+          done
+          
           docker run --rm \
             --network host \
             -v "$(pwd)/postman/test-results:/etc/newman/results" \
