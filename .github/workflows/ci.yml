@@ -954,82 +954,6 @@ jobs:
             sleep 2
           done
 
-      - name: DEBUG - test JWT with curl directly
-        run: |
-          echo "=== Generate JWT with python ==="
-          TOKEN=$(python3 << 'PY'
-          import hmac, hashlib, base64, json, time
-          secret = b'ThisIsATestSecretKeyForIntegrationTests1234567890'
-          header = {'alg':'HS256','typ':'JWT'}
-          now = int(time.time())
-          payload = {
-              'sub':'testuser',
-              'preferred_username':'testuser',
-              'iss':'test',
-              'aud':'gateway',
-              'iat':now,
-              'exp':now+3600
-          }
-          def b64u(b): return base64.urlsafe_b64encode(b).rstrip(b'=').decode()
-          h = b64u(json.dumps(header,separators=(',',':')).encode())
-          p = b64u(json.dumps(payload,separators=(',',':')).encode())
-          sig = b64u(hmac.new(secret, f'{h}.{p}'.encode(), hashlib.sha256).digest())
-          print(f'{h}.{p}.{sig}')
-          PY
-          )
-          echo "JWT token: ${TOKEN:0:50}... (len=${#TOKEN})"
-          
-          echo ""
-          echo "=== TEST 1: curl bonus /api/v1/privileges ==="
-          HTTP_CODE=$(curl -s -o /tmp/bonus.txt -w "%{http_code}" \
-            -H "Authorization: Bearer $TOKEN" \
-            http://localhost:8050/api/v1/privileges)
-          echo "HTTP $HTTP_CODE"
-          cat /tmp/bonus.txt
-          echo ""
-          
-          echo ""
-          echo "=== TEST 2: curl flight /api/v1/flights ==="
-          HTTP_CODE=$(curl -s -o /tmp/flight.txt -w "%{http_code}" \
-            -H "Authorization: Bearer $TOKEN" \
-            http://localhost:8060/api/v1/flights)
-          echo "HTTP $HTTP_CODE"
-          cat /tmp/flight.txt
-          echo ""
-          
-          echo ""
-          echo "=== TEST 3: curl ticket /api/v1/tickets ==="
-          HTTP_CODE=$(curl -s -o /tmp/ticket.txt -w "%{http_code}" \
-            -H "Authorization: Bearer $TOKEN" \
-            http://localhost:8070/api/v1/tickets)
-          echo "HTTP $HTTP_CODE"
-          cat /tmp/ticket.txt
-          echo ""
-          
-          echo ""
-          echo "=== TEST 4: curl gateway /api/v1/privilege ==="
-          HTTP_CODE=$(curl -s -o /tmp/gateway.txt -w "%{http_code}" \
-            -H "Authorization: Bearer $TOKEN" \
-            http://localhost:8080/api/v1/privilege)
-          echo "HTTP $HTTP_CODE"
-          cat /tmp/gateway.txt
-          echo ""
-          
-          echo "=== Gateway env vars (from inside container) ==="
-          docker exec gateway-api-e2e env | sort | grep -E "BONUS|FLIGHT|TICKET|OIDC|API_URL" || true
-          
-          echo ""
-          echo "=== Gateway logs (last 150 lines) ==="
-          docker logs gateway-api-e2e 2>&1 | tail -150
-          
-          echo "=== DEBUG COMPLETE ==="
-          echo ""
-          echo "=== Saving HTTP codes ==="
-          echo "BONUS:$HTTP_CODE" > /tmp/bonus-code.txt
-          echo "FLIGHT:$HTTP_CODE" > /tmp/flight-code.txt
-          echo "TICKET:$HTTP_CODE" > /tmp/ticket-code.txt
-          echo "GATEWAY:$HTTP_CODE" > /tmp/gateway-code.txt
-
       - name: Run Gateway Postman API tests
         run: |
           echo "Running Gateway API tests..."
@@ -1645,15 +1569,6 @@ jobs:
               --reporter-junit-export /etc/newman/results/step3.xml \
               --export-environment /etc/newman/results/env-after-step3.json
 
-      - name: DEBUG — Gateway logs after step3
-        if: always()
-        run: |
-          echo "=== Gateway logs (step3 window) ==="
-          docker logs gateway-api-e2e 2>&1 | tail -200
-          echo ""
-          echo "=== Bonus container status ==="
-          docker ps -a --filter name=bonus-api-e2e --format "{{.Status}}"
-
       - name: Step 4 — start Bonus Service again (final check)
         run: |
           echo "=== Step 4: Starting Bonus Service again ==="
@@ -1689,15 +1604,6 @@ jobs:
             [ "$BALANCE" = "10000" ] && break
             sleep 2
           done
-          
-          echo "=== Gateway logs (after retry wait) ==="
-          docker logs gateway-api-e2e 2>&1 | tail -100
-          echo ""
-          echo "=== Current balance check ==="
-          TOKEN=$(curl -s -X POST http://localhost:8888/realms/rsoi/protocol/openid-connect/token \
-            -d 'grant_type=password&client_id=gateway&client_secret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj&username=testuser&password=test' \
-            | python3 -c 'import sys,json;print(json.load(sys.stdin).get("access_token",""))')
-          curl -s -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/privilege | python3 -m json.tool
           
           docker run --rm \
             --network host \
