@@ -1,9 +1,47 @@
-# РСОИ ЛР4 — Распределённая система на Kubernetes
+# РСОИ ЛР5 — Распределённая система на Kubernetes с JWT аутентификацией
 
-## Deploy to Cloud (Managed Kubernetes + Helm)
+## Основные изменения (ЛР5 vs ЛР4)
 
-Развёртывание Flight Booking System в managed Kubernetes кластере: 4 микросервиса
-(Gateway / Flight / Ticket / Bonus) + единый PostgreSQL instance с тремя виртуальными БД
+- **JWT аутентификация** через Keycloak 26.0 (OIDC)
+- **OAuth2 токены** для всех защищённых эндпоинтов
+- **Keycloak** развёрнут в том же namespace (`test`)
+- **CI/CD** автоматически деплоит Keycloak перед Gateway
+
+## Quick Start
+
+### Локально (Docker Compose)
+
+```bash
+cd labs/lab_05
+
+# Запустить весь стек
+docker compose -f docker-compose.lab_05.yml up -d
+
+# Проверить
+docker ps --filter "name=lab_05"
+
+# Получить JWT токен
+TOKEN=$(curl -s -X POST http://localhost:8888/realms/rsoi/protocol/openid-connect/token \
+  -d "grant_type=password" \
+  -d "client_id=gateway" \
+  -d "client_secret=uc0YsBgNzVIjrGqcBfeYOhUJ5WzAOfmj" \
+  -d "username=testuser" \
+  -d "password=test" \
+  | python3 -c "import sys,json; print(json.load(sys.stdin)['access_token'])")
+
+# Протестировать
+curl -H "Authorization: Bearer $TOKEN" http://localhost:8080/api/v1/me
+```
+
+**URL:**
+- Keycloak Admin: http://localhost:8888/admin (admin/admin)
+- Gateway Swagger: http://localhost:8080/swagger
+- Realm: `rsoi`
+- Client: `gateway`
+- User: `testuser` / `test`
+
+Развёртывание Flight Booking System в managed Kubernetes кластере с JWT аутентификацией: 4 микросервиса
+(Gateway / Flight / Ticket / Bonus) + Keycloak + единый PostgreSQL instance с тремя виртуальными БД
 (`flight`, `ticket`, `bonus`). Образы публикуются в Docker Hub, манифесты описаны
 Helm-чартом, наружу публикуется только Gateway через Ingress.
 
@@ -35,11 +73,19 @@ Helm-чартом, наружу публикуется только Gateway че
                  │  postgres       │  StatefulSet, ClusterIP :5432
                  │  3 virtual DB   │
                  └─────────────────┘
+                 
+                 ┌───────▼─────────┐
+                 │  keycloak       │  ClusterIP :8080
+                 │  realm: rsoi    │
+                 └─────────────────┘
 ```
 
-Namespace: `test`
-Имена Deployment: `gateway`, `flight`, `ticket`, `bonus`
-Порты приложений: Gateway 8080, Flight 8060, Ticket 8070, Bonus 8050
+**JWT Authentication Flow:**
+1. Client → `/api/v1/authorize` → redirect to Keycloak
+2. User authenticates → Keycloak returns JWT
+3. Client → API with `Authorization: Bearer <JWT>`
+4. Gateway validates JWT against Keycloak JWKS
+5. Downstream services validate JWT directly
 
 ### Публикация наружу (Ingress)
 
@@ -183,7 +229,9 @@ Circuit Breaker + in-memory retry queue хранятся в pod Gateway → `rep
 |---|---|
 | Namespace | `test` |
 | Label подов Gateway | `app.kubernetes.io/name=gateway` |
-| Имена Deployment | `gateway`, `flight`, `ticket`, `bonus` |
+| Имена Deployment | `gateway`, `flight`, `ticket`, `bonus`, `keycloak` |
 | Нестабильный сервис (v1) | `bonus` |
 | baseUrl для Postman | публичный адрес Ingress |
-| Порты | 8080 / 8060 / 8070 / 8050 |
+| Порты | Gateway 8080, Flight 8060, Ticket 8070, Bonus 8050, Keycloak 8080 |
+| OIDC Client | `gateway` |
+| Test User | `testuser` / `test` |
